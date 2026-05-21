@@ -1,10 +1,11 @@
-﻿using System.Data;
+using System.Data;
 using LabelPrintClient.Infrastructure;
 using LabelPrintClient.Modules.PrintCenter.Models;
 using LabelPrintClient.Modules.Template.Models;
 using LabelPrintClient.Modules.Template.Services;
 using Stimulsoft.Report;
 using Stimulsoft.Report.Components;
+using LabelPrintClient.Services;
 
 namespace LabelPrintClient.Modules.Template.Services;
 
@@ -46,7 +47,7 @@ public class StiTemplateDesignerService
                 }
                 catch (Exception ex)
                 {
-                    System.Windows.MessageBox.Show(
+                    AppMessageBox.Show(
                         $"保存模板失败：{ex.Message}", 
                         "错误", 
                         System.Windows.MessageBoxButton.OK, 

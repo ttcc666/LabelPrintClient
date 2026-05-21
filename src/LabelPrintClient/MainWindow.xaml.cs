@@ -11,7 +11,7 @@ using LabelPrintClient.Services;
 
 namespace LabelPrintClient;
 
-public partial class MainWindow : System.Windows.Window
+public partial class MainWindow : HandyControl.Controls.Window
 {
     private readonly PrintCenterView _printCenterView = new();
     private readonly PrintHistoryView _printHistoryView = new();
@@ -74,7 +74,7 @@ public partial class MainWindow : System.Windows.Window
             return;
 
         SelectThemeMode(previousMode);
-        System.Windows.MessageBox.Show($"主题切换失败：{errorMessage}", "主题切换", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+        AppMessageBox.Show($"主题切换失败：{errorMessage}", "主题切换", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
     }
 
     private void AppThemeService_ThemeModeChanged(object? sender, AppThemeMode themeMode)

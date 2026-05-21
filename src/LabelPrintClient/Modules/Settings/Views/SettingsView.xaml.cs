@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Drawing.Printing;
 using System.Windows;
 using System.Windows.Controls;
@@ -48,7 +48,7 @@ public partial class SettingsView : System.Windows.Controls.UserControl
     {
         if (!TryBuildSettings(out var settings, out var errorMessage))
         {
-            System.Windows.MessageBox.Show(errorMessage, "配置校验失败", MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppMessageBox.Show(errorMessage, "配置校验失败", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -59,17 +59,17 @@ public partial class SettingsView : System.Windows.Controls.UserControl
             if (!AppThemeService.TryApplyAndSetRuntime(settings.ThemeMode, out var themeErrorMessage))
             {
                 StatusText.Text = $"配置已保存，但主题应用失败：{themeErrorMessage}";
-                System.Windows.MessageBox.Show($"配置已保存，但主题应用失败：{themeErrorMessage}", "主题切换", MessageBoxButton.OK, MessageBoxImage.Warning);
+                AppMessageBox.Show($"配置已保存，但主题应用失败：{themeErrorMessage}", "主题切换", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
             ApplyToRuntimeSettings(settings);
             StatusText.Text = $"配置已保存：{DateTime.Now:HH:mm:ss}。主题已应用，其余运行配置重启后完全生效。";
-            System.Windows.MessageBox.Show("配置已保存。运行模式、数据库连接和模板目录相关配置需要重启应用后完全生效。", "保存成功", MessageBoxButton.OK, MessageBoxImage.Information);
+            AppMessageBox.Show("配置已保存。运行模式、数据库连接和模板目录相关配置需要重启应用后完全生效。", "保存成功", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (Exception ex)
         {
-            System.Windows.MessageBox.Show($"保存配置失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            AppMessageBox.Show($"保存配置失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -93,7 +93,7 @@ public partial class SettingsView : System.Windows.Controls.UserControl
         }
         catch (Exception ex)
         {
-            System.Windows.MessageBox.Show($"加载配置失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            AppMessageBox.Show($"加载配置失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -168,6 +168,7 @@ public partial class SettingsView : System.Windows.Controls.UserControl
         settings.DefaultPrinterName = defaultPrinterName;
         settings.DefaultPrintCopies = defaultPrintCopies;
         settings.ConfirmBeforePrint = ConfirmBeforePrintBox.IsChecked == true;
+        settings.EnableSqlLogging = App.Settings.EnableSqlLogging;
         settings.ThemeMode = themeMode;
         return true;
     }
@@ -269,6 +270,7 @@ public partial class SettingsView : System.Windows.Controls.UserControl
         App.Settings.DefaultPrinterName = settings.DefaultPrinterName;
         App.Settings.DefaultPrintCopies = settings.DefaultPrintCopies;
         App.Settings.ConfirmBeforePrint = settings.ConfirmBeforePrint;
+        App.Settings.EnableSqlLogging = settings.EnableSqlLogging;
         App.Settings.ThemeMode = settings.ThemeMode;
     }
 
@@ -284,12 +286,12 @@ public partial class SettingsView : System.Windows.Controls.UserControl
         {
             await ConnectionTestService.TestAsync(runMode, connectionString);
             StatusText.Text = $"{displayName} 连接测试成功：{DateTime.Now:HH:mm:ss}";
-            System.Windows.MessageBox.Show($"{displayName} 连接测试成功。", "连接测试", MessageBoxButton.OK, MessageBoxImage.Information);
+            AppMessageBox.Show($"{displayName} 连接测试成功。", "连接测试", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (Exception ex)
         {
             StatusText.Text = $"{displayName} 连接测试失败：{ex.Message}";
-            System.Windows.MessageBox.Show($"{displayName} 连接测试失败：{ex.Message}", "连接测试", MessageBoxButton.OK, MessageBoxImage.Error);
+            AppMessageBox.Show($"{displayName} 连接测试失败：{ex.Message}", "连接测试", MessageBoxButton.OK, MessageBoxImage.Error);
         }
         finally
         {

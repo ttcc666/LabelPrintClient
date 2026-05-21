@@ -9,6 +9,7 @@ using LabelPrintClient.Modules.PrintCenter.Models;
 using LabelPrintClient.Modules.Template.Models;
 using LabelPrintClient.Modules.PrintCenter.Services;
 using LabelPrintClient.Modules.PrintCenter.ViewModels;
+using LabelPrintClient.Services;
 
 namespace LabelPrintClient.Modules.PrintHistory.Views;
 
@@ -30,15 +31,13 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
     private int _rowPageSize = DefaultRowPageSize;
     private int _rowTotalRows;
     private int _rowTotalPages = 1;
+    private bool _printersLoaded;
+    private string? _rowGridColumnSignature;
 
     public PrintHistoryView()
     {
         InitializeComponent();
-        Loaded += async (_, _) =>
-        {
-            LoadPrinters();
-            await RefreshHistoryAsync();
-        };
+        Loaded += (_, _) => LoadPrinters();
         Unloaded += (_, _) => CancelPendingLoads();
     }
 
@@ -166,7 +165,7 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
         }
         catch (Exception ex)
         {
-            System.Windows.MessageBox.Show($"加载打印记录失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            AppMessageBox.Show($"加载打印记录失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -208,12 +207,15 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
             var totalPages = Math.Max(1, (int)Math.Ceiling(totalRows / (double)_rowPageSize));
             var currentPage = Math.Clamp(_rowCurrentPage, 1, totalPages);
 
-            var pageRows = (await rowQuery
+            var dbRows = await rowQuery
                     .OrderBy(x => x.RowIndex)
                     .Skip((currentPage - 1) * _rowPageSize)
                     .Take(_rowPageSize)
-                    .ToListAsync())
-                .Select(x => new PrintJobRowGridItem
+                    .ToListAsync();
+
+            var rowLoadResult = await Task.Run(() =>
+            {
+                var rows = dbRows.Select(x => new PrintJobRowGridItem
                 {
                     Id = x.Id,
                     ImportRowId = x.ImportRowId,
@@ -221,6 +223,21 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
                     Data = GridRowDataHelper.Deserialize(x.RowDataJson)
                 })
                 .ToList();
+
+                GridRowDataHelper.EnsureFieldKeys(rows.Select(x => x.Data), fields);
+                var knownCodes = fields
+                    .Select(x => x.FieldCode)
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+                var extraKeys = rows
+                    .SelectMany(x => x.Data.Keys)
+                    .Where(x => !knownCodes.Contains(x))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(x => x)
+                    .ToList();
+                GridRowDataHelper.EnsureKeys(rows.Select(x => x.Data), extraKeys);
+                return (Rows: rows, ExtraKeys: extraKeys);
+            }, token);
 
             if (token.IsCancellationRequested ||
                 SelectedJob?.Id != job.Id ||
@@ -233,9 +250,9 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
             _rowTotalPages = totalPages;
             _rowCurrentPage = currentPage;
 
-            BuildRowGridColumns(fields, pageRows);
+            BuildRowGridColumnsIfNeeded(fields, rowLoadResult.ExtraKeys);
             _rows.Clear();
-            foreach (var item in pageRows)
+            foreach (var item in rowLoadResult.Rows)
             {
                 _rows.Add(item);
             }
@@ -250,14 +267,28 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
         }
         catch (Exception ex)
         {
-            System.Windows.MessageBox.Show($"加载打印明细失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            AppMessageBox.Show($"加载打印明细失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
-    private void BuildRowGridColumns(IReadOnlyList<LabelTemplateField> fields, IReadOnlyList<PrintJobRowGridItem> rows)
+    private void BuildRowGridColumnsIfNeeded(IReadOnlyList<LabelTemplateField> fields, IReadOnlyList<string> extraKeys)
+    {
+        var signature = $"{BuildFieldSignature(fields)}||{string.Join("|", extraKeys)}";
+        if (string.Equals(_rowGridColumnSignature, signature, StringComparison.Ordinal))
+            return;
+
+        _rowGridColumnSignature = signature;
+        BuildRowGridColumns(fields, extraKeys);
+    }
+
+    private static string BuildFieldSignature(IEnumerable<LabelTemplateField> fields)
+    {
+        return string.Join("|", fields.Select(x => $"{x.Id}:{x.Sort}:{x.FieldCode}:{x.FieldName}"));
+    }
+
+    private void BuildRowGridColumns(IReadOnlyList<LabelTemplateField> fields, IEnumerable<string> extraKeys)
     {
         RowGrid.Columns.Clear();
-        GridRowDataHelper.EnsureFieldKeys(rows.Select(x => x.Data), fields);
 
         RowGrid.Columns.Add(new DataGridTemplateColumn
         {
@@ -273,10 +304,8 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
             IsReadOnly = true
         });
 
-        var knownCodes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var field in fields)
         {
-            knownCodes.Add(field.FieldCode);
             RowGrid.Columns.Add(new DataGridTextColumn
             {
                 Header = field.FieldName,
@@ -285,14 +314,6 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
                 IsReadOnly = true
             });
         }
-
-        var extraKeys = rows
-            .SelectMany(x => x.Data.Keys)
-            .Where(x => !knownCodes.Contains(x))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .OrderBy(x => x)
-            .ToList();
-        GridRowDataHelper.EnsureKeys(rows.Select(x => x.Data), extraKeys);
 
         foreach (var key in extraKeys)
         {
@@ -312,6 +333,7 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
         _rowCurrentPage = 1;
         _rowTotalRows = 0;
         _rowTotalPages = 1;
+        _rowGridColumnSignature = null;
         RowGrid.Columns.Clear();
         RowGrid.ItemsSource = _rows;
         UpdateRowPagination();
@@ -358,7 +380,7 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
 
         if (!string.Equals(job.Status, "Failed", StringComparison.OrdinalIgnoreCase))
         {
-            System.Windows.MessageBox.Show("只有失败的打印任务可以失败重试。");
+            AppMessageBox.Show("只有失败的打印任务可以失败重试。");
             return;
         }
         if (!TryGetPrintOptions(out var printerName, out var printCopies))
@@ -525,6 +547,10 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
 
     private void LoadPrinters()
     {
+        if (_printersLoaded)
+            return;
+
+        _printersLoaded = true;
         var printerNames = PrinterSettings.InstalledPrinters
             .Cast<string>()
             .OrderBy(x => x)
@@ -554,7 +580,7 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
 
         if (string.IsNullOrWhiteSpace(printerName))
         {
-            System.Windows.MessageBox.Show("请先选择打印机。");
+            AppMessageBox.Show("请先选择打印机。");
             return false;
         }
 
@@ -562,7 +588,7 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
             copies < 1 ||
             copies > MaxPrintCopies)
         {
-            System.Windows.MessageBox.Show($"打印份数必须是 1 到 {MaxPrintCopies} 之间的整数。");
+            AppMessageBox.Show($"打印份数必须是 1 到 {MaxPrintCopies} 之间的整数。");
             return false;
         }
 
@@ -576,7 +602,7 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
         Func<BackgroundTaskContext, Task> operation)
     {
         if (App.Settings.ConfirmBeforePrint &&
-            System.Windows.MessageBox.Show(confirmMessage, "确认打印", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+            AppMessageBox.Show(confirmMessage, "确认打印", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
         {
             return;
         }
@@ -588,12 +614,12 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
         try
         {
             await BackgroundTaskQueue.Shared.EnqueueAsync(BackgroundTaskKind.Print, "正在提交历史打印...", operation);
-            System.Windows.MessageBox.Show("打印任务已完成。");
+            AppMessageBox.Show("打印任务已完成。");
             await RefreshHistoryAsync();
         }
         catch (Exception ex)
         {
-            System.Windows.MessageBox.Show($"打印失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            AppMessageBox.Show($"打印失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
         }
         finally
         {

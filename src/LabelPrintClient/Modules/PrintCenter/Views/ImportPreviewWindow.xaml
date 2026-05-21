@@ -16,39 +16,49 @@
         </Grid.RowDefinitions>
 
         <Border Background="{DynamicResource RegionBrush}" CornerRadius="4" Grid.Row="0" Padding="10" Margin="0,0,0,8">
-            <DockPanel LastChildFill="False">
-                <StackPanel DockPanel.Dock="Left">
-                    <TextBlock Text="导入前预览" />
+            <Grid VerticalAlignment="Center">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" MinWidth="240" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <Grid Grid.Column="0" Margin="0,0,16,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0" Text="导入前预览" />
                     <TextBlock x:Name="SummaryText"
+                               Grid.Row="1"
                                Margin="0,4,0,0"
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                TextTrimming="CharacterEllipsis" />
-                </StackPanel>
-                <WrapPanel DockPanel.Dock="Right" VerticalAlignment="Center">
+                </Grid>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right">
                     <TextBox x:Name="PreviewSearchBox"
-                                Width="180"
-                               
-                                Margin="0,0,8,0"
-                                KeyDown="PreviewSearchBox_KeyDown" />
-                    <Button  Style="{StaticResource ButtonPrimary}" Click="ApplyFilter_Click" Margin="0,0,8,0" >
-        <StackPanel Orientation="Horizontal">
-            <iconPacks:PackIconMaterial Kind="Magnify" Margin="0,0,6,0" VerticalAlignment="Center"/>
-            <TextBlock Text="查询" VerticalAlignment="Center"/>
-        </StackPanel>
-    </Button>
-                    <Button  Style="{StaticResource ButtonDanger}" Click="ClearFilter_Click" Margin="0,0,12,0" >
-        <StackPanel Orientation="Horizontal">
-            <iconPacks:PackIconMaterial Kind="FilterRemoveOutline" Margin="0,0,6,0" VerticalAlignment="Center"/>
-            <TextBlock Text="清空" VerticalAlignment="Center"/>
-        </StackPanel>
-    </Button>
+                             Width="160"
+                             Margin="0,0,8,0"
+                             KeyDown="PreviewSearchBox_KeyDown" />
+                    <Button Style="{StaticResource ButtonPrimary}" Click="ApplyFilter_Click" Margin="0,0,8,0">
+                        <StackPanel Orientation="Horizontal">
+                            <iconPacks:PackIconMaterial Kind="Magnify" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="查询" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource ButtonDanger}" Click="ClearFilter_Click" Margin="0,0,12,0">
+                        <StackPanel Orientation="Horizontal">
+                            <iconPacks:PackIconMaterial Kind="FilterRemoveOutline" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="清空" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
                     <CheckBox x:Name="OnlyErrorRowsBox"
                               Content="只看错误"
                               VerticalAlignment="Center"
                               Checked="OnlyErrorRowsBox_Changed"
                               Unchecked="OnlyErrorRowsBox_Changed" />
-                </WrapPanel>
-            </DockPanel>
+                </StackPanel>
+            </Grid>
         </Border>
 
         <Border Background="{DynamicResource RegionBrush}" CornerRadius="4" Grid.Row="1" Padding="0" VerticalAlignment="Stretch">

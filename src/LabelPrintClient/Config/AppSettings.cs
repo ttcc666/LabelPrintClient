@@ -18,6 +18,8 @@ public class AppSettings
 
     public bool ConfirmBeforePrint { get; set; } = true;
 
+    public bool EnableSqlLogging { get; set; } = false;
+
     public AppThemeMode ThemeMode { get; set; } = AppThemeMode.System;
 }
 

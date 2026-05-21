@@ -220,6 +220,7 @@ public class LabelPrintService
         var settings = CreatePrinterSettings(printerName);
         var total = context.Rows.Count * copyCount;
         var completed = 0;
+        var progressReportInterval = Math.Max(1, (int)Math.Ceiling(total / 100.0));
         progress?.Report(new BackgroundTaskProgress(completed, total, "开始提交打印任务"));
 
         foreach (var row in context.Rows)
@@ -238,9 +239,15 @@ public class LabelPrintService
                 var report = BuildRenderedReport(context.Template, dataTable);
                 report.Print(false, settings);
                 completed++;
-                progress?.Report(new BackgroundTaskProgress(completed, total, $"已提交 Excel 第 {row.RowIndex} 行"));
+                if (ShouldReportProgress(completed, total, progressReportInterval))
+                    progress?.Report(new BackgroundTaskProgress(completed, total, $"已提交 Excel 第 {row.RowIndex} 行"));
             }
         }
+    }
+
+    private static bool ShouldReportProgress(int completed, int total, int reportInterval)
+    {
+        return completed >= total || completed % reportInterval == 0;
     }
 
     private StiReport BuildRenderedReport(LabelTemplate template, DataTable dataTable)

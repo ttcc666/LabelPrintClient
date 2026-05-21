@@ -1,5 +1,6 @@
-﻿using System.Windows;
+using System.Windows;
 using LabelPrintClient.Modules.Template.Models;
+using LabelPrintClient.Services;
 
 namespace LabelPrintClient.Modules.Template.Views;
 
@@ -39,7 +40,7 @@ public partial class CategoryEditWindow : Window
         var name = NameBox.Text.Trim();
         if (string.IsNullOrWhiteSpace(name))
         {
-            System.Windows.MessageBox.Show("请输入分类名称。", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppMessageBox.Show("请输入分类名称。", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 

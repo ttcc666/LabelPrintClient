@@ -16,12 +16,6 @@
             <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
         </Style>
 
-        <Style x:Key="CommandGroupStyle" TargetType="StackPanel">
-            <Setter Property="Orientation" Value="Horizontal" />
-            <Setter Property="MinHeight" Value="36" />
-            <Setter Property="Margin" Value="0,0,16,6" />
-            <Setter Property="VerticalAlignment" Value="Center" />
-        </Style>
     </UserControl.Resources>
 
     <Grid Margin="12">
@@ -34,50 +28,70 @@
         <!-- 顶部：模板选择、Excel 操作、筛选条件 -->
         <Border Background="{DynamicResource RegionBrush}" CornerRadius="4" Grid.Row="0" Margin="0,0,0,8" Padding="10">
             <Grid>
-                <WrapPanel VerticalAlignment="Center">
-                    <TextBlock Text="标签打印中心" VerticalAlignment="Center" Margin="0,0,20,6" />
-                    <StackPanel Style="{StaticResource CommandGroupStyle}">
-                    <TextBlock Style="{StaticResource FormLabelStyle}" Text="分类" />
-                    <ComboBox x:Name="CategoryBox" Width="150" DisplayMemberPath="Name"
-                              infra:SearchableComboBoxBehavior.IsEnabled="True"
-                              infra:SearchableComboBoxBehavior.SearchMemberPath="Name"
-                              SelectionChanged="CategoryBox_SelectionChanged" VerticalAlignment="Center" />
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0" VerticalAlignment="Center">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Column="0" Text="标签打印中心" VerticalAlignment="Center" Margin="0,0,16,0" />
+
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,0">
+                        <TextBlock Style="{StaticResource FormLabelStyle}" Text="分类" />
+                        <ComboBox x:Name="CategoryBox" Width="140" DisplayMemberPath="Name"
+                                  infra:SearchableComboBoxBehavior.IsEnabled="True"
+                                  infra:SearchableComboBoxBehavior.SearchMemberPath="Name"
+                                  SelectionChanged="CategoryBox_SelectionChanged" VerticalAlignment="Center" />
                     </StackPanel>
-                    <StackPanel Style="{StaticResource CommandGroupStyle}">
-                    <TextBlock Style="{StaticResource FormLabelStyle}" Text="模板" />
-                    <ComboBox x:Name="TemplateBox" Width="170" DisplayMemberPath="Name"
-                              infra:SearchableComboBoxBehavior.IsEnabled="True"
-                              infra:SearchableComboBoxBehavior.SearchMemberPath="Name"
-                              SelectionChanged="TemplateBox_SelectionChanged" VerticalAlignment="Center" />
+
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,0">
+                        <TextBlock Style="{StaticResource FormLabelStyle}" Text="模板" />
+                        <ComboBox x:Name="TemplateBox" Width="160" DisplayMemberPath="Name"
+                                  infra:SearchableComboBoxBehavior.IsEnabled="True"
+                                  infra:SearchableComboBoxBehavior.SearchMemberPath="Name"
+                                  SelectionChanged="TemplateBox_SelectionChanged" VerticalAlignment="Center" />
                     </StackPanel>
-                    <Button  Click="Refresh_Click" Margin="0,0,8,6" >
-        <StackPanel Orientation="Horizontal">
-            <iconPacks:PackIconMaterial Kind="Refresh" Margin="0,0,6,0" VerticalAlignment="Center"/>
-            <TextBlock Text="刷新" VerticalAlignment="Center"/>
-        </StackPanel>
-    </Button>
-                    <Button  Click="DownloadExcel_Click" Margin="0,0,8,6" >
-        <StackPanel Orientation="Horizontal">
-            <iconPacks:PackIconMaterial Kind="Download" Margin="0,0,6,0" VerticalAlignment="Center"/>
-            <TextBlock Text="下载 Excel 模板" VerticalAlignment="Center"/>
-        </StackPanel>
-    </Button>
-                    <Button  Style="{StaticResource ButtonPrimary}" Click="ImportExcel_Click" Margin="0,0,20,6" >
-        <StackPanel Orientation="Horizontal">
-            <iconPacks:PackIconMaterial Kind="MicrosoftExcel" Margin="0,0,6,0" VerticalAlignment="Center"/>
-            <TextBlock Text="导入 Excel" VerticalAlignment="Center"/>
-        </StackPanel>
-    </Button>
-                    <CheckBox x:Name="OnlyInvalidBox" Content="只看错误" VerticalAlignment="Center" Margin="0,0,16,6"
+
+                    <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Style="{StaticResource FormLabelStyle}" Text="打印机" />
+                        <ComboBox x:Name="PrinterNameBox" Width="190" VerticalAlignment="Center"
+                                  infra:SearchableComboBoxBehavior.IsEnabled="True" />
+                    </StackPanel>
+
+                    <Button Grid.Column="4" Click="Refresh_Click" Margin="8,0,0,0">
+                        <StackPanel Orientation="Horizontal">
+                            <iconPacks:PackIconMaterial Kind="Refresh" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="刷新" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </Grid>
+
+                <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,8,0,0">
+                    <Button Click="DownloadExcel_Click" Margin="0,0,8,0">
+                        <StackPanel Orientation="Horizontal">
+                            <iconPacks:PackIconMaterial Kind="Download" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="下载 Excel 模板" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource ButtonPrimary}" Click="ImportExcel_Click" Margin="0,0,20,0">
+                        <StackPanel Orientation="Horizontal">
+                            <iconPacks:PackIconMaterial Kind="MicrosoftExcel" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="导入 Excel" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <CheckBox x:Name="OnlyInvalidBox" Content="只看错误" VerticalAlignment="Center" Margin="0,0,16,0"
                               Checked="Filter_Changed" Unchecked="Filter_Changed" />
-                    <CheckBox x:Name="OnlyUnprintedBox" Content="只看未打印" VerticalAlignment="Center" Margin="0,0,20,6"
+                    <CheckBox x:Name="OnlyUnprintedBox" Content="只看未打印" VerticalAlignment="Center"
                               Checked="Filter_Changed" Unchecked="Filter_Changed" />
-                    <StackPanel Style="{StaticResource CommandGroupStyle}" Margin="0,0,0,6">
-                    <TextBlock Style="{StaticResource FormLabelStyle}" Text="打印机" />
-                    <ComboBox x:Name="PrinterNameBox" Width="220" VerticalAlignment="Center"
-                              infra:SearchableComboBoxBehavior.IsEnabled="True" />
-                    </StackPanel>
-                </WrapPanel>
+                </StackPanel>
             </Grid>
         </Border>
 

@@ -75,7 +75,9 @@ public partial class TaskCenterView : System.Windows.Controls.UserControl
     {
         if (e.PropertyName is nameof(BackgroundTaskItem.Status) or
             nameof(BackgroundTaskItem.Message) or
-            nameof(BackgroundTaskItem.ErrorMessage))
+            nameof(BackgroundTaskItem.ErrorMessage) or
+            nameof(BackgroundTaskItem.DisplayTitle) or
+            nameof(BackgroundTaskItem.Description))
         {
             RefreshFilter();
             return;
@@ -103,9 +105,11 @@ public partial class TaskCenterView : System.Windows.Controls.UserControl
             return true;
 
         return Contains(task.Title, keyword) ||
+               Contains(task.DisplayTitle, keyword) ||
                Contains(task.KindText, keyword) ||
                Contains(task.StatusText, keyword) ||
                Contains(task.Message, keyword) ||
+               Contains(task.Description, keyword) ||
                Contains(task.ErrorMessage, keyword);
     }
 

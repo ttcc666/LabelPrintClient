@@ -26,6 +26,9 @@ public static class AppDb
             InitKeyType = InitKeyType.Attribute
         }, db =>
         {
+            if (!settings.EnableSqlLogging)
+                return;
+
             // 1. 拦截 SQL 正在执行事件，美化并输出完整拼装好的 SQL 语句
             db.Aop.OnLogExecuting = (sql, pars) =>
             {
@@ -40,7 +43,6 @@ public static class AppDb
                                   $"============================================================\r\n";
                     
                     System.Diagnostics.Debug.WriteLine(logText);
-                    System.Console.Write(logText); // 支持 CLI 终端及后台标准输出采集
                 }
                 catch
                 {
@@ -53,7 +55,6 @@ public static class AppDb
             {
                 var logText = $"[SQL LOG EXECUTED] Time Elapsed: {db.Ado.SqlExecutionTime} | {DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}\r\n";
                 System.Diagnostics.Debug.WriteLine(logText);
-                System.Console.Write(logText);
             };
         });
     }

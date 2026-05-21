@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using LabelPrintClient.Config;
@@ -7,6 +7,7 @@ using LabelPrintClient.Infrastructure;
 using LabelPrintClient.Modules.PrintCenter.Models;
 using LabelPrintClient.Modules.Template.Models;
 using LabelPrintClient.Modules.Template.Services;
+using LabelPrintClient.Services;
 
 namespace LabelPrintClient.Modules.Template.Views;
 
@@ -113,7 +114,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         }
         catch (Exception ex)
         {
-            System.Windows.MessageBox.Show($"刷新失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            AppMessageBox.Show($"刷新失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -176,7 +177,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         }
         catch (Exception ex)
         {
-            System.Windows.MessageBox.Show($"加载模板失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            AppMessageBox.Show($"加载模板失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -229,7 +230,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         }
         catch (Exception ex)
         {
-            System.Windows.MessageBox.Show($"加载字段失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            AppMessageBox.Show($"加载字段失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -248,7 +249,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         var category = win.Category;
         if (await FindCategoryAsync(category.Name, 0) != null)
         {
-            System.Windows.MessageBox.Show("分类名称已存在，请勿重复新增。", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppMessageBox.Show("分类名称已存在，请勿重复新增。", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -264,7 +265,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         var category = SelectedCategory;
         if (category == null)
         {
-            System.Windows.MessageBox.Show("请先选择要编辑的分类。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+            AppMessageBox.Show("请先选择要编辑的分类。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -280,7 +281,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         var existing = await FindCategoryAsync(edited.Name, 0);
         if (existing != null && existing.Id != edited.Id)
         {
-            System.Windows.MessageBox.Show("分类名称已存在，无法重命名为此名称。", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppMessageBox.Show("分类名称已存在，无法重命名为此名称。", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -293,11 +294,11 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         var category = SelectedCategory;
         if (category == null)
         {
-            System.Windows.MessageBox.Show("请先选择要删除的分类。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+            AppMessageBox.Show("请先选择要删除的分类。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
-        if (System.Windows.MessageBox.Show($"确定删除分类 {category.Name}？\n这将会同步删除该分类下的所有模板和关联字段！该操作不可恢复！", "确认删除", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+        if (AppMessageBox.Show($"确定删除分类 {category.Name}？\n这将会同步删除该分类下的所有模板和关联字段！该操作不可恢复！", "确认删除", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
         {
             return;
         }
@@ -331,7 +332,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         var category = SelectedCategory;
         if (category == null)
         {
-            System.Windows.MessageBox.Show("请先选择分类，再新增模板。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+            AppMessageBox.Show("请先选择分类，再新增模板。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -346,7 +347,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         var template = win.Template;
         if (await FindTemplateAsync(category.Id, template.Name) != null)
         {
-            System.Windows.MessageBox.Show("当前分类下已存在同名模板，请勿重复新增。", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppMessageBox.Show("当前分类下已存在同名模板，请勿重复新增。", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -371,7 +372,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         var template = SelectedTemplate;
         if (template == null)
         {
-            System.Windows.MessageBox.Show("请先选择要编辑的模板。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+            AppMessageBox.Show("请先选择要编辑的模板。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -387,7 +388,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         var existing = await FindTemplateAsync(edited.CategoryId, edited.Name);
         if (existing != null && existing.Id != edited.Id)
         {
-            System.Windows.MessageBox.Show("当前分类下已存在同名模板，无法重命名为此名称。", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppMessageBox.Show("当前分类下已存在同名模板，无法重命名为此名称。", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -411,11 +412,11 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         var template = SelectedTemplate;
         if (template == null)
         {
-            System.Windows.MessageBox.Show("请先选择要删除的模板。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+            AppMessageBox.Show("请先选择要删除的模板。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
-        if (System.Windows.MessageBox.Show($"确定删除模板 {template.Name}？\n这将同步删除该模板下的所有字段，且不可恢复！", "确认删除", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+        if (AppMessageBox.Show($"确定删除模板 {template.Name}？\n这将同步删除该模板下的所有字段，且不可恢复！", "确认删除", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
         {
             return;
         }
@@ -449,7 +450,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         var template = SelectedTemplate;
         if (template == null)
         {
-            System.Windows.MessageBox.Show("请先选择模板，再新增字段。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+            AppMessageBox.Show("请先选择模板，再新增字段。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -469,7 +470,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         var duplicateFieldError = GetDuplicateFieldError(fields, field.FieldName, field.FieldCode, null);
         if (duplicateFieldError != null)
         {
-            System.Windows.MessageBox.Show(duplicateFieldError, "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppMessageBox.Show(duplicateFieldError, "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -488,7 +489,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         var field = SelectedField;
         if (field == null)
         {
-            System.Windows.MessageBox.Show("请先选择要编辑的字段。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+            AppMessageBox.Show("请先选择要编辑的字段。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -508,7 +509,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         var duplicateFieldError = GetDuplicateFieldError(fields, edited.FieldName, edited.FieldCode, edited.Id);
         if (duplicateFieldError != null)
         {
-            System.Windows.MessageBox.Show(duplicateFieldError, "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppMessageBox.Show(duplicateFieldError, "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -521,11 +522,11 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         var field = SelectedField;
         if (field == null)
         {
-            System.Windows.MessageBox.Show("请先选择要删除的字段。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+            AppMessageBox.Show("请先选择要删除的字段。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
-        if (System.Windows.MessageBox.Show($"确定删除字段 {field.FieldName}？", "确认", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+        if (AppMessageBox.Show($"确定删除字段 {field.FieldName}？", "确认", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
         {
             return;
         }
@@ -542,7 +543,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         var template = SelectedTemplate;
         if (template == null)
         {
-            System.Windows.MessageBox.Show("请先选择模板。");
+            AppMessageBox.Show("请先选择模板。");
             return;
         }
 
@@ -557,11 +558,11 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
             await RunQueuedAsync(sender, BackgroundTaskKind.Upload, "正在上传模板...", context =>
                 UploadTemplateAsync(template, dialog.FileName, context.CancellationToken));
             await LoadTemplatesAsync();
-            System.Windows.MessageBox.Show("模板已保存。");
+            AppMessageBox.Show("模板已保存。");
         }
         catch (Exception ex)
         {
-            System.Windows.MessageBox.Show($"模板保存失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            AppMessageBox.Show($"模板保存失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -633,7 +634,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         var template = SelectedTemplate;
         if (template == null)
         {
-            System.Windows.MessageBox.Show("请先选择模板。");
+            AppMessageBox.Show("请先选择模板。");
             return;
         }
 
@@ -644,7 +645,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
 
         if (fields.Count == 0)
         {
-            System.Windows.MessageBox.Show("请先维护模板字段，设计器会根据字段注册 LabelData 数据源。");
+            AppMessageBox.Show("请先维护模板字段，设计器会根据字段注册 LabelData 数据源。");
             return;
         }
 
@@ -655,11 +656,11 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
             await RunQueuedAsync(sender, BackgroundTaskKind.Design, "正在打开设计器...", context =>
                 designer.DesignAsync(template, fields, context.CancellationToken));
             await LoadTemplatesAsync();
-            System.Windows.MessageBox.Show("模板设计已保存。");
+            AppMessageBox.Show("模板设计已保存。");
         }
         catch (Exception ex)
         {
-            System.Windows.MessageBox.Show($"打开设计器失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            AppMessageBox.Show($"打开设计器失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -725,7 +726,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         }
 
         await RefreshAllAsync();
-        System.Windows.MessageBox.Show("示例分类、模板和字段已初始化。请继续上传或设计 .mrt 模板。");
+        AppMessageBox.Show("示例分类、模板和字段已初始化。请继续上传或设计 .mrt 模板。");
     }
 
     private static LabelTemplateField NewField(long templateId, string name, string code, string type, bool required, int sort, string remark)
@@ -877,7 +878,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         var field = SelectedField;
         if (template == null || field == null)
         {
-            System.Windows.MessageBox.Show("请先选择字段。");
+            AppMessageBox.Show("请先选择字段。");
             return;
         }
 

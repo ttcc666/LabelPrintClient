@@ -1,6 +1,7 @@
-﻿using System.Windows;
+using System.Windows;
 using System.Windows.Controls;
 using LabelPrintClient.Modules.Template.Models;
+using LabelPrintClient.Services;
 
 namespace LabelPrintClient.Modules.Template.Views;
 
@@ -51,13 +52,13 @@ public partial class FieldEditWindow : Window
         
         if (string.IsNullOrWhiteSpace(name))
         {
-            System.Windows.MessageBox.Show("请输入字段名称。", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppMessageBox.Show("请输入字段名称。", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
         if (string.IsNullOrWhiteSpace(code))
         {
-            System.Windows.MessageBox.Show("请输入字段编码。", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppMessageBox.Show("请输入字段编码。", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 

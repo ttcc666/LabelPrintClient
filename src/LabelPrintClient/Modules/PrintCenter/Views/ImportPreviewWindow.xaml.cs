@@ -11,6 +11,7 @@ public partial class ImportPreviewWindow : Window
 {
     private readonly ImportPreviewResult _preview;
     private readonly List<ImportPreviewRowGridItem> _rows;
+    private CancellationTokenSource? _filterCts;
 
     public ImportPreviewWindow(ImportPreviewResult preview)
     {
@@ -28,30 +29,30 @@ public partial class ImportPreviewWindow : Window
         InitializeComponent();
         SummaryText.Text = $"{preview.ExcelFileName} · 共 {preview.TotalRows} 行，有效 {preview.ValidRows} 行，错误 {preview.InvalidRows} 行";
         BuildColumns(preview.Fields);
-        ApplyFilter();
+        _ = ApplyFilterAsync();
     }
 
-    private void OnlyErrorRowsBox_Changed(object sender, RoutedEventArgs e)
+    private async void OnlyErrorRowsBox_Changed(object sender, RoutedEventArgs e)
     {
-        ApplyFilter();
+        await ApplyFilterAsync();
     }
 
-    private void ApplyFilter_Click(object sender, RoutedEventArgs e)
+    private async void ApplyFilter_Click(object sender, RoutedEventArgs e)
     {
-        ApplyFilter();
+        await ApplyFilterAsync();
     }
 
-    private void ClearFilter_Click(object sender, RoutedEventArgs e)
+    private async void ClearFilter_Click(object sender, RoutedEventArgs e)
     {
         PreviewSearchBox.Text = string.Empty;
         OnlyErrorRowsBox.IsChecked = false;
-        ApplyFilter();
+        await ApplyFilterAsync();
     }
 
-    private void PreviewSearchBox_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    private async void PreviewSearchBox_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
     {
         if (e.Key != System.Windows.Input.Key.Enter) return;
-        ApplyFilter();
+        await ApplyFilterAsync();
     }
 
     private void Confirm_Click(object sender, RoutedEventArgs e)
@@ -99,18 +100,42 @@ public partial class ImportPreviewWindow : Window
         });
     }
 
-    private void ApplyFilter()
+    private async Task ApplyFilterAsync()
     {
+        var token = ResetCancellation(ref _filterCts);
         var keyword = PreviewSearchBox?.Text.Trim() ?? string.Empty;
-        var rows = OnlyErrorRowsBox.IsChecked == true
-            ? _rows.Where(x => !x.IsValid).ToList()
-            : _rows;
+        var onlyErrors = OnlyErrorRowsBox.IsChecked == true;
 
-        if (!string.IsNullOrWhiteSpace(keyword))
-            rows = rows.Where(x => MatchesKeyword(x, keyword)).ToList();
+        try
+        {
+            var rows = await Task.Run(() =>
+            {
+                token.ThrowIfCancellationRequested();
+                IEnumerable<ImportPreviewRowGridItem> query = onlyErrors
+                    ? _rows.Where(x => !x.IsValid)
+                    : _rows;
 
-        PreviewGrid.ItemsSource = rows;
-        EmptyText.Visibility = rows.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+                if (!string.IsNullOrWhiteSpace(keyword))
+                    query = query.Where(x => MatchesKeyword(x, keyword));
+
+                var result = query.ToList();
+                token.ThrowIfCancellationRequested();
+                return result;
+            }, token);
+
+            if (token.IsCancellationRequested ||
+                (PreviewSearchBox?.Text.Trim() ?? string.Empty) != keyword ||
+                (OnlyErrorRowsBox.IsChecked == true) != onlyErrors)
+            {
+                return;
+            }
+
+            PreviewGrid.ItemsSource = rows;
+            EmptyText.Visibility = rows.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        }
+        catch (OperationCanceledException)
+        {
+        }
     }
 
     private static bool MatchesKeyword(ImportPreviewRowGridItem row, string keyword)
@@ -125,6 +150,27 @@ public partial class ImportPreviewWindow : Window
         return row.Data.Values.Any(x =>
             !string.IsNullOrWhiteSpace(x) &&
             x.Contains(keyword, StringComparison.OrdinalIgnoreCase));
+    }
+
+    protected override void OnClosed(EventArgs e)
+    {
+        CancelAndDispose(ref _filterCts);
+        base.OnClosed(e);
+    }
+
+    private static CancellationToken ResetCancellation(ref CancellationTokenSource? cts)
+    {
+        cts?.Cancel();
+        cts?.Dispose();
+        cts = new CancellationTokenSource();
+        return cts.Token;
+    }
+
+    private static void CancelAndDispose(ref CancellationTokenSource? cts)
+    {
+        cts?.Cancel();
+        cts?.Dispose();
+        cts = null;
     }
 }
 

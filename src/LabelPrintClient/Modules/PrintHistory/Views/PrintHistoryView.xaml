@@ -25,52 +25,70 @@
         </Grid.RowDefinitions>
 
         <Border Background="{DynamicResource RegionBrush}" CornerRadius="4" Grid.Row="0" Margin="0,0,0,8" Padding="10">
-            <DockPanel LastChildFill="False">
-                <WrapPanel DockPanel.Dock="Left" VerticalAlignment="Center">
-                    <TextBlock Text="打印记录" VerticalAlignment="Center" Margin="0,0,20,0" />
+            <Grid VerticalAlignment="Center">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" MinWidth="96" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0" Text="打印记录" VerticalAlignment="Center" Margin="0,0,12,0" />
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,0">
                     <TextBlock Style="{StaticResource FormLabelStyle}" Text="状态" />
-                    <ComboBox x:Name="StatusFilterBox" Width="120" SelectedIndex="0" SelectionChanged="Filter_Changed" Margin="0,0,16,0">
+                    <ComboBox x:Name="StatusFilterBox" Width="96" SelectedIndex="0" SelectionChanged="Filter_Changed" Margin="0">
                         <ComboBoxItem Content="全部" />
                         <ComboBoxItem Content="已打印" Tag="Printed" />
                         <ComboBoxItem Content="失败" Tag="Failed" />
                         <ComboBoxItem Content="打印中" Tag="Printing" />
                     </ComboBox>
+                </StackPanel>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,0">
                     <TextBlock Style="{StaticResource FormLabelStyle}" Text="打印机" />
                     <ComboBox x:Name="PrinterNameBox"
-                              Width="220"
+                              Width="180"
                               infra:SearchableComboBoxBehavior.IsEnabled="True"
-                              Margin="0,0,16,0" />
-                    <TextBlock Style="{StaticResource FormLabelStyle}" Text="份数" />
-                    <TextBox x:Name="PrintCopiesBox" Width="72" Text="1" Margin="0,0,16,0" />
-                    <TextBox x:Name="JobSearchBox"
-                                Width="180"
-                               
-                                Margin="0,0,8,0"
-                                KeyDown="JobSearchBox_KeyDown" />
-                    <Button  Style="{StaticResource ButtonPrimary}" Click="JobFilter_Click" Margin="0,0,8,0" >
-        <StackPanel Orientation="Horizontal">
-            <iconPacks:PackIconMaterial Kind="Magnify" Margin="0,0,6,0" VerticalAlignment="Center"/>
-            <TextBlock Text="查询" VerticalAlignment="Center"/>
-        </StackPanel>
-    </Button>
-                    <Button  Style="{StaticResource ButtonDanger}" Click="ClearJobFilter_Click" >
-        <StackPanel Orientation="Horizontal">
-            <iconPacks:PackIconMaterial Kind="FilterRemoveOutline" Margin="0,0,6,0" VerticalAlignment="Center"/>
-            <TextBlock Text="清空" VerticalAlignment="Center"/>
-        </StackPanel>
-    </Button>
-                </WrapPanel>
+                              Margin="0" />
+                </StackPanel>
 
-                <Button DockPanel.Dock="Right"
-                           
-                          
-                           Click="Refresh_Click" >
-        <StackPanel Orientation="Horizontal">
-            <iconPacks:PackIconMaterial Kind="Refresh" Margin="0,0,6,0" VerticalAlignment="Center"/>
-            <TextBlock Text="刷新" VerticalAlignment="Center"/>
-        </StackPanel>
-    </Button>
-            </DockPanel>
+                <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,0">
+                    <TextBlock Style="{StaticResource FormLabelStyle}" Text="份数" />
+                    <TextBox x:Name="PrintCopiesBox" Width="56" Text="1" Margin="0" />
+                </StackPanel>
+
+                <TextBox x:Name="JobSearchBox"
+                         Grid.Column="4"
+                         MinWidth="80"
+                         MaxWidth="130"
+                         HorizontalAlignment="Stretch"
+                         Margin="0,0,8,0"
+                         KeyDown="JobSearchBox_KeyDown" />
+
+                <StackPanel Grid.Column="5" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right">
+                    <Button Style="{StaticResource ButtonPrimary}" Click="JobFilter_Click" Margin="0,0,8,0">
+                        <StackPanel Orientation="Horizontal">
+                            <iconPacks:PackIconMaterial Kind="Magnify" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="查询" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource ButtonDanger}" Click="ClearJobFilter_Click" Margin="0,0,8,0">
+                        <StackPanel Orientation="Horizontal">
+                            <iconPacks:PackIconMaterial Kind="FilterRemoveOutline" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="清空" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Click="Refresh_Click" Margin="0">
+                        <StackPanel Orientation="Horizontal">
+                            <iconPacks:PackIconMaterial Kind="Refresh" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="刷新" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
         </Border>
 
         <Grid Grid.Row="1">

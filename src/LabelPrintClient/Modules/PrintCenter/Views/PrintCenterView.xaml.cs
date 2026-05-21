@@ -10,6 +10,7 @@ using LabelPrintClient.Modules.PrintCenter.Models;
 using LabelPrintClient.Modules.Template.Models;
 using LabelPrintClient.Modules.PrintCenter.Services;
 using LabelPrintClient.Modules.PrintCenter.ViewModels;
+using LabelPrintClient.Services;
 
 namespace LabelPrintClient.Modules.PrintCenter.Views;
 
@@ -33,6 +34,9 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
     private int _rowPageSize = DefaultRowPageSize;
     private int _rowTotalRows;
     private int _rowTotalPages = 1;
+    private bool _printersLoaded;
+    private bool _isBulkSelectingRows;
+    private string? _rowGridColumnSignature;
 
     public PrintCenterView()
     {
@@ -53,6 +57,10 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
 
     private void LoadPrinters()
     {
+        if (_printersLoaded)
+            return;
+
+        _printersLoaded = true;
         var printerNames = PrinterSettings.InstalledPrinters
             .Cast<string>()
             .OrderBy(x => x)
@@ -121,7 +129,7 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         }
         catch (Exception ex)
         {
-            System.Windows.MessageBox.Show($"刷新失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            AppMessageBox.Show($"刷新失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -160,7 +168,7 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         }
         catch (Exception ex)
         {
-            System.Windows.MessageBox.Show($"加载模板失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            AppMessageBox.Show($"加载模板失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -270,7 +278,7 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         }
         catch (Exception ex)
         {
-            System.Windows.MessageBox.Show($"加载批次失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            AppMessageBox.Show($"加载批次失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -278,7 +286,7 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
     {
         if (SelectedTemplate == null)
         {
-            System.Windows.MessageBox.Show("请先选择模板。");
+            AppMessageBox.Show("请先选择模板。");
             return;
         }
 
@@ -294,11 +302,11 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         {
             await RunQueuedAsync(sender, BackgroundTaskKind.Export, "正在生成 Excel 模板...", context =>
                 new ExcelTemplateExportService().ExportAsync(templateId, dialog.FileName, context.CancellationToken));
-            System.Windows.MessageBox.Show("Excel 模板已生成。");
+            AppMessageBox.Show("Excel 模板已生成。");
         }
         catch (Exception ex)
         {
-            System.Windows.MessageBox.Show($"导出失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            AppMessageBox.Show($"导出失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -306,7 +314,7 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
     {
         if (SelectedTemplate == null)
         {
-            System.Windows.MessageBox.Show("请先选择模板。");
+            AppMessageBox.Show("请先选择模板。");
             return;
         }
 
@@ -346,11 +354,11 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
                 BatchGrid.SelectedItem = batches.FirstOrDefault(x => x.Id == batchId);
             }
 
-            System.Windows.MessageBox.Show("Excel 数据已导入数据库。");
+            AppMessageBox.Show("Excel 数据已导入数据库。");
         }
         catch (Exception ex)
         {
-            System.Windows.MessageBox.Show($"导入失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            AppMessageBox.Show($"导入失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -367,11 +375,11 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
 
         if (string.Equals(batch.Status, "Voided", StringComparison.OrdinalIgnoreCase))
         {
-            System.Windows.MessageBox.Show("当前批次已经作废。");
+            AppMessageBox.Show("当前批次已经作废。");
             return;
         }
 
-        if (System.Windows.MessageBox.Show($"确定作废批次 {batch.ExcelFileName}？作废后默认列表会隐藏该批次，但历史记录仍保留。", "确认作废", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+        if (AppMessageBox.Show($"确定作废批次 {batch.ExcelFileName}？作废后默认列表会隐藏该批次，但历史记录仍保留。", "确认作废", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
             return;
 
         try
@@ -379,11 +387,11 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
             batch.Status = "Voided";
             await AppDb.Db.Updateable(batch).ExecuteCommandAsync();
             await LoadBatchesAsync();
-            System.Windows.MessageBox.Show("批次已作废。");
+            AppMessageBox.Show("批次已作废。");
         }
         catch (Exception ex)
         {
-            System.Windows.MessageBox.Show($"作废批次失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            AppMessageBox.Show($"作废批次失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -444,7 +452,7 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
             _rowTotalPages = totalPages;
             _rowCurrentPage = currentPage;
 
-            var pageRows = dbRows.Select(x => new ImportRowGridItem
+            var pageRows = await Task.Run(() => dbRows.Select(x => new ImportRowGridItem
             {
                 Id = x.Id,
                 RowIndex = x.RowIndex,
@@ -454,15 +462,10 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
                 ErrorMessage = x.ErrorMessage,
                 IsSelected = false,
                 Data = GridRowDataHelper.Deserialize(x.RowDataJson, fields)
-            }).ToList();
+            }).ToList(), token);
 
-            BuildRowGridColumns(fields);
-            _rows.Clear();
-            foreach (var item in pageRows)
-            {
-                item.PropertyChanged += Row_PropertyChanged;
-                _rows.Add(item);
-            }
+            BuildRowGridColumnsIfNeeded(fields);
+            ReplaceRows(pageRows);
             RowGrid.ItemsSource = _rows;
             UpdateRowEmptyState(batch);
             UpdateSummary();
@@ -472,7 +475,7 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         }
         catch (Exception ex)
         {
-            System.Windows.MessageBox.Show($"加载明细失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            AppMessageBox.Show($"加载明细失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -517,6 +520,21 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         });
     }
 
+    private void BuildRowGridColumnsIfNeeded(IReadOnlyList<LabelTemplateField> fields)
+    {
+        var signature = BuildFieldSignature(fields);
+        if (string.Equals(_rowGridColumnSignature, signature, StringComparison.Ordinal))
+            return;
+
+        _rowGridColumnSignature = signature;
+        BuildRowGridColumns(fields);
+    }
+
+    private static string BuildFieldSignature(IEnumerable<LabelTemplateField> fields)
+    {
+        return string.Join("|", fields.Select(x => $"{x.Id}:{x.Sort}:{x.FieldCode}:{x.FieldName}"));
+    }
+
     private DataTemplate BuildRowActionTemplate()
     {
         var panel = new FrameworkElementFactory(typeof(StackPanel));
@@ -548,13 +566,30 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
 
     private void ClearRows()
     {
-        _rows.Clear();
+        ClearRowItems();
         _rowCurrentPage = 1;
         _rowTotalRows = 0;
         _rowTotalPages = 1;
         RowGrid.ItemsSource = _rows;
         UpdateRowEmptyState(null);
         UpdateSummary();
+    }
+
+    private void ReplaceRows(IEnumerable<ImportRowGridItem> rows)
+    {
+        ClearRowItems();
+        foreach (var item in rows)
+        {
+            item.PropertyChanged += Row_PropertyChanged;
+            _rows.Add(item);
+        }
+    }
+
+    private void ClearRowItems()
+    {
+        foreach (var item in _rows)
+            item.PropertyChanged -= Row_PropertyChanged;
+        _rows.Clear();
     }
 
     private void ClearBatches()
@@ -619,7 +654,7 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
 
     private void Row_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(ImportRowGridItem.IsSelected))
+        if (e.PropertyName == nameof(ImportRowGridItem.IsSelected) && !_isBulkSelectingRows)
             UpdateSummary();
     }
 
@@ -701,33 +736,37 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
 
     private void SelectValidUnprinted_Click(object sender, RoutedEventArgs e)
     {
-        foreach (var row in _rows)
-            row.IsSelected = row.IsValid && !row.IsPrinted;
-        RowGrid.Items.Refresh();
-        UpdateSummary();
+        ApplyRowSelection(row => row.IsValid && !row.IsPrinted);
     }
 
     private void SelectValid_Click(object sender, RoutedEventArgs e)
     {
-        foreach (var row in _rows)
-            row.IsSelected = row.IsValid;
-        RowGrid.Items.Refresh();
-        UpdateSummary();
+        ApplyRowSelection(row => row.IsValid);
     }
 
     private void ReverseSelect_Click(object sender, RoutedEventArgs e)
     {
-        foreach (var row in _rows)
-            row.IsSelected = !row.IsSelected;
-        RowGrid.Items.Refresh();
-        UpdateSummary();
+        ApplyRowSelection(row => !row.IsSelected);
     }
 
     private void ClearSelect_Click(object sender, RoutedEventArgs e)
     {
-        foreach (var row in _rows)
-            row.IsSelected = false;
-        RowGrid.Items.Refresh();
+        ApplyRowSelection(_ => false);
+    }
+
+    private void ApplyRowSelection(Func<ImportRowGridItem, bool> selector)
+    {
+        _isBulkSelectingRows = true;
+        try
+        {
+            foreach (var row in _rows)
+                row.IsSelected = selector(row);
+        }
+        finally
+        {
+            _isBulkSelectingRows = false;
+        }
+
         UpdateSummary();
     }
 
@@ -746,7 +785,7 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         }
         catch (Exception ex)
         {
-            System.Windows.MessageBox.Show($"预览失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            AppMessageBox.Show($"预览失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -765,7 +804,7 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
             return;
 
         if (App.Settings.ConfirmBeforePrint &&
-            System.Windows.MessageBox.Show($"确定打印 Excel 第 {row.RowIndex} 行数据，{printCopies} 张？", "确认打印", MessageBoxButton.YesNo) != MessageBoxResult.Yes)
+            AppMessageBox.Show($"确定打印 Excel 第 {row.RowIndex} 行数据，{printCopies} 张？", "确认打印", MessageBoxButton.YesNo) != MessageBoxResult.Yes)
             return;
 
         try
@@ -779,12 +818,12 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
                     printCopies,
                     context.CancellationToken,
                     context.Progress));
-            System.Windows.MessageBox.Show("打印任务已完成。");
+            AppMessageBox.Show("打印任务已完成。");
             await LoadRowsAsync();
         }
         catch (Exception ex)
         {
-            System.Windows.MessageBox.Show($"打印失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            AppMessageBox.Show($"打印失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -794,14 +833,14 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         var batch = SelectedBatch;
         if (template == null || batch == null)
         {
-            System.Windows.MessageBox.Show("请先选择模板和导入批次。");
+            AppMessageBox.Show("请先选择模板和导入批次。");
             return;
         }
 
         var selectedIds = GetSelectedValidRowIds();
         if (selectedIds.Count == 0)
         {
-            System.Windows.MessageBox.Show("请选择有效数据行。");
+            AppMessageBox.Show("请选择有效数据行。");
             return;
         }
 
@@ -816,7 +855,7 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
 
         var totalLabels = selectedIds.Count * printCopies;
         if (App.Settings.ConfirmBeforePrint &&
-            System.Windows.MessageBox.Show($"确定批量打印选中的 {selectedIds.Count} 行数据，每行 {printCopies} 张，共 {totalLabels} 张？", "确认批量打印", MessageBoxButton.YesNo) != MessageBoxResult.Yes)
+            AppMessageBox.Show($"确定批量打印选中的 {selectedIds.Count} 行数据，每行 {printCopies} 张，共 {totalLabels} 张？", "确认批量打印", MessageBoxButton.YesNo) != MessageBoxResult.Yes)
             return;
 
         try
@@ -830,12 +869,12 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
                     printCopies,
                     context.CancellationToken,
                     context.Progress));
-            System.Windows.MessageBox.Show("打印任务已完成。");
+            AppMessageBox.Show("打印任务已完成。");
             await LoadRowsAsync();
         }
         catch (Exception ex)
         {
-            System.Windows.MessageBox.Show($"打印失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            AppMessageBox.Show($"打印失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -845,14 +884,14 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         var batch = SelectedBatch;
         if (template == null || batch == null)
         {
-            System.Windows.MessageBox.Show("请先选择模板和导入批次。");
+            AppMessageBox.Show("请先选择模板和导入批次。");
             return;
         }
 
         var selectedIds = GetSelectedValidRowIds();
         if (selectedIds.Count == 0)
         {
-            System.Windows.MessageBox.Show("请选择有效数据行。");
+            AppMessageBox.Show("请选择有效数据行。");
             return;
         }
 
@@ -871,7 +910,7 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         }
         catch (Exception ex)
         {
-            System.Windows.MessageBox.Show($"预览失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            AppMessageBox.Show($"预览失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -886,7 +925,7 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
 
         if (!rowItem.IsValid)
         {
-            System.Windows.MessageBox.Show("当前行是无效数据，不能预览或打印。");
+            AppMessageBox.Show("当前行是无效数据，不能预览或打印。");
             return false;
         }
 
@@ -894,7 +933,7 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         var selectedBatch = SelectedBatch;
         if (selectedTemplate == null || selectedBatch == null)
         {
-            System.Windows.MessageBox.Show("请先选择模板和导入批次。");
+            AppMessageBox.Show("请先选择模板和导入批次。");
             return false;
         }
 
@@ -910,7 +949,7 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         var text = PrintCopiesBox.Text.Trim();
         if (!int.TryParse(text, out var copies) || copies < 1 || copies > MaxPrintCopies)
         {
-            System.Windows.MessageBox.Show($"打印份数必须是 1 到 {MaxPrintCopies} 之间的整数。");
+            AppMessageBox.Show($"打印份数必须是 1 到 {MaxPrintCopies} 之间的整数。");
             return false;
         }
 
@@ -924,7 +963,7 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         if (!string.IsNullOrWhiteSpace(printerName))
             return true;
 
-        System.Windows.MessageBox.Show("请先选择打印机。");
+        AppMessageBox.Show("请先选择打印机。");
         return false;
     }
 
@@ -933,7 +972,7 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         if (!string.Equals(batch.Status, "Voided", StringComparison.OrdinalIgnoreCase))
             return true;
 
-        System.Windows.MessageBox.Show("当前批次已作废，不能从打印中心继续打印。可以在打印记录中按历史任务重打印。", "批次已作废", MessageBoxButton.OK, MessageBoxImage.Warning);
+        AppMessageBox.Show("当前批次已作废，不能从打印中心继续打印。可以在打印记录中按历史任务重打印。", "批次已作废", MessageBoxButton.OK, MessageBoxImage.Warning);
         return false;
     }
 
