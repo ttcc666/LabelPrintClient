@@ -30,7 +30,9 @@ public class LocalFileTemplateStorageService : ILabelTemplateStorageService
         if (!string.IsNullOrWhiteSpace(dir)) Directory.CreateDirectory(dir);
 
         report.Save(template.TemplatePath);
-        template.TemplateFileName = Path.GetFileName(template.TemplatePath);
+        template.TemplateFileName = string.IsNullOrWhiteSpace(template.TemplateFileName)
+            ? Path.GetFileName(template.TemplatePath)
+            : template.TemplateFileName;
         template.TemplateHash = File.Exists(template.TemplatePath) ? FileHashHelper.GetSha256(template.TemplatePath) : null;
         template.UpdateTime = DateTime.Now;
 

@@ -70,6 +70,12 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
             return;
         }
 
+        if (FindCategory(name, 0) != null)
+        {
+            System.Windows.MessageBox.Show("分类名称已存在，请勿重复新增。");
+            return;
+        }
+
         var category = new LabelCategory
         {
             Id = IdHelper.NewId(),
@@ -98,13 +104,20 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
             return;
         }
 
+        if (FindTemplate(SelectedCategory.Id, name) != null)
+        {
+            System.Windows.MessageBox.Show("当前分类下已存在同名模板，请勿重复新增。");
+            return;
+        }
+
         var storageType = App.Settings.RunMode == AppRunMode.LocalSqlite
             ? TemplateStorageType.LocalFile
             : TemplateStorageType.Database;
 
+        var templateId = IdHelper.NewId();
         var template = new LabelTemplate
         {
-            Id = IdHelper.NewId(),
+            Id = templateId,
             CategoryId = SelectedCategory.Id,
             Name = name,
             StorageType = storageType,
@@ -116,9 +129,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
 
         if (storageType == TemplateStorageType.LocalFile)
         {
-            var folder = ResolveTemplateFolder();
-            Directory.CreateDirectory(folder);
-            template.TemplatePath = Path.Combine(folder, $"{name}.mrt");
+            template.TemplatePath = BuildLocalTemplatePath(template.Id);
         }
 
         AppDb.Db.Insertable(template).ExecuteCommand();
@@ -143,13 +154,11 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
 
         if (App.Settings.RunMode == AppRunMode.LocalSqlite)
         {
-            var folder = ResolveTemplateFolder();
-            Directory.CreateDirectory(folder);
-            var targetPath = Path.Combine(folder, Path.GetFileName(dialog.FileName));
+            var targetPath = BuildLocalTemplatePath(template.Id);
             File.Copy(dialog.FileName, targetPath, true);
             template.StorageType = TemplateStorageType.LocalFile;
             template.TemplatePath = targetPath;
-            template.TemplateFileName = Path.GetFileName(targetPath);
+            template.TemplateFileName = Path.GetFileName(dialog.FileName);
             template.TemplateHash = FileHashHelper.GetSha256(targetPath);
         }
         else
@@ -212,6 +221,13 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
             return;
         }
 
+        var duplicateFieldError = GetDuplicateFieldError(template.Id, name, code);
+        if (duplicateFieldError != null)
+        {
+            System.Windows.MessageBox.Show(duplicateFieldError);
+            return;
+        }
+
         var maxSort = AppDb.Db.Queryable<LabelTemplateField>()
             .Where(x => x.TemplateId == template.Id)
             .Max(x => x.Sort);
@@ -245,7 +261,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
 
     private void SeedDemo_Click(object sender, RoutedEventArgs e)
     {
-        var category = AppDb.Db.Queryable<LabelCategory>().First(x => x.Name == "产品标签");
+        var category = FindCategory("产品标签", 0);
         if (category == null)
         {
             category = new LabelCategory
@@ -258,23 +274,24 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
             AppDb.Db.Insertable(category).ExecuteCommand();
         }
 
-        var template = AppDb.Db.Queryable<LabelTemplate>().First(x => x.Name == "产品基础标签");
+        var template = FindTemplate(category.Id, "产品基础标签");
         if (template == null)
         {
             var storageType = App.Settings.RunMode == AppRunMode.LocalSqlite
                 ? TemplateStorageType.LocalFile
                 : TemplateStorageType.Database;
 
+            var templateId = IdHelper.NewId();
             template = new LabelTemplate
             {
-                Id = IdHelper.NewId(),
+                Id = templateId,
                 CategoryId = category.Id,
                 Name = "产品基础标签",
                 StorageType = storageType,
                 DataSourceName = "LabelData",
                 TemplateFileName = "产品基础标签.mrt",
                 TemplatePath = storageType == TemplateStorageType.LocalFile
-                    ? Path.Combine(ResolveTemplateFolder(), "产品基础标签.mrt")
+                    ? BuildLocalTemplatePath(templateId)
                     : null,
                 Version = 1,
                 IsEnabled = true
@@ -322,5 +339,41 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
             folder = Path.Combine(AppContext.BaseDirectory, folder);
         Directory.CreateDirectory(folder);
         return folder;
+    }
+
+    private static string BuildLocalTemplatePath(long templateId)
+    {
+        return Path.Combine(ResolveTemplateFolder(), $"{templateId}.mrt");
+    }
+
+    private static LabelCategory? FindCategory(string name, long parentId)
+    {
+        return AppDb.Db.Queryable<LabelCategory>()
+            .Where(x => x.ParentId == parentId)
+            .ToList()
+            .FirstOrDefault(x => string.Equals(x.Name.Trim(), name, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static LabelTemplate? FindTemplate(long categoryId, string name)
+    {
+        return AppDb.Db.Queryable<LabelTemplate>()
+            .Where(x => x.CategoryId == categoryId)
+            .ToList()
+            .FirstOrDefault(x => string.Equals(x.Name.Trim(), name, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static string? GetDuplicateFieldError(long templateId, string name, string code)
+    {
+        var fields = AppDb.Db.Queryable<LabelTemplateField>()
+            .Where(x => x.TemplateId == templateId)
+            .ToList();
+
+        if (fields.Any(x => string.Equals(x.FieldName.Trim(), name, StringComparison.OrdinalIgnoreCase)))
+            return "字段名已存在，请勿重复新增。";
+
+        if (fields.Any(x => string.Equals(x.FieldCode.Trim(), code, StringComparison.OrdinalIgnoreCase)))
+            return "字段编码已存在，请勿重复新增。";
+
+        return null;
     }
 }

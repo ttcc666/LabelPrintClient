@@ -47,7 +47,7 @@
    {
      "RunMode": "LocalSqlite",
      "SqliteConnection": "DataSource=Data/label_print.db",
-     "PostgreSqlConnection": "Host=127.0.0.1;Port=5432;Username=postgres;Password=123456;Database=label_print;",
+     "PostgreSqlConnection": "Host=127.0.0.1;Port=5432;Username=postgres;Database=label_print;",
      "LocalTemplateFolder": "Templates",
      "OperatorName": "admin"
    }
@@ -67,13 +67,14 @@
 {
   "RunMode": "LanPostgreSql",
   "SqliteConnection": "DataSource=Data/label_print.db",
-  "PostgreSqlConnection": "Host=192.168.1.100;Port=5432;Username=postgres;Password=123456;Database=label_print;",
+  "PostgreSqlConnection": "Host=192.168.1.100;Port=5432;Username=postgres;Database=label_print;",
   "LocalTemplateFolder": "Templates",
   "OperatorName": "admin"
 }
 ```
 
 在 PostgreSQL 中创建空数据库 `label_print`，启动程序后会自动 CodeFirst 建表。
+如果 PostgreSQL 需要密码，请在本机运行配置中追加 `Password=你的密码;`，不要把真实密码提交到仓库。
 
 ## 业务流程
 

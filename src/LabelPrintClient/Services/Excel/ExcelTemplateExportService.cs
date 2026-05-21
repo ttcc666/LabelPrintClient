@@ -18,6 +18,7 @@ public class ExcelTemplateExportService
 
         using var workbook = new XLWorkbook();
         var sheet = workbook.Worksheets.Add("导入数据");
+        var instructionSheet = workbook.Worksheets.Add("字段说明");
 
         for (var i = 0; i < fields.Count; i++)
         {
@@ -27,15 +28,81 @@ public class ExcelTemplateExportService
             headerCell.Value = field.IsRequired ? $"{field.FieldName} *" : field.FieldName;
             headerCell.Style.Font.Bold = true;
             headerCell.Style.Fill.BackgroundColor = XLColor.LightGray;
-
-            sheet.Cell(2, col).Value = BuildExample(field);
-            sheet.Cell(3, col).Value = field.Remark ?? string.Empty;
         }
 
-        sheet.Row(2).Style.Font.Italic = true;
-        sheet.Row(3).Style.Font.FontColor = XLColor.Gray;
-        sheet.Columns().AdjustToContents();
+        BuildInstructionSheet(instructionSheet, fields);
+        ApplyDataSheetStyle(sheet, fields.Count);
+        ApplyInstructionSheetStyle(instructionSheet, fields.Count + 1);
         workbook.SaveAs(savePath);
+    }
+
+    private static void BuildInstructionSheet(IXLWorksheet sheet, IReadOnlyList<LabelTemplateField> fields)
+    {
+        var headers = new[] { "字段名称", "字段编码", "类型", "是否必填", "示例", "备注" };
+        for (var i = 0; i < headers.Length; i++)
+        {
+            var cell = sheet.Cell(1, i + 1);
+            cell.Value = headers[i];
+            cell.Style.Font.Bold = true;
+            cell.Style.Fill.BackgroundColor = XLColor.LightGray;
+        }
+
+        for (var i = 0; i < fields.Count; i++)
+        {
+            var field = fields[i];
+            var row = i + 2;
+            sheet.Cell(row, 1).Value = field.FieldName;
+            sheet.Cell(row, 2).Value = field.FieldCode;
+            sheet.Cell(row, 3).Value = field.FieldType;
+            sheet.Cell(row, 4).Value = field.IsRequired ? "是" : "否";
+            sheet.Cell(row, 5).Value = BuildExample(field);
+            sheet.Cell(row, 6).Value = field.Remark ?? string.Empty;
+        }
+    }
+
+    private static void ApplyDataSheetStyle(IXLWorksheet sheet, int columnCount)
+    {
+        var headerRange = sheet.Range(1, 1, 1, columnCount);
+        ApplyHeaderStyle(headerRange);
+        headerRange.SetAutoFilter();
+        sheet.SheetView.FreezeRows(1);
+
+        AdjustColumns(sheet, columnCount, 14, 36);
+    }
+
+    private static void ApplyInstructionSheetStyle(IXLWorksheet sheet, int rowCount)
+    {
+        ApplyHeaderStyle(sheet.Range(1, 1, 1, 6));
+
+        var usedRange = sheet.Range(1, 1, rowCount, 6);
+        usedRange.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+        usedRange.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
+        usedRange.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+
+        sheet.SheetView.FreezeRows(1);
+        AdjustColumns(sheet, 6, 10, 48);
+        sheet.Column(6).Style.Alignment.WrapText = true;
+    }
+
+    private static void ApplyHeaderStyle(IXLRange range)
+    {
+        range.Style.Font.Bold = true;
+        range.Style.Fill.BackgroundColor = XLColor.LightGray;
+        range.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+        range.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+        range.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+        range.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
+    }
+
+    private static void AdjustColumns(IXLWorksheet sheet, int columnCount, double minWidth, double maxWidth)
+    {
+        for (var col = 1; col <= columnCount; col++)
+        {
+            var column = sheet.Column(col);
+            column.AdjustToContents();
+            if (column.Width < minWidth) column.Width = minWidth;
+            if (column.Width > maxWidth) column.Width = maxWidth;
+        }
     }
 
     private static string BuildExample(LabelTemplateField field)

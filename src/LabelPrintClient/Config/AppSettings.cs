@@ -6,7 +6,7 @@ public class AppSettings
 
     public string SqliteConnection { get; set; } = "DataSource=Data/label_print.db";
 
-    public string PostgreSqlConnection { get; set; } = "Host=127.0.0.1;Port=5432;Username=postgres;Password=123456;Database=label_print;";
+    public string PostgreSqlConnection { get; set; } = "Host=127.0.0.1;Port=5432;Username=postgres;Database=label_print;";
 
     public string LocalTemplateFolder { get; set; } = "Templates";
 
