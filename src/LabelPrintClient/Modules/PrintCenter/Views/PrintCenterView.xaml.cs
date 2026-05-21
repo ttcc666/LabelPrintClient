@@ -492,10 +492,10 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
             Binding = new System.Windows.Data.Binding(nameof(ImportRowGridItem.IsSelected)) { Mode = BindingMode.TwoWay, UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged },
             Width = 70
         });
-        RowGrid.Columns.Add(new DataGridTextColumn { Header = "Excel行", Binding = new System.Windows.Data.Binding(nameof(ImportRowGridItem.RowIndex)), Width = 80, IsReadOnly = true });
-        RowGrid.Columns.Add(new DataGridCheckBoxColumn { Header = "有效", Binding = new System.Windows.Data.Binding(nameof(ImportRowGridItem.IsValid)), Width = 70, IsReadOnly = true });
-        RowGrid.Columns.Add(new DataGridCheckBoxColumn { Header = "已打印", Binding = new System.Windows.Data.Binding(nameof(ImportRowGridItem.IsPrinted)), Width = 80, IsReadOnly = true });
-        RowGrid.Columns.Add(new DataGridTextColumn { Header = "打印次数", Binding = new System.Windows.Data.Binding(nameof(ImportRowGridItem.PrintCount)), Width = 80, IsReadOnly = true });
+        RowGrid.Columns.Add(new DataGridTextColumn { Header = "Excel行号", Binding = new System.Windows.Data.Binding(nameof(ImportRowGridItem.RowIndex)), Width = 100, IsReadOnly = true });
+        RowGrid.Columns.Add(new DataGridCheckBoxColumn { Header = "是否有效", Binding = new System.Windows.Data.Binding(nameof(ImportRowGridItem.IsValid)), Width = 90, IsReadOnly = true });
+        RowGrid.Columns.Add(new DataGridCheckBoxColumn { Header = "已打印", Binding = new System.Windows.Data.Binding(nameof(ImportRowGridItem.IsPrinted)), Width = 90, IsReadOnly = true });
+        RowGrid.Columns.Add(new DataGridTextColumn { Header = "打印次数", Binding = new System.Windows.Data.Binding(nameof(ImportRowGridItem.PrintCount)), Width = 90, IsReadOnly = true });
 
         foreach (var field in fields)
         {

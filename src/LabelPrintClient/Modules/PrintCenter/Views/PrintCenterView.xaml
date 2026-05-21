@@ -114,7 +114,7 @@
                                      HorizontalScrollBarVisibility="Auto"
                                      VerticalScrollBarVisibility="Auto">
                             <DataGrid.Columns>
-                                <DataGridTemplateColumn Header="操作" Width="70">
+                                <DataGridTemplateColumn Header="操作" Width="80">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <ui:Button Content="作废"
@@ -125,12 +125,12 @@
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTextColumn Header="导入时间" Binding="{Binding ImportTime, StringFormat=MM-dd HH:mm}" Width="112" />
+                                <DataGridTextColumn Header="导入时间" Binding="{Binding ImportTime, StringFormat=\{0:yyyy-MM-dd HH:mm:ss\}}" Width="170" />
                                 <DataGridTextColumn Header="Excel" Binding="{Binding ExcelFileName}" Width="*" MinWidth="130" />
-                                <DataGridTextColumn Header="状态" Binding="{Binding Status}" Width="76" />
-                                <DataGridTextColumn Header="总" Binding="{Binding TotalRows}" Width="44" />
-                                <DataGridTextColumn Header="错" Binding="{Binding InvalidRows}" Width="44" />
-                                <DataGridTextColumn Header="操作人" Binding="{Binding OperatorName}" Width="90" />
+                                <DataGridTextColumn Header="状态" Binding="{Binding Status}" Width="90" />
+                                <DataGridTextColumn Header="总行数" Binding="{Binding TotalRows}" Width="80" />
+                                <DataGridTextColumn Header="错误行数" Binding="{Binding InvalidRows}" Width="80" />
+                                <DataGridTextColumn Header="操作人" Binding="{Binding OperatorName}" Width="100" />
                             </DataGrid.Columns>
                         </ui:DataGrid>
                         <TextBlock x:Name="BatchEmptyText"

@@ -26,9 +26,34 @@ public static class AppDb
             InitKeyType = InitKeyType.Attribute
         }, db =>
         {
+            // 1. 拦截 SQL 正在执行事件，美化并输出完整拼装好的 SQL 语句
             db.Aop.OnLogExecuting = (sql, pars) =>
             {
-                System.Diagnostics.Debug.WriteLine(sql);
+                try
+                {
+                    // 利用 SqlSugar 工具类将参数拼接进 SQL 语句中，生成完整的可执行 SQL 字符串
+                    var fullSql = UtilMethods.GetSqlString(dbType, sql, pars);
+                    
+                    var logText = $"\r\n==================== [SQL LOG EXECUTING] ====================\r\n" +
+                                  $"[Time] : {DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}\r\n" +
+                                  $"[SQL]  :\r\n{fullSql}\r\n" +
+                                  $"============================================================\r\n";
+                    
+                    System.Diagnostics.Debug.WriteLine(logText);
+                    System.Console.Write(logText); // 支持 CLI 终端及后台标准输出采集
+                }
+                catch
+                {
+                    System.Diagnostics.Debug.WriteLine($"[SQL Raw Error] {sql}");
+                }
+            };
+
+            // 2. 拦截 SQL 执行完毕事件，记录并输出高精度的耗时监控
+            db.Aop.OnLogExecuted = (sql, pars) =>
+            {
+                var logText = $"[SQL LOG EXECUTED] Time Elapsed: {db.Ado.SqlExecutionTime} | {DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}\r\n";
+                System.Diagnostics.Debug.WriteLine(logText);
+                System.Console.Write(logText);
             };
         });
     }

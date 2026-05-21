@@ -87,8 +87,8 @@
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
                             <DataGridTextColumn Header="说明" Binding="{Binding Message}" Width="180" />
-                            <DataGridTextColumn Header="创建时间" Binding="{Binding CreateTime, StringFormat=MM-dd HH:mm:ss}" Width="120" />
-                            <DataGridTextColumn Header="完成时间" Binding="{Binding FinishTime, StringFormat=MM-dd HH:mm:ss}" Width="120" />
+                            <DataGridTextColumn Header="创建时间" Binding="{Binding CreateTime, StringFormat=\{0:yyyy-MM-dd HH:mm:ss\}}" Width="170" />
+                            <DataGridTextColumn Header="完成时间" Binding="{Binding FinishTime, StringFormat=\{0:yyyy-MM-dd HH:mm:ss\}}" Width="170" />
                             <DataGridTextColumn Header="错误" Binding="{Binding ErrorMessage}" Width="*" MinWidth="180" />
                         </DataGrid.Columns>
                     </ui:DataGrid>

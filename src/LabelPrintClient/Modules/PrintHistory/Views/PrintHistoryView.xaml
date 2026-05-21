@@ -99,13 +99,13 @@
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTextColumn Header="状态" Binding="{Binding StatusText}" Width="76" />
-                                <DataGridTextColumn Header="创建时间" Binding="{Binding CreateTime, StringFormat=MM-dd HH:mm}" Width="112" />
-                                <DataGridTextColumn Header="打印时间" Binding="{Binding PrintTime, StringFormat=MM-dd HH:mm}" Width="112" />
-                                <DataGridTextColumn Header="模板" Binding="{Binding TemplateName}" Width="150" />
-                                <DataGridTextColumn Header="张数" Binding="{Binding SelectedRowCount}" Width="58" />
+                                <DataGridTextColumn Header="状态" Binding="{Binding StatusText}" Width="90" />
+                                <DataGridTextColumn Header="创建时间" Binding="{Binding CreateTime, StringFormat=\{0:yyyy-MM-dd HH:mm:ss\}}" Width="170" />
+                                <DataGridTextColumn Header="打印时间" Binding="{Binding PrintTime, StringFormat=\{0:yyyy-MM-dd HH:mm:ss\}}" Width="170" />
+                                <DataGridTextColumn Header="模板名称" Binding="{Binding TemplateName}" Width="160" />
+                                <DataGridTextColumn Header="打印张数" Binding="{Binding SelectedRowCount}" Width="80" />
                                 <DataGridTextColumn Header="打印机" Binding="{Binding PrinterNameText}" Width="150" />
-                                <DataGridTextColumn Header="操作人" Binding="{Binding OperatorName}" Width="90" />
+                                <DataGridTextColumn Header="操作人" Binding="{Binding OperatorName}" Width="100" />
                                 <DataGridTextColumn Header="错误信息" Binding="{Binding ErrorMessage}" Width="*" MinWidth="180" />
                             </DataGrid.Columns>
                         </ui:DataGrid>

@@ -69,15 +69,15 @@ public partial class ImportPreviewWindow : Window
         PreviewGrid.Columns.Clear();
         PreviewGrid.Columns.Add(new DataGridTextColumn
         {
-            Header = "Excel行",
+            Header = "Excel行号",
             Binding = new System.Windows.Data.Binding(nameof(ImportPreviewRowGridItem.RowIndex)),
-            Width = 80
+            Width = 100
         });
         PreviewGrid.Columns.Add(new DataGridCheckBoxColumn
         {
-            Header = "有效",
+            Header = "是否有效",
             Binding = new System.Windows.Data.Binding(nameof(ImportPreviewRowGridItem.IsValid)),
-            Width = 70
+            Width = 90
         });
 
         foreach (var field in fields)

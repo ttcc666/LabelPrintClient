@@ -267,9 +267,9 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
         });
         RowGrid.Columns.Add(new DataGridTextColumn
         {
-            Header = "Excel行",
+            Header = "Excel行号",
             Binding = new System.Windows.Data.Binding(nameof(PrintJobRowGridItem.RowIndex)),
-            Width = 80,
+            Width = 100,
             IsReadOnly = true
         });
 

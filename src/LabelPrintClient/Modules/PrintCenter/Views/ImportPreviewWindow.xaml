@@ -5,7 +5,8 @@
         Title="导入前预览"
         Width="980"
         Height="620"
-        WindowStartupLocation="CenterOwner">
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource ApplicationBackgroundBrush}">
     <Grid Margin="12">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
