@@ -8,31 +8,68 @@ namespace LabelPrintClient.Services.Import;
 
 public class LabelImportService
 {
-    public long ImportExcel(long templateId, string excelPath, string? operatorName)
+    public async Task<long> ImportExcelAsync(
+        long templateId,
+        string excelPath,
+        string? operatorName,
+        CancellationToken cancellationToken = default)
     {
-        var template = AppDb.Db.Queryable<LabelTemplate>().First(x => x.Id == templateId)
+        var templates = await AppDb.Db.Queryable<LabelTemplate>()
+            .Where(x => x.Id == templateId)
+            .Take(1)
+            .ToListAsync()
+            .ConfigureAwait(false);
+        var template = templates.FirstOrDefault()
             ?? throw new InvalidOperationException("模板不存在。");
 
-        var fields = AppDb.Db.Queryable<LabelTemplateField>()
+        var fields = await AppDb.Db.Queryable<LabelTemplateField>()
             .Where(x => x.TemplateId == templateId)
             .OrderBy(x => x.Sort)
-            .ToList();
+            .ToListAsync()
+            .ConfigureAwait(false);
 
         if (fields.Count == 0)
             throw new InvalidOperationException("当前模板没有维护字段，不能导入 Excel。");
 
-        var drafts = ExcelReader.ReadRows(excelPath, fields);
+        var drafts = await ExcelReader.ReadRowsAsync(excelPath, fields, cancellationToken).ConfigureAwait(false);
         if (drafts.Count == 0)
             throw new InvalidOperationException("Excel 中没有可导入的数据行。");
 
-        var batch = new LabelImportBatch
+        var fileHash = await FileHashHelper.GetSha256Async(excelPath, cancellationToken).ConfigureAwait(false);
+        var batch = BuildBatch(template, excelPath, fileHash, drafts, operatorName);
+        var rows = BuildRows(template.Id, batch.Id, drafts);
+
+        await AppDb.Db.Ado.BeginTranAsync().ConfigureAwait(false);
+        try
+        {
+            await AppDb.Db.Insertable(batch).ExecuteCommandAsync().ConfigureAwait(false);
+            await AppDb.Db.Insertable(rows).ExecuteCommandAsync().ConfigureAwait(false);
+            await AppDb.Db.Ado.CommitTranAsync().ConfigureAwait(false);
+        }
+        catch
+        {
+            await AppDb.Db.Ado.RollbackTranAsync().ConfigureAwait(false);
+            throw;
+        }
+
+        return batch.Id;
+    }
+
+    private static LabelImportBatch BuildBatch(
+        LabelTemplate template,
+        string excelPath,
+        string? fileHash,
+        IReadOnlyList<ImportRowDraft> drafts,
+        string? operatorName)
+    {
+        return new LabelImportBatch
         {
             Id = IdHelper.NewId(),
             TemplateId = template.Id,
             TemplateName = template.Name,
             TemplateVersion = template.Version,
             ExcelFileName = Path.GetFileName(excelPath),
-            ExcelFileHash = FileHashHelper.GetSha256(excelPath),
+            ExcelFileHash = fileHash,
             TotalRows = drafts.Count,
             ValidRows = drafts.Count(x => x.IsValid),
             InvalidRows = drafts.Count(x => !x.IsValid),
@@ -40,12 +77,15 @@ public class LabelImportService
             OperatorName = operatorName,
             ImportTime = DateTime.Now
         };
+    }
 
-        var rows = drafts.Select(x => new LabelImportRow
+    private static List<LabelImportRow> BuildRows(long templateId, long batchId, IEnumerable<ImportRowDraft> drafts)
+    {
+        return drafts.Select(x => new LabelImportRow
         {
             Id = IdHelper.NewId(),
-            BatchId = batch.Id,
-            TemplateId = template.Id,
+            BatchId = batchId,
+            TemplateId = templateId,
             RowIndex = x.RowIndex,
             RowDataJson = JsonHelper.Serialize(x.Data),
             IsValid = x.IsValid,
@@ -54,13 +94,5 @@ public class LabelImportService
             PrintCount = 0,
             CreateTime = DateTime.Now
         }).ToList();
-
-        AppDb.Db.Ado.UseTran(() =>
-        {
-            AppDb.Db.Insertable(batch).ExecuteCommand();
-            AppDb.Db.Insertable(rows).ExecuteCommand();
-        });
-
-        return batch.Id;
     }
 }

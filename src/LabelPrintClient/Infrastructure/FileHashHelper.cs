@@ -13,6 +13,21 @@ public static class FileHashHelper
         return ToHex(sha.ComputeHash(stream));
     }
 
+    public static async Task<string> GetSha256Async(string filePath, CancellationToken cancellationToken = default)
+    {
+        await using var stream = new FileStream(
+            filePath,
+            FileMode.Open,
+            FileAccess.Read,
+            FileShare.Read,
+            bufferSize: 1024 * 64,
+            useAsync: true);
+
+        using var sha = SHA256.Create();
+        var hash = await sha.ComputeHashAsync(stream, cancellationToken).ConfigureAwait(false);
+        return ToHex(hash);
+    }
+
     public static string GetSha256(byte[] bytes)
     {
         using var sha = SHA256.Create();

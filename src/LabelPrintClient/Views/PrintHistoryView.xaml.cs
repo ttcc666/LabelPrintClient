@@ -16,6 +16,8 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
 
     private readonly ObservableCollection<PrintJobGridItem> _jobs = new();
     private readonly ObservableCollection<PrintJobRowGridItem> _rows = new();
+    private CancellationTokenSource? _jobLoadCts;
+    private CancellationTokenSource? _rowLoadCts;
     private int _jobCurrentPage = 1;
     private int _jobPageSize = DefaultJobPageSize;
     private int _jobTotalRows;
@@ -28,73 +30,96 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
     public PrintHistoryView()
     {
         InitializeComponent();
-        Loaded += (_, _) => RefreshHistory();
+        Loaded += async (_, _) => await RefreshHistoryAsync();
+        Unloaded += (_, _) => CancelPendingLoads();
     }
 
     private PrintJobGridItem? SelectedJob => JobGrid.SelectedItem as PrintJobGridItem;
 
     public void RefreshHistory()
     {
-        _jobCurrentPage = 1;
-        LoadJobs();
+        _ = RefreshHistoryAsync();
     }
 
-    private void Refresh_Click(object sender, RoutedEventArgs e) => RefreshHistory();
+    public async Task RefreshHistoryAsync()
+    {
+        _jobCurrentPage = 1;
+        await LoadJobsAsync();
+    }
 
-    private void Filter_Changed(object sender, SelectionChangedEventArgs e)
+    private async void Refresh_Click(object sender, RoutedEventArgs e) => await RefreshHistoryAsync();
+
+    private async void Filter_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (!IsLoaded) return;
-        RefreshHistory();
+        await RefreshHistoryAsync();
     }
 
-    private void LoadJobs()
+    private async Task LoadJobsAsync()
     {
-        var jobQuery = AppDb.Db.Queryable<LabelPrintJob>();
         var status = GetSelectedStatus();
-        if (!string.IsNullOrWhiteSpace(status))
-            jobQuery = jobQuery.Where(x => x.Status == status);
+        var token = ResetCancellation(ref _jobLoadCts);
 
-        _jobTotalRows = jobQuery.Count();
-        _jobTotalPages = Math.Max(1, (int)Math.Ceiling(_jobTotalRows / (double)_jobPageSize));
-        if (_jobCurrentPage > _jobTotalPages) _jobCurrentPage = _jobTotalPages;
-        if (_jobCurrentPage < 1) _jobCurrentPage = 1;
-
-        var pageJobs = jobQuery
-            .OrderByDescending(x => x.CreateTime)
-            .OrderByDescending(x => x.Id)
-            .Skip((_jobCurrentPage - 1) * _jobPageSize)
-            .Take(_jobPageSize)
-            .ToList()
-            .Select(PrintJobGridItem.From)
-            .ToList();
-
-        _jobs.Clear();
-        foreach (var item in pageJobs)
+        try
         {
-            _jobs.Add(item);
+            var jobQuery = AppDb.Db.Queryable<LabelPrintJob>();
+            if (!string.IsNullOrWhiteSpace(status))
+                jobQuery = jobQuery.Where(x => x.Status == status);
+
+            var totalRows = await jobQuery.CountAsync();
+            var totalPages = Math.Max(1, (int)Math.Ceiling(totalRows / (double)_jobPageSize));
+            var currentPage = Math.Clamp(_jobCurrentPage, 1, totalPages);
+
+            var pageJobs = (await jobQuery
+                    .OrderByDescending(x => x.CreateTime)
+                    .OrderByDescending(x => x.Id)
+                    .Skip((currentPage - 1) * _jobPageSize)
+                    .Take(_jobPageSize)
+                    .ToListAsync())
+                .Select(PrintJobGridItem.From)
+                .ToList();
+
+            if (token.IsCancellationRequested || GetSelectedStatus() != status) return;
+
+            _jobTotalRows = totalRows;
+            _jobTotalPages = totalPages;
+            _jobCurrentPage = currentPage;
+
+            _jobs.Clear();
+            foreach (var item in pageJobs)
+            {
+                _jobs.Add(item);
+            }
+
+            JobGrid.ItemsSource = _jobs;
+            UpdateJobPagination();
+
+            if (_jobs.Count == 0)
+            {
+                JobGrid.SelectedItem = null;
+                ClearRows();
+                return;
+            }
+
+            JobGrid.SelectedIndex = 0;
+            await LoadRowsAsync();
         }
-
-        JobGrid.ItemsSource = _jobs;
-        UpdateJobPagination();
-
-        if (_jobs.Count == 0)
+        catch (OperationCanceledException)
         {
-            JobGrid.SelectedItem = null;
-            ClearRows();
-            return;
         }
-
-        JobGrid.SelectedIndex = 0;
-        LoadRows();
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show($"加载打印记录失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
-    private void JobGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private async void JobGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         _rowCurrentPage = 1;
-        LoadRows();
+        await LoadRowsAsync();
     }
 
-    private void LoadRows()
+    private async Task LoadRowsAsync()
     {
         var job = SelectedJob;
         if (job == null)
@@ -103,43 +128,59 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
             return;
         }
 
-        var fields = AppDb.Db.Queryable<LabelTemplateField>()
-            .Where(x => x.TemplateId == job.TemplateId)
-            .OrderBy(x => x.Sort)
-            .ToList();
-
-        var rowQuery = AppDb.Db.Queryable<LabelPrintJobRow>()
-            .Where(x => x.PrintJobId == job.Id);
-
-        _rowTotalRows = rowQuery.Count();
-        _rowTotalPages = Math.Max(1, (int)Math.Ceiling(_rowTotalRows / (double)_rowPageSize));
-        if (_rowCurrentPage > _rowTotalPages) _rowCurrentPage = _rowTotalPages;
-        if (_rowCurrentPage < 1) _rowCurrentPage = 1;
-
-        var pageRows = rowQuery
-            .OrderBy(x => x.RowIndex)
-            .Skip((_rowCurrentPage - 1) * _rowPageSize)
-            .Take(_rowPageSize)
-            .ToList()
-            .Select(x => new PrintJobRowGridItem
-            {
-                Id = x.Id,
-                ImportRowId = x.ImportRowId,
-                RowIndex = x.RowIndex,
-                Data = JsonHelper.Deserialize<Dictionary<string, string>>(x.RowDataJson) ?? new Dictionary<string, string>()
-            })
-            .ToList();
-
-        BuildRowGridColumns(fields, pageRows);
-        _rows.Clear();
-        foreach (var item in pageRows)
+        var token = ResetCancellation(ref _rowLoadCts);
+        try
         {
-            _rows.Add(item);
-        }
+            var fields = await AppDb.Db.Queryable<LabelTemplateField>()
+                .Where(x => x.TemplateId == job.TemplateId)
+                .OrderBy(x => x.Sort)
+                .ToListAsync();
 
-        RowGrid.ItemsSource = _rows;
-        UpdateRowPagination();
-        UpdateSummary();
+            var rowQuery = AppDb.Db.Queryable<LabelPrintJobRow>()
+                .Where(x => x.PrintJobId == job.Id);
+
+            var totalRows = await rowQuery.CountAsync();
+            var totalPages = Math.Max(1, (int)Math.Ceiling(totalRows / (double)_rowPageSize));
+            var currentPage = Math.Clamp(_rowCurrentPage, 1, totalPages);
+
+            var pageRows = (await rowQuery
+                    .OrderBy(x => x.RowIndex)
+                    .Skip((currentPage - 1) * _rowPageSize)
+                    .Take(_rowPageSize)
+                    .ToListAsync())
+                .Select(x => new PrintJobRowGridItem
+                {
+                    Id = x.Id,
+                    ImportRowId = x.ImportRowId,
+                    RowIndex = x.RowIndex,
+                    Data = JsonHelper.Deserialize<Dictionary<string, string>>(x.RowDataJson) ?? new Dictionary<string, string>()
+                })
+                .ToList();
+
+            if (token.IsCancellationRequested || SelectedJob?.Id != job.Id) return;
+
+            _rowTotalRows = totalRows;
+            _rowTotalPages = totalPages;
+            _rowCurrentPage = currentPage;
+
+            BuildRowGridColumns(fields, pageRows);
+            _rows.Clear();
+            foreach (var item in pageRows)
+            {
+                _rows.Add(item);
+            }
+
+            RowGrid.ItemsSource = _rows;
+            UpdateRowPagination();
+            UpdateSummary();
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show($"加载打印明细失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
     private void BuildRowGridColumns(IReadOnlyList<LabelTemplateField> fields, IReadOnlyList<PrintJobRowGridItem> rows)
@@ -197,76 +238,76 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
         UpdateSummary();
     }
 
-    private void JobFirstPage_Click(object sender, RoutedEventArgs e)
+    private async void JobFirstPage_Click(object sender, RoutedEventArgs e)
     {
         if (_jobCurrentPage <= 1) return;
         _jobCurrentPage = 1;
-        LoadJobs();
+        await LoadJobsAsync();
     }
 
-    private void JobPrevPage_Click(object sender, RoutedEventArgs e)
+    private async void JobPrevPage_Click(object sender, RoutedEventArgs e)
     {
         if (_jobCurrentPage <= 1) return;
         _jobCurrentPage--;
-        LoadJobs();
+        await LoadJobsAsync();
     }
 
-    private void JobNextPage_Click(object sender, RoutedEventArgs e)
+    private async void JobNextPage_Click(object sender, RoutedEventArgs e)
     {
         if (_jobCurrentPage >= _jobTotalPages) return;
         _jobCurrentPage++;
-        LoadJobs();
+        await LoadJobsAsync();
     }
 
-    private void JobLastPage_Click(object sender, RoutedEventArgs e)
+    private async void JobLastPage_Click(object sender, RoutedEventArgs e)
     {
         if (_jobCurrentPage >= _jobTotalPages) return;
         _jobCurrentPage = _jobTotalPages;
-        LoadJobs();
+        await LoadJobsAsync();
     }
 
-    private void JobPageSizeBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private async void JobPageSizeBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         _jobPageSize = GetSelectedJobPageSize();
         _jobCurrentPage = 1;
         if (IsLoaded)
-            LoadJobs();
+            await LoadJobsAsync();
     }
 
-    private void RowFirstPage_Click(object sender, RoutedEventArgs e)
+    private async void RowFirstPage_Click(object sender, RoutedEventArgs e)
     {
         if (_rowCurrentPage <= 1) return;
         _rowCurrentPage = 1;
-        LoadRows();
+        await LoadRowsAsync();
     }
 
-    private void RowPrevPage_Click(object sender, RoutedEventArgs e)
+    private async void RowPrevPage_Click(object sender, RoutedEventArgs e)
     {
         if (_rowCurrentPage <= 1) return;
         _rowCurrentPage--;
-        LoadRows();
+        await LoadRowsAsync();
     }
 
-    private void RowNextPage_Click(object sender, RoutedEventArgs e)
+    private async void RowNextPage_Click(object sender, RoutedEventArgs e)
     {
         if (_rowCurrentPage >= _rowTotalPages) return;
         _rowCurrentPage++;
-        LoadRows();
+        await LoadRowsAsync();
     }
 
-    private void RowLastPage_Click(object sender, RoutedEventArgs e)
+    private async void RowLastPage_Click(object sender, RoutedEventArgs e)
     {
         if (_rowCurrentPage >= _rowTotalPages) return;
         _rowCurrentPage = _rowTotalPages;
-        LoadRows();
+        await LoadRowsAsync();
     }
 
-    private void RowPageSizeBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private async void RowPageSizeBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         _rowPageSize = GetSelectedRowPageSize();
         _rowCurrentPage = 1;
         if (IsLoaded)
-            LoadRows();
+            await LoadRowsAsync();
     }
 
     private void UpdateJobPagination()
@@ -349,5 +390,26 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
         }
 
         return DefaultRowPageSize;
+    }
+
+    private static CancellationToken ResetCancellation(ref CancellationTokenSource? cts)
+    {
+        cts?.Cancel();
+        cts?.Dispose();
+        cts = new CancellationTokenSource();
+        return cts.Token;
+    }
+
+    private void CancelPendingLoads()
+    {
+        CancelAndDispose(ref _jobLoadCts);
+        CancelAndDispose(ref _rowLoadCts);
+    }
+
+    private static void CancelAndDispose(ref CancellationTokenSource? cts)
+    {
+        cts?.Cancel();
+        cts?.Dispose();
+        cts = null;
     }
 }

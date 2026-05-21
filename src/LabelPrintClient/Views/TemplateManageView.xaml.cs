@@ -7,7 +7,6 @@ using LabelPrintClient.Infrastructure;
 using LabelPrintClient.Models;
 using LabelPrintClient.Services.Stimulsoft;
 using LabelPrintClient.Services.TemplateStorage;
-using Microsoft.Win32;
 
 namespace LabelPrintClient.Views;
 
@@ -15,6 +14,9 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
 {
     private const int DefaultTemplatePageSize = 20;
 
+    private CancellationTokenSource? _categoryLoadCts;
+    private CancellationTokenSource? _templateLoadCts;
+    private CancellationTokenSource? _fieldLoadCts;
     private int _templateCurrentPage = 1;
     private int _templatePageSize = DefaultTemplatePageSize;
     private int _templateTotalRows;
@@ -24,71 +26,122 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
     {
         InitializeComponent();
         RunModeText.Text = App.Settings.RunMode.ToString();
-        Loaded += (_, _) => RefreshAll();
+        Loaded += async (_, _) => await RefreshAllAsync();
+        Unloaded += (_, _) => CancelPendingLoads();
     }
 
     private LabelCategory? SelectedCategory => CategoryGrid.SelectedItem as LabelCategory;
     private LabelTemplate? SelectedTemplate => TemplateGrid.SelectedItem as LabelTemplate;
 
-    private void Refresh_Click(object sender, RoutedEventArgs e) => RefreshAll();
+    private async void Refresh_Click(object sender, RoutedEventArgs e) => await RefreshAllAsync();
 
-    private void RefreshAll()
+    private async Task RefreshAllAsync()
     {
-        CategoryGrid.ItemsSource = AppDb.Db.Queryable<LabelCategory>().OrderBy(x => x.Sort).ToList();
-        ClearTemplates();
+        var token = ResetCancellation(ref _categoryLoadCts);
+        try
+        {
+            var categories = await AppDb.Db.Queryable<LabelCategory>()
+                .OrderBy(x => x.Sort)
+                .ToListAsync();
+
+            if (token.IsCancellationRequested) return;
+
+            CategoryGrid.ItemsSource = categories;
+            ClearTemplates();
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show($"刷新失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
-    private void CategoryGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private async void CategoryGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         _templateCurrentPage = 1;
-        LoadTemplates();
+        await LoadTemplatesAsync();
     }
 
-    private void LoadTemplates()
+    private async Task LoadTemplatesAsync()
     {
-        if (SelectedCategory == null)
+        var category = SelectedCategory;
+        if (category == null)
         {
             ClearTemplates();
             return;
         }
 
-        var templateQuery = AppDb.Db.Queryable<LabelTemplate>()
-            .Where(x => x.CategoryId == SelectedCategory.Id);
+        var token = ResetCancellation(ref _templateLoadCts);
+        try
+        {
+            var templateQuery = AppDb.Db.Queryable<LabelTemplate>()
+                .Where(x => x.CategoryId == category.Id);
 
-        _templateTotalRows = templateQuery.Count();
-        _templateTotalPages = Math.Max(1, (int)Math.Ceiling(_templateTotalRows / (double)_templatePageSize));
-        if (_templateCurrentPage > _templateTotalPages) _templateCurrentPage = _templateTotalPages;
-        if (_templateCurrentPage < 1) _templateCurrentPage = 1;
+            var totalRows = await templateQuery.CountAsync();
+            var totalPages = Math.Max(1, (int)Math.Ceiling(totalRows / (double)_templatePageSize));
+            var currentPage = Math.Clamp(_templateCurrentPage, 1, totalPages);
 
-        TemplateGrid.ItemsSource = templateQuery
-            .OrderBy(x => x.Name)
-            .Skip((_templateCurrentPage - 1) * _templatePageSize)
-            .Take(_templatePageSize)
-            .ToList();
-        FieldGrid.ItemsSource = null;
-        UpdateTemplatePagination();
+            var templates = await templateQuery
+                .OrderBy(x => x.Name)
+                .Skip((currentPage - 1) * _templatePageSize)
+                .Take(_templatePageSize)
+                .ToListAsync();
+
+            if (token.IsCancellationRequested || SelectedCategory?.Id != category.Id) return;
+
+            _templateTotalRows = totalRows;
+            _templateTotalPages = totalPages;
+            _templateCurrentPage = currentPage;
+            TemplateGrid.ItemsSource = templates;
+            FieldGrid.ItemsSource = null;
+            UpdateTemplatePagination();
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show($"加载模板失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
-    private void TemplateGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private async void TemplateGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        LoadFields();
+        await LoadFieldsAsync();
     }
 
-    private void LoadFields()
+    private async Task LoadFieldsAsync()
     {
-        if (SelectedTemplate == null)
+        var template = SelectedTemplate;
+        if (template == null)
         {
             FieldGrid.ItemsSource = null;
             return;
         }
 
-        FieldGrid.ItemsSource = AppDb.Db.Queryable<LabelTemplateField>()
-            .Where(x => x.TemplateId == SelectedTemplate.Id)
-            .OrderBy(x => x.Sort)
-            .ToList();
+        var token = ResetCancellation(ref _fieldLoadCts);
+        try
+        {
+            var fields = await AppDb.Db.Queryable<LabelTemplateField>()
+                .Where(x => x.TemplateId == template.Id)
+                .OrderBy(x => x.Sort)
+                .ToListAsync();
+
+            if (token.IsCancellationRequested || SelectedTemplate?.Id != template.Id) return;
+            FieldGrid.ItemsSource = fields;
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show($"加载字段失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
-    private void AddCategory_Click(object sender, RoutedEventArgs e)
+    private async void AddCategory_Click(object sender, RoutedEventArgs e)
     {
         var name = CategoryNameBox.Text.Trim();
         if (string.IsNullOrWhiteSpace(name))
@@ -97,7 +150,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
             return;
         }
 
-        if (FindCategory(name, 0) != null)
+        if (await FindCategoryAsync(name, 0) != null)
         {
             System.Windows.MessageBox.Show("分类名称已存在，请勿重复新增。");
             return;
@@ -111,12 +164,12 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
             IsEnabled = true
         };
 
-        AppDb.Db.Insertable(category).ExecuteCommand();
+        await AppDb.Db.Insertable(category).ExecuteCommandAsync();
         CategoryNameBox.Text = string.Empty;
-        RefreshAll();
+        await RefreshAllAsync();
     }
 
-    private void AddTemplate_Click(object sender, RoutedEventArgs e)
+    private async void AddTemplate_Click(object sender, RoutedEventArgs e)
     {
         if (SelectedCategory == null)
         {
@@ -124,6 +177,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
             return;
         }
 
+        var categoryId = SelectedCategory.Id;
         var name = TemplateNameBox.Text.Trim();
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -131,7 +185,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
             return;
         }
 
-        if (FindTemplate(SelectedCategory.Id, name) != null)
+        if (await FindTemplateAsync(categoryId, name) != null)
         {
             System.Windows.MessageBox.Show("当前分类下已存在同名模板，请勿重复新增。");
             return;
@@ -145,7 +199,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         var template = new LabelTemplate
         {
             Id = templateId,
-            CategoryId = SelectedCategory.Id,
+            CategoryId = categoryId,
             Name = name,
             StorageType = storageType,
             DataSourceName = "LabelData",
@@ -159,13 +213,13 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
             template.TemplatePath = BuildLocalTemplatePath(template.Id);
         }
 
-        AppDb.Db.Insertable(template).ExecuteCommand();
+        await AppDb.Db.Insertable(template).ExecuteCommandAsync();
         TemplateNameBox.Text = string.Empty;
         _templateCurrentPage = 1;
-        LoadTemplates();
+        await LoadTemplatesAsync();
     }
 
-    private void UploadTemplate_Click(object sender, RoutedEventArgs e)
+    private async void UploadTemplate_Click(object sender, RoutedEventArgs e)
     {
         var template = SelectedTemplate;
         if (template == null)
@@ -180,70 +234,82 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         };
         if (dialog.ShowDialog() != true) return;
 
+        try
+        {
+            await RunQueuedAsync(sender, "正在上传模板...", ct => UploadTemplateAsync(template, dialog.FileName, ct));
+            await LoadTemplatesAsync();
+            System.Windows.MessageBox.Show("模板已保存。");
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show($"模板保存失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private async Task UploadTemplateAsync(LabelTemplate template, string sourceFileName, CancellationToken cancellationToken)
+    {
         if (App.Settings.RunMode == AppRunMode.LocalSqlite)
         {
             var targetPath = BuildLocalTemplatePath(template.Id);
-            File.Copy(dialog.FileName, targetPath, true);
+            await Task.Run(() => File.Copy(sourceFileName, targetPath, true), cancellationToken);
             template.StorageType = TemplateStorageType.LocalFile;
             template.TemplatePath = targetPath;
-            template.TemplateFileName = Path.GetFileName(dialog.FileName);
-            template.TemplateHash = FileHashHelper.GetSha256(targetPath);
+            template.TemplateFileName = Path.GetFileName(sourceFileName);
+            template.TemplateHash = await FileHashHelper.GetSha256Async(targetPath, cancellationToken);
         }
         else
         {
-            var bytes = File.ReadAllBytes(dialog.FileName);
+            var bytes = await File.ReadAllBytesAsync(sourceFileName, cancellationToken);
             template.StorageType = TemplateStorageType.Database;
-            template.TemplateFileName = Path.GetFileName(dialog.FileName);
+            template.TemplateFileName = Path.GetFileName(sourceFileName);
             template.TemplateContent = bytes;
             template.TemplatePath = null;
             template.TemplateHash = FileHashHelper.GetSha256(bytes);
         }
 
         template.UpdateTime = DateTime.Now;
-        AppDb.Db.Updateable(template).ExecuteCommand();
-        LoadTemplates();
-        System.Windows.MessageBox.Show("模板已保存。");
+        await AppDb.Db.Updateable(template).ExecuteCommandAsync();
     }
 
-    private void TemplateFirstPage_Click(object sender, RoutedEventArgs e)
+    private async void TemplateFirstPage_Click(object sender, RoutedEventArgs e)
     {
         if (_templateCurrentPage <= 1) return;
         _templateCurrentPage = 1;
-        LoadTemplates();
+        await LoadTemplatesAsync();
     }
 
-    private void TemplatePrevPage_Click(object sender, RoutedEventArgs e)
+    private async void TemplatePrevPage_Click(object sender, RoutedEventArgs e)
     {
         if (_templateCurrentPage <= 1) return;
         _templateCurrentPage--;
-        LoadTemplates();
+        await LoadTemplatesAsync();
     }
 
-    private void TemplateNextPage_Click(object sender, RoutedEventArgs e)
+    private async void TemplateNextPage_Click(object sender, RoutedEventArgs e)
     {
         if (_templateCurrentPage >= _templateTotalPages) return;
         _templateCurrentPage++;
-        LoadTemplates();
+        await LoadTemplatesAsync();
     }
 
-    private void TemplateLastPage_Click(object sender, RoutedEventArgs e)
+    private async void TemplateLastPage_Click(object sender, RoutedEventArgs e)
     {
         if (_templateCurrentPage >= _templateTotalPages) return;
         _templateCurrentPage = _templateTotalPages;
-        LoadTemplates();
+        await LoadTemplatesAsync();
     }
 
-    private void TemplatePageSizeBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private async void TemplatePageSizeBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         _templatePageSize = GetSelectedTemplatePageSize();
         _templateCurrentPage = 1;
         if (SelectedCategory != null)
-            LoadTemplates();
+            await LoadTemplatesAsync();
         else
             UpdateTemplatePagination();
     }
 
-    private void DesignTemplate_Click(object sender, RoutedEventArgs e)
+    private async void DesignTemplate_Click(object sender, RoutedEventArgs e)
     {
         var template = SelectedTemplate;
         if (template == null)
@@ -252,10 +318,10 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
             return;
         }
 
-        var fields = AppDb.Db.Queryable<LabelTemplateField>()
+        var fields = await AppDb.Db.Queryable<LabelTemplateField>()
             .Where(x => x.TemplateId == template.Id)
             .OrderBy(x => x.Sort)
-            .ToList();
+            .ToListAsync();
 
         if (fields.Count == 0)
         {
@@ -263,13 +329,21 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
             return;
         }
 
-        var storage = LabelTemplateStorageFactory.Create(App.Settings.RunMode);
-        var designer = new StiTemplateDesignerService(storage);
-        designer.Design(template, fields);
-        System.Windows.MessageBox.Show("模板设计已保存。");
+        try
+        {
+            var storage = LabelTemplateStorageFactory.Create(App.Settings.RunMode);
+            var designer = new StiTemplateDesignerService(storage);
+            await RunQueuedAsync(sender, "正在打开设计器...", ct => designer.DesignAsync(template, fields, ct));
+            await LoadTemplatesAsync();
+            System.Windows.MessageBox.Show("模板设计已保存。");
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show($"打开设计器失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
-    private void AddField_Click(object sender, RoutedEventArgs e)
+    private async void AddField_Click(object sender, RoutedEventArgs e)
     {
         var template = SelectedTemplate;
         if (template == null)
@@ -287,17 +361,17 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
             return;
         }
 
-        var duplicateFieldError = GetDuplicateFieldError(template.Id, name, code);
+        var fields = await AppDb.Db.Queryable<LabelTemplateField>()
+            .Where(x => x.TemplateId == template.Id)
+            .ToListAsync();
+        var duplicateFieldError = GetDuplicateFieldError(fields, name, code);
         if (duplicateFieldError != null)
         {
             System.Windows.MessageBox.Show(duplicateFieldError);
             return;
         }
 
-        var maxSort = AppDb.Db.Queryable<LabelTemplateField>()
-            .Where(x => x.TemplateId == template.Id)
-            .Max(x => x.Sort);
-
+        var maxSort = fields.Count == 0 ? 0 : fields.Max(x => x.Sort);
         var field = new LabelTemplateField
         {
             Id = IdHelper.NewId(),
@@ -310,24 +384,24 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
             Sort = maxSort + 10
         };
 
-        AppDb.Db.Insertable(field).ExecuteCommand();
+        await AppDb.Db.Insertable(field).ExecuteCommandAsync();
         FieldNameBox.Text = string.Empty;
         FieldCodeBox.Text = string.Empty;
         FieldRemarkBox.Text = string.Empty;
-        LoadFields();
+        await LoadFieldsAsync();
     }
 
-    private void DeleteField_Click(object sender, RoutedEventArgs e)
+    private async void DeleteField_Click(object sender, RoutedEventArgs e)
     {
         if (FieldGrid.SelectedItem is not LabelTemplateField field) return;
         if (System.Windows.MessageBox.Show($"确定删除字段 {field.FieldName}？", "确认", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
-        AppDb.Db.Deleteable<LabelTemplateField>().Where(x => x.Id == field.Id).ExecuteCommand();
-        LoadFields();
+        await AppDb.Db.Deleteable<LabelTemplateField>().Where(x => x.Id == field.Id).ExecuteCommandAsync();
+        await LoadFieldsAsync();
     }
 
-    private void SeedDemo_Click(object sender, RoutedEventArgs e)
+    private async void SeedDemo_Click(object sender, RoutedEventArgs e)
     {
-        var category = FindCategory("产品标签", 0);
+        var category = await FindCategoryAsync("产品标签", 0);
         if (category == null)
         {
             category = new LabelCategory
@@ -337,10 +411,10 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
                 Sort = 10,
                 IsEnabled = true
             };
-            AppDb.Db.Insertable(category).ExecuteCommand();
+            await AppDb.Db.Insertable(category).ExecuteCommandAsync();
         }
 
-        var template = FindTemplate(category.Id, "产品基础标签");
+        var template = await FindTemplateAsync(category.Id, "产品基础标签");
         if (template == null)
         {
             var storageType = App.Settings.RunMode == AppRunMode.LocalSqlite
@@ -362,10 +436,12 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
                 Version = 1,
                 IsEnabled = true
             };
-            AppDb.Db.Insertable(template).ExecuteCommand();
+            await AppDb.Db.Insertable(template).ExecuteCommandAsync();
         }
 
-        var existsFields = AppDb.Db.Queryable<LabelTemplateField>().Where(x => x.TemplateId == template.Id).Any();
+        var existsFields = await AppDb.Db.Queryable<LabelTemplateField>()
+            .Where(x => x.TemplateId == template.Id)
+            .AnyAsync();
         if (!existsFields)
         {
             var fields = new List<LabelTemplateField>
@@ -376,10 +452,10 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
                 NewField(template.Id, "数量", "Qty", "int", true, 40, "打印数量或产品数量"),
                 NewField(template.Id, "生产日期", "ProduceDate", "date", false, 50, "yyyy-MM-dd")
             };
-            AppDb.Db.Insertable(fields).ExecuteCommand();
+            await AppDb.Db.Insertable(fields).ExecuteCommandAsync();
         }
 
-        RefreshAll();
+        await RefreshAllAsync();
         System.Windows.MessageBox.Show("示例分类、模板和字段已初始化。请继续上传或设计 .mrt 模板。");
     }
 
@@ -455,28 +531,24 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         return DefaultTemplatePageSize;
     }
 
-    private static LabelCategory? FindCategory(string name, long parentId)
+    private async Task<LabelCategory?> FindCategoryAsync(string name, long parentId)
     {
-        return AppDb.Db.Queryable<LabelCategory>()
+        var categories = await AppDb.Db.Queryable<LabelCategory>()
             .Where(x => x.ParentId == parentId)
-            .ToList()
-            .FirstOrDefault(x => string.Equals(x.Name.Trim(), name, StringComparison.OrdinalIgnoreCase));
+            .ToListAsync();
+        return categories.FirstOrDefault(x => string.Equals(x.Name.Trim(), name, StringComparison.OrdinalIgnoreCase));
     }
 
-    private static LabelTemplate? FindTemplate(long categoryId, string name)
+    private async Task<LabelTemplate?> FindTemplateAsync(long categoryId, string name)
     {
-        return AppDb.Db.Queryable<LabelTemplate>()
+        var templates = await AppDb.Db.Queryable<LabelTemplate>()
             .Where(x => x.CategoryId == categoryId)
-            .ToList()
-            .FirstOrDefault(x => string.Equals(x.Name.Trim(), name, StringComparison.OrdinalIgnoreCase));
+            .ToListAsync();
+        return templates.FirstOrDefault(x => string.Equals(x.Name.Trim(), name, StringComparison.OrdinalIgnoreCase));
     }
 
-    private static string? GetDuplicateFieldError(long templateId, string name, string code)
+    private static string? GetDuplicateFieldError(IEnumerable<LabelTemplateField> fields, string name, string code)
     {
-        var fields = AppDb.Db.Queryable<LabelTemplateField>()
-            .Where(x => x.TemplateId == templateId)
-            .ToList();
-
         if (fields.Any(x => string.Equals(x.FieldName.Trim(), name, StringComparison.OrdinalIgnoreCase)))
             return "字段名已存在，请勿重复新增。";
 
@@ -484,5 +556,48 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
             return "字段编码已存在，请勿重复新增。";
 
         return null;
+    }
+
+    private async Task RunQueuedAsync(object sender, string runningText, Func<CancellationToken, Task> operation)
+    {
+        var element = sender as UIElement;
+        var modeText = App.Settings.RunMode.ToString();
+
+        if (element != null)
+            element.IsEnabled = false;
+        RunModeText.Text = $"{modeText} · {runningText}";
+
+        try
+        {
+            await BackgroundTaskQueue.Shared.EnqueueAsync(operation);
+        }
+        finally
+        {
+            if (element != null)
+                element.IsEnabled = true;
+            RunModeText.Text = modeText;
+        }
+    }
+
+    private static CancellationToken ResetCancellation(ref CancellationTokenSource? cts)
+    {
+        cts?.Cancel();
+        cts?.Dispose();
+        cts = new CancellationTokenSource();
+        return cts.Token;
+    }
+
+    private void CancelPendingLoads()
+    {
+        CancelAndDispose(ref _categoryLoadCts);
+        CancelAndDispose(ref _templateLoadCts);
+        CancelAndDispose(ref _fieldLoadCts);
+    }
+
+    private static void CancelAndDispose(ref CancellationTokenSource? cts)
+    {
+        cts?.Cancel();
+        cts?.Dispose();
+        cts = null;
     }
 }

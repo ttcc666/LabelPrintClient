@@ -10,7 +10,6 @@ using LabelPrintClient.Services.Excel;
 using LabelPrintClient.Services.Import;
 using LabelPrintClient.Services.Print;
 using LabelPrintClient.ViewModels;
-using Microsoft.Win32;
 
 namespace LabelPrintClient.Views;
 
@@ -21,6 +20,10 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
     private const int MaxPrintCopies = 999;
 
     private readonly ObservableCollection<ImportRowGridItem> _rows = new();
+    private CancellationTokenSource? _refreshCts;
+    private CancellationTokenSource? _templateLoadCts;
+    private CancellationTokenSource? _batchLoadCts;
+    private CancellationTokenSource? _rowLoadCts;
     private int _batchCurrentPage = 1;
     private int _batchPageSize = DefaultBatchPageSize;
     private int _batchTotalRows;
@@ -33,18 +36,19 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
     public PrintCenterView()
     {
         InitializeComponent();
-        Loaded += (_, _) =>
+        Loaded += async (_, _) =>
         {
             LoadPrinters();
-            RefreshAll();
+            await RefreshAllAsync();
         };
+        Unloaded += (_, _) => CancelPendingLoads();
     }
 
     private LabelCategory? SelectedCategory => CategoryBox.SelectedItem as LabelCategory;
     private LabelTemplate? SelectedTemplate => TemplateBox.SelectedItem as LabelTemplate;
     private LabelImportBatch? SelectedBatch => BatchGrid.SelectedItem as LabelImportBatch;
 
-    private void Refresh_Click(object sender, RoutedEventArgs e) => RefreshAll();
+    private async void Refresh_Click(object sender, RoutedEventArgs e) => await RefreshAllAsync();
 
     private void LoadPrinters()
     {
@@ -85,64 +89,121 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
                name.Contains("ONENOTE");
     }
 
-    private void RefreshAll()
+    private async Task RefreshAllAsync()
     {
-        CategoryBox.ItemsSource = AppDb.Db.Queryable<LabelCategory>()
-            .Where(x => x.IsEnabled)
-            .OrderBy(x => x.Sort)
-            .ToList();
+        var token = ResetCancellation(ref _refreshCts);
+        try
+        {
+            var categories = await AppDb.Db.Queryable<LabelCategory>()
+                .Where(x => x.IsEnabled)
+                .OrderBy(x => x.Sort)
+                .ToListAsync();
+
+            if (token.IsCancellationRequested) return;
+
+            CategoryBox.ItemsSource = categories;
+            TemplateBox.ItemsSource = null;
+            ClearBatches();
+            ClearRows();
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show($"刷新失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private async void CategoryBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        var category = SelectedCategory;
+        if (category == null)
+        {
+            TemplateBox.ItemsSource = null;
+            ClearBatches();
+            ClearRows();
+            return;
+        }
+
+        var token = ResetCancellation(ref _templateLoadCts);
         TemplateBox.ItemsSource = null;
         ClearBatches();
         ClearRows();
+
+        try
+        {
+            var templates = await AppDb.Db.Queryable<LabelTemplate>()
+                .Where(x => x.CategoryId == category.Id && x.IsEnabled)
+                .OrderBy(x => x.Name)
+                .ToListAsync();
+
+            if (token.IsCancellationRequested || SelectedCategory?.Id != category.Id) return;
+            TemplateBox.ItemsSource = templates;
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show($"加载模板失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
-    private void CategoryBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (SelectedCategory == null) return;
-        TemplateBox.ItemsSource = AppDb.Db.Queryable<LabelTemplate>()
-            .Where(x => x.CategoryId == SelectedCategory.Id && x.IsEnabled)
-            .OrderBy(x => x.Name)
-            .ToList();
-        ClearBatches();
-        ClearRows();
-    }
-
-    private void TemplateBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private async void TemplateBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         _batchCurrentPage = 1;
-        LoadBatches();
+        await LoadBatchesAsync();
     }
 
-    private void LoadBatches_Click(object sender, RoutedEventArgs e) => LoadBatches();
+    private async void LoadBatches_Click(object sender, RoutedEventArgs e) => await LoadBatchesAsync();
 
-    private void LoadBatches()
+    private async Task LoadBatchesAsync()
     {
-        if (SelectedTemplate == null)
+        var template = SelectedTemplate;
+        if (template == null)
         {
             ClearBatches();
             ClearRows();
             return;
         }
 
-        var batchQuery = AppDb.Db.Queryable<LabelImportBatch>()
-            .Where(x => x.TemplateId == SelectedTemplate.Id);
+        var token = ResetCancellation(ref _batchLoadCts);
+        try
+        {
+            var batchQuery = AppDb.Db.Queryable<LabelImportBatch>()
+                .Where(x => x.TemplateId == template.Id);
 
-        _batchTotalRows = batchQuery.Count();
-        _batchTotalPages = Math.Max(1, (int)Math.Ceiling(_batchTotalRows / (double)_batchPageSize));
-        if (_batchCurrentPage > _batchTotalPages) _batchCurrentPage = _batchTotalPages;
-        if (_batchCurrentPage < 1) _batchCurrentPage = 1;
+            var totalRows = await batchQuery.CountAsync();
+            var totalPages = Math.Max(1, (int)Math.Ceiling(totalRows / (double)_batchPageSize));
+            var currentPage = Math.Clamp(_batchCurrentPage, 1, totalPages);
 
-        BatchGrid.ItemsSource = batchQuery
-            .OrderByDescending(x => x.ImportTime)
-            .OrderByDescending(x => x.Id)
-            .Skip((_batchCurrentPage - 1) * _batchPageSize)
-            .Take(_batchPageSize)
-            .ToList();
-        ClearRows();
-        UpdateBatchPagination();
+            var batches = await batchQuery
+                .OrderByDescending(x => x.ImportTime)
+                .OrderByDescending(x => x.Id)
+                .Skip((currentPage - 1) * _batchPageSize)
+                .Take(_batchPageSize)
+                .ToListAsync();
+
+            if (token.IsCancellationRequested || SelectedTemplate?.Id != template.Id) return;
+
+            _batchTotalRows = totalRows;
+            _batchTotalPages = totalPages;
+            _batchCurrentPage = currentPage;
+            BatchGrid.ItemsSource = batches;
+            ClearRows();
+            UpdateBatchPagination();
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show($"加载批次失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
-    private void DownloadExcel_Click(object sender, RoutedEventArgs e)
+    private async void DownloadExcel_Click(object sender, RoutedEventArgs e)
     {
         if (SelectedTemplate == null)
         {
@@ -150,6 +211,7 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
             return;
         }
 
+        var templateId = SelectedTemplate.Id;
         var dialog = new Microsoft.Win32.SaveFileDialog
         {
             Filter = "Excel 文件|*.xlsx",
@@ -157,11 +219,19 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         };
         if (dialog.ShowDialog() != true) return;
 
-        new ExcelTemplateExportService().Export(SelectedTemplate.Id, dialog.FileName);
-        System.Windows.MessageBox.Show("Excel 模板已生成。");
+        try
+        {
+            await RunQueuedAsync(sender, "正在生成 Excel 模板...", ct =>
+                new ExcelTemplateExportService().ExportAsync(templateId, dialog.FileName, ct));
+            System.Windows.MessageBox.Show("Excel 模板已生成。");
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show($"导出失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
-    private void ImportExcel_Click(object sender, RoutedEventArgs e)
+    private async void ImportExcel_Click(object sender, RoutedEventArgs e)
     {
         if (SelectedTemplate == null)
         {
@@ -169,6 +239,7 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
             return;
         }
 
+        var templateId = SelectedTemplate.Id;
         var dialog = new Microsoft.Win32.OpenFileDialog
         {
             Filter = "Excel 文件|*.xlsx;*.xlsm|所有文件|*.*"
@@ -178,12 +249,18 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         try
         {
             var service = new LabelImportService();
-            var batchId = service.ImportExcel(SelectedTemplate.Id, dialog.FileName, App.Settings.OperatorName);
-            _batchCurrentPage = 1;
-            LoadBatches();
+            var batchId = await RunQueuedAsync(sender, "正在导入 Excel 数据...", ct =>
+                service.ImportExcelAsync(templateId, dialog.FileName, App.Settings.OperatorName, ct));
 
-            var batches = BatchGrid.ItemsSource?.Cast<LabelImportBatch>().ToList() ?? new List<LabelImportBatch>();
-            BatchGrid.SelectedItem = batches.FirstOrDefault(x => x.Id == batchId);
+            if (SelectedTemplate?.Id == templateId)
+            {
+                _batchCurrentPage = 1;
+                await LoadBatchesAsync();
+
+                var batches = BatchGrid.ItemsSource?.Cast<LabelImportBatch>().ToList() ?? new List<LabelImportBatch>();
+                BatchGrid.SelectedItem = batches.FirstOrDefault(x => x.Id == batchId);
+            }
+
             System.Windows.MessageBox.Show("Excel 数据已导入数据库。");
         }
         catch (Exception ex)
@@ -192,13 +269,13 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         }
     }
 
-    private void BatchGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private async void BatchGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         _rowCurrentPage = 1;
-        LoadRows();
+        await LoadRowsAsync();
     }
 
-    private void LoadRows()
+    private async Task LoadRowsAsync()
     {
         var template = SelectedTemplate;
         var batch = SelectedBatch;
@@ -208,50 +285,74 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
             return;
         }
 
-        var fields = AppDb.Db.Queryable<LabelTemplateField>()
-            .Where(x => x.TemplateId == template.Id)
-            .OrderBy(x => x.Sort)
-            .ToList();
+        var onlyInvalid = OnlyInvalidBox.IsChecked == true;
+        var onlyUnprinted = OnlyUnprintedBox.IsChecked == true;
+        var token = ResetCancellation(ref _rowLoadCts);
 
-        var rowQuery = AppDb.Db.Queryable<LabelImportRow>()
-            .Where(x => x.BatchId == batch.Id);
-        if (OnlyInvalidBox.IsChecked == true)
-            rowQuery = rowQuery.Where(x => !x.IsValid);
-        if (OnlyUnprintedBox.IsChecked == true)
-            rowQuery = rowQuery.Where(x => !x.IsPrinted);
-
-        _rowTotalRows = rowQuery.Count();
-        _rowTotalPages = Math.Max(1, (int)Math.Ceiling(_rowTotalRows / (double)_rowPageSize));
-        if (_rowCurrentPage > _rowTotalPages) _rowCurrentPage = _rowTotalPages;
-        if (_rowCurrentPage < 1) _rowCurrentPage = 1;
-
-        var dbRows = rowQuery
-            .OrderBy(x => x.RowIndex)
-            .Skip((_rowCurrentPage - 1) * _rowPageSize)
-            .Take(_rowPageSize)
-            .ToList();
-
-        var pageRows = dbRows.Select(x => new ImportRowGridItem
+        try
         {
-            Id = x.Id,
-            RowIndex = x.RowIndex,
-            IsValid = x.IsValid,
-            IsPrinted = x.IsPrinted,
-            PrintCount = x.PrintCount,
-            ErrorMessage = x.ErrorMessage,
-            IsSelected = false,
-            Data = JsonHelper.Deserialize<Dictionary<string, string>>(x.RowDataJson) ?? new Dictionary<string, string>()
-        }).ToList();
+            var fields = await AppDb.Db.Queryable<LabelTemplateField>()
+                .Where(x => x.TemplateId == template.Id)
+                .OrderBy(x => x.Sort)
+                .ToListAsync();
 
-        BuildRowGridColumns(fields);
-        _rows.Clear();
-        foreach (var item in pageRows)
-        {
-            item.PropertyChanged += Row_PropertyChanged;
-            _rows.Add(item);
+            var rowQuery = AppDb.Db.Queryable<LabelImportRow>()
+                .Where(x => x.BatchId == batch.Id);
+            if (onlyInvalid)
+                rowQuery = rowQuery.Where(x => !x.IsValid);
+            if (onlyUnprinted)
+                rowQuery = rowQuery.Where(x => !x.IsPrinted);
+
+            var totalRows = await rowQuery.CountAsync();
+            var totalPages = Math.Max(1, (int)Math.Ceiling(totalRows / (double)_rowPageSize));
+            var currentPage = Math.Clamp(_rowCurrentPage, 1, totalPages);
+
+            var dbRows = await rowQuery
+                .OrderBy(x => x.RowIndex)
+                .Skip((currentPage - 1) * _rowPageSize)
+                .Take(_rowPageSize)
+                .ToListAsync();
+
+            if (token.IsCancellationRequested ||
+                SelectedTemplate?.Id != template.Id ||
+                SelectedBatch?.Id != batch.Id)
+            {
+                return;
+            }
+
+            _rowTotalRows = totalRows;
+            _rowTotalPages = totalPages;
+            _rowCurrentPage = currentPage;
+
+            var pageRows = dbRows.Select(x => new ImportRowGridItem
+            {
+                Id = x.Id,
+                RowIndex = x.RowIndex,
+                IsValid = x.IsValid,
+                IsPrinted = x.IsPrinted,
+                PrintCount = x.PrintCount,
+                ErrorMessage = x.ErrorMessage,
+                IsSelected = false,
+                Data = JsonHelper.Deserialize<Dictionary<string, string>>(x.RowDataJson) ?? new Dictionary<string, string>()
+            }).ToList();
+
+            BuildRowGridColumns(fields);
+            _rows.Clear();
+            foreach (var item in pageRows)
+            {
+                item.PropertyChanged += Row_PropertyChanged;
+                _rows.Add(item);
+            }
+            RowGrid.ItemsSource = _rows;
+            UpdateSummary();
         }
-        RowGrid.ItemsSource = _rows;
-        UpdateSummary();
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show($"加载明细失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
     private void BuildRowGridColumns(IReadOnlyList<LabelTemplateField> fields)
@@ -347,13 +448,13 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         UpdateBatchPagination();
     }
 
-    private void ApplyFilter()
+    private async Task ApplyFilterAsync()
     {
         _rowCurrentPage = 1;
-        LoadRows();
+        await LoadRowsAsync();
     }
 
-    private void Filter_Changed(object sender, RoutedEventArgs e) => ApplyFilter();
+    private async void Filter_Changed(object sender, RoutedEventArgs e) => await ApplyFilterAsync();
 
     private void Row_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
@@ -361,78 +462,78 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
             UpdateSummary();
     }
 
-    private void FirstPage_Click(object sender, RoutedEventArgs e)
+    private async void FirstPage_Click(object sender, RoutedEventArgs e)
     {
         if (_rowCurrentPage <= 1) return;
         _rowCurrentPage = 1;
-        LoadRows();
+        await LoadRowsAsync();
     }
 
-    private void PrevPage_Click(object sender, RoutedEventArgs e)
+    private async void PrevPage_Click(object sender, RoutedEventArgs e)
     {
         if (_rowCurrentPage <= 1) return;
         _rowCurrentPage--;
-        LoadRows();
+        await LoadRowsAsync();
     }
 
-    private void NextPage_Click(object sender, RoutedEventArgs e)
+    private async void NextPage_Click(object sender, RoutedEventArgs e)
     {
         if (_rowCurrentPage >= _rowTotalPages) return;
         _rowCurrentPage++;
-        LoadRows();
+        await LoadRowsAsync();
     }
 
-    private void LastPage_Click(object sender, RoutedEventArgs e)
+    private async void LastPage_Click(object sender, RoutedEventArgs e)
     {
         if (_rowCurrentPage >= _rowTotalPages) return;
         _rowCurrentPage = _rowTotalPages;
-        LoadRows();
+        await LoadRowsAsync();
     }
 
-    private void PageSizeBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private async void PageSizeBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         _rowPageSize = GetSelectedRowPageSize();
         _rowCurrentPage = 1;
         if (SelectedBatch != null)
-            LoadRows();
+            await LoadRowsAsync();
         else
             UpdateSummary();
     }
 
-    private void BatchFirstPage_Click(object sender, RoutedEventArgs e)
+    private async void BatchFirstPage_Click(object sender, RoutedEventArgs e)
     {
         if (_batchCurrentPage <= 1) return;
         _batchCurrentPage = 1;
-        LoadBatches();
+        await LoadBatchesAsync();
     }
 
-    private void BatchPrevPage_Click(object sender, RoutedEventArgs e)
+    private async void BatchPrevPage_Click(object sender, RoutedEventArgs e)
     {
         if (_batchCurrentPage <= 1) return;
         _batchCurrentPage--;
-        LoadBatches();
+        await LoadBatchesAsync();
     }
 
-    private void BatchNextPage_Click(object sender, RoutedEventArgs e)
+    private async void BatchNextPage_Click(object sender, RoutedEventArgs e)
     {
         if (_batchCurrentPage >= _batchTotalPages) return;
         _batchCurrentPage++;
-        LoadBatches();
+        await LoadBatchesAsync();
     }
 
-    private void BatchLastPage_Click(object sender, RoutedEventArgs e)
+    private async void BatchLastPage_Click(object sender, RoutedEventArgs e)
     {
         if (_batchCurrentPage >= _batchTotalPages) return;
         _batchCurrentPage = _batchTotalPages;
-        LoadBatches();
+        await LoadBatchesAsync();
     }
 
-    private void BatchPageSizeBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private async void BatchPageSizeBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         _batchPageSize = GetSelectedBatchPageSize();
         _batchCurrentPage = 1;
         if (SelectedTemplate != null)
-            LoadBatches();
+            await LoadBatchesAsync();
         else
             UpdateBatchPagination();
     }
@@ -469,19 +570,18 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         UpdateSummary();
     }
 
-    private void PreviewRow_Click(object sender, RoutedEventArgs e)
+    private async void PreviewRow_Click(object sender, RoutedEventArgs e)
     {
         if (!TryGetRowActionContext(sender, out var template, out var batch, out var row))
-        {
             return;
-        }
 
         if (!TryGetPrintCopies(out var printCopies))
             return;
 
         try
         {
-            new LabelPrintService(App.Settings).PreviewSelectedRows(template.Id, batch.Id, new[] { row.Id }, printCopies);
+            await RunQueuedAsync(sender, "正在打开标签预览...", ct =>
+                new LabelPrintService(App.Settings).PreviewSelectedRowsAsync(template.Id, batch.Id, new[] { row.Id }, printCopies, ct));
         }
         catch (Exception ex)
         {
@@ -489,12 +589,10 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         }
     }
 
-    private void PrintRow_Click(object sender, RoutedEventArgs e)
+    private async void PrintRow_Click(object sender, RoutedEventArgs e)
     {
         if (!TryGetRowActionContext(sender, out var template, out var batch, out var row))
-        {
             return;
-        }
 
         if (!TryGetPrintCopies(out var printCopies))
             return;
@@ -507,9 +605,10 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
 
         try
         {
-            new LabelPrintService(App.Settings).PrintSelectedRows(template.Id, batch.Id, new[] { row.Id }, printerName, printCopies);
+            await RunQueuedAsync(sender, "正在打印当前行...", ct =>
+                new LabelPrintService(App.Settings).PrintSelectedRowsAsync(template.Id, batch.Id, new[] { row.Id }, printerName, printCopies, ct));
             System.Windows.MessageBox.Show("打印任务已完成。");
-            LoadRows();
+            await LoadRowsAsync();
         }
         catch (Exception ex)
         {
@@ -517,7 +616,7 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         }
     }
 
-    private void PreviewSelected_Click(object sender, RoutedEventArgs e)
+    private async void PreviewSelected_Click(object sender, RoutedEventArgs e)
     {
         var template = SelectedTemplate;
         var batch = SelectedBatch;
@@ -539,7 +638,8 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
 
         try
         {
-            new LabelPrintService(App.Settings).PreviewSelectedRows(template.Id, batch.Id, selectedIds, printCopies);
+            await RunQueuedAsync(sender, "正在打开批量预览...", ct =>
+                new LabelPrintService(App.Settings).PreviewSelectedRowsAsync(template.Id, batch.Id, selectedIds, printCopies, ct));
         }
         catch (Exception ex)
         {
@@ -547,7 +647,7 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         }
     }
 
-    private void PrintSelected_Click(object sender, RoutedEventArgs e)
+    private async void PrintSelected_Click(object sender, RoutedEventArgs e)
     {
         var template = SelectedTemplate;
         var batch = SelectedBatch;
@@ -576,9 +676,10 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
 
         try
         {
-            new LabelPrintService(App.Settings).PrintSelectedRows(template.Id, batch.Id, selectedIds, printerName, printCopies);
+            await RunQueuedAsync(sender, "正在批量打印...", ct =>
+                new LabelPrintService(App.Settings).PrintSelectedRowsAsync(template.Id, batch.Id, selectedIds, printerName, printCopies, ct));
             System.Windows.MessageBox.Show("打印任务已完成。");
-            LoadRows();
+            await LoadRowsAsync();
         }
         catch (Exception ex)
         {
@@ -647,6 +748,49 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
             .ToList();
     }
 
+    private async Task RunQueuedAsync(object sender, string runningText, Func<CancellationToken, Task> operation)
+    {
+        await RunQueuedAsync<object?>(
+            sender,
+            runningText,
+            async token =>
+            {
+                await operation(token);
+                return null;
+            });
+    }
+
+    private async Task<T> RunQueuedAsync<T>(object sender, string runningText, Func<CancellationToken, Task<T>> operation)
+    {
+        var element = GetTemporarilyDisabledElement(sender);
+        if (element != null)
+            element.IsEnabled = false;
+
+        if (SummaryText != null)
+            SummaryText.Text = runningText;
+
+        try
+        {
+            return await BackgroundTaskQueue.Shared.EnqueueAsync(operation);
+        }
+        finally
+        {
+            if (element != null)
+                element.IsEnabled = true;
+            UpdateSummary();
+        }
+    }
+
+    private static UIElement? GetTemporarilyDisabledElement(object sender)
+    {
+        if (sender is not UIElement element)
+            return null;
+
+        return BindingOperations.GetBindingExpression(element, UIElement.IsEnabledProperty) == null
+            ? element
+            : null;
+    }
+
     private void UpdateSummary()
     {
         if (SummaryText == null || PageInfoText == null ||
@@ -707,5 +851,28 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         }
 
         return DefaultBatchPageSize;
+    }
+
+    private static CancellationToken ResetCancellation(ref CancellationTokenSource? cts)
+    {
+        cts?.Cancel();
+        cts?.Dispose();
+        cts = new CancellationTokenSource();
+        return cts.Token;
+    }
+
+    private void CancelPendingLoads()
+    {
+        CancelAndDispose(ref _refreshCts);
+        CancelAndDispose(ref _templateLoadCts);
+        CancelAndDispose(ref _batchLoadCts);
+        CancelAndDispose(ref _rowLoadCts);
+    }
+
+    private static void CancelAndDispose(ref CancellationTokenSource? cts)
+    {
+        cts?.Cancel();
+        cts?.Dispose();
+        cts = null;
     }
 }

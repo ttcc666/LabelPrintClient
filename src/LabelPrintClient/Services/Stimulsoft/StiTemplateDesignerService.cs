@@ -1,4 +1,5 @@
 using System.Data;
+using LabelPrintClient.Infrastructure;
 using LabelPrintClient.Models;
 using LabelPrintClient.Services.TemplateStorage;
 using Stimulsoft.Report;
@@ -15,25 +16,37 @@ public class StiTemplateDesignerService
         _storage = storage;
     }
 
-    public void Design(LabelTemplate template, IReadOnlyList<LabelTemplateField> fields)
+    public async Task DesignAsync(
+        LabelTemplate template,
+        IReadOnlyList<LabelTemplateField> fields,
+        CancellationToken cancellationToken = default)
     {
-        StiReport report;
+        var report = await StaThreadRunner.RunAsync(() =>
+        {
+            var designReport = LoadOrCreateReport(template);
+            RegisterDesignData(designReport, template.DataSourceName, fields);
+            designReport.Design(true);
+            return designReport;
+        }, cancellationToken).ConfigureAwait(false);
+
+        await _storage.SaveReportAsync(template, report, cancellationToken).ConfigureAwait(false);
+    }
+
+    private StiReport LoadOrCreateReport(LabelTemplate template)
+    {
         try
         {
-            report = _storage.LoadReport(template);
+            return _storage.LoadReport(template);
         }
         catch
         {
-            report = new StiReport();
+            var report = new StiReport();
             report.Pages.Clear();
             var page = new StiPage();
             page.Name = "Page1";
             report.Pages.Add(page);
+            return report;
         }
-
-        RegisterDesignData(report, template.DataSourceName, fields);
-        report.Design();
-        _storage.SaveReport(template, report);
     }
 
     private static void RegisterDesignData(StiReport report, string dataSourceName, IReadOnlyList<LabelTemplateField> fields)

@@ -21,21 +21,32 @@ public class LocalFileTemplateStorageService : ILabelTemplateStorageService
         return report;
     }
 
-    public void SaveReport(LabelTemplate template, StiReport report)
+    public Task<StiReport> LoadReportAsync(LabelTemplate template, CancellationToken cancellationToken = default)
+    {
+        return Task.Run(() => LoadReport(template), cancellationToken);
+    }
+
+    public async Task SaveReportAsync(LabelTemplate template, StiReport report, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(template.TemplatePath))
             throw new InvalidOperationException("模板文件路径为空，无法保存。");
 
-        var dir = Path.GetDirectoryName(template.TemplatePath);
-        if (!string.IsNullOrWhiteSpace(dir)) Directory.CreateDirectory(dir);
+        await Task.Run(() =>
+        {
+            var dir = Path.GetDirectoryName(template.TemplatePath);
+            if (!string.IsNullOrWhiteSpace(dir)) Directory.CreateDirectory(dir);
 
-        report.Save(template.TemplatePath);
-        template.TemplateFileName = string.IsNullOrWhiteSpace(template.TemplateFileName)
-            ? Path.GetFileName(template.TemplatePath)
-            : template.TemplateFileName;
-        template.TemplateHash = File.Exists(template.TemplatePath) ? FileHashHelper.GetSha256(template.TemplatePath) : null;
+            report.Save(template.TemplatePath);
+            template.TemplateFileName = string.IsNullOrWhiteSpace(template.TemplateFileName)
+                ? Path.GetFileName(template.TemplatePath)
+                : template.TemplateFileName;
+        }, cancellationToken).ConfigureAwait(false);
+
+        template.TemplateHash = File.Exists(template.TemplatePath)
+            ? await FileHashHelper.GetSha256Async(template.TemplatePath, cancellationToken).ConfigureAwait(false)
+            : null;
         template.UpdateTime = DateTime.Now;
 
-        AppDb.Db.Updateable(template).ExecuteCommand();
+        await AppDb.Db.Updateable(template).ExecuteCommandAsync().ConfigureAwait(false);
     }
 }

@@ -6,6 +6,14 @@ namespace LabelPrintClient.Services.Excel;
 
 public static class ExcelReader
 {
+    public static Task<List<ImportRowDraft>> ReadRowsAsync(
+        string filePath,
+        IReadOnlyList<LabelTemplateField> fields,
+        CancellationToken cancellationToken = default)
+    {
+        return Task.Run(() => ReadRows(filePath, fields), cancellationToken);
+    }
+
     public static List<ImportRowDraft> ReadRows(string filePath, IReadOnlyList<LabelTemplateField> fields)
     {
         using var workbook = new XLWorkbook(filePath);

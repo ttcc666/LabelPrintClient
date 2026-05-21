@@ -22,82 +22,91 @@ public class LabelPrintService
         _templateStorage = LabelTemplateStorageFactory.Create(settings.RunMode);
     }
 
-    public void PreviewSelectedRows(long templateId, long batchId, IReadOnlyCollection<long> selectedRowIds, int copyCount = 1)
+    public async Task PreviewSelectedRowsAsync(
+        long templateId,
+        long batchId,
+        IReadOnlyCollection<long> selectedRowIds,
+        int copyCount = 1,
+        CancellationToken cancellationToken = default)
     {
         copyCount = ValidateCopyCount(copyCount);
-        var context = BuildPrintContext(templateId, batchId, selectedRowIds, copyCount);
-        var report = BuildRenderedReport(context.Template, context.DataTable);
-        report.Show();
+        var context = await BuildPrintContextAsync(templateId, batchId, selectedRowIds, copyCount, cancellationToken)
+            .ConfigureAwait(false);
+        await StaThreadRunner.RunAsync(() =>
+        {
+            var report = BuildRenderedReport(context.Template, context.DataTable);
+            report.Show(true);
+        }, cancellationToken).ConfigureAwait(false);
     }
 
-    public void PrintSelectedRows(long templateId, long batchId, IReadOnlyCollection<long> selectedRowIds, string? printerName, int copyCount = 1)
+    public async Task PrintSelectedRowsAsync(
+        long templateId,
+        long batchId,
+        IReadOnlyCollection<long> selectedRowIds,
+        string? printerName,
+        int copyCount = 1,
+        CancellationToken cancellationToken = default)
     {
         copyCount = ValidateCopyCount(copyCount);
-        var context = BuildPrintContext(templateId, batchId, selectedRowIds, 1);
+        var context = await BuildPrintContextAsync(templateId, batchId, selectedRowIds, 1, cancellationToken)
+            .ConfigureAwait(false);
 
-        var printJob = new LabelPrintJob
+        var printJob = BuildPrintJob(context.Template, batchId, context.Rows.Count * copyCount, printerName, _settings.OperatorName);
+        var jobRows = BuildPrintJobRows(printJob.Id, context.Rows, copyCount);
+
+        await ExecuteTransactionAsync(async () =>
         {
-            Id = IdHelper.NewId(),
-            TemplateId = context.Template.Id,
-            BatchId = batchId,
-            TemplateName = context.Template.Name,
-            SelectedRowCount = context.Rows.Count * copyCount,
-            PrinterName = printerName,
-            Status = "Printing",
-            OperatorName = _settings.OperatorName,
-            CreateTime = DateTime.Now
-        };
-
-        var jobRows = context.Rows
-            .SelectMany(row => Enumerable.Range(0, copyCount).Select(_ => new LabelPrintJobRow
-            {
-                Id = IdHelper.NewId(),
-                PrintJobId = printJob.Id,
-                ImportRowId = row.Id,
-                RowIndex = row.RowIndex,
-                RowDataJson = row.RowDataJson
-            }))
-            .ToList();
-
-        AppDb.Db.Ado.UseTran(() =>
-        {
-            AppDb.Db.Insertable(printJob).ExecuteCommand();
-            AppDb.Db.Insertable(jobRows).ExecuteCommand();
-        });
+            await AppDb.Db.Insertable(printJob).ExecuteCommandAsync().ConfigureAwait(false);
+            await AppDb.Db.Insertable(jobRows).ExecuteCommandAsync().ConfigureAwait(false);
+        }).ConfigureAwait(false);
 
         try
         {
-            PrintLabels(context, printerName, copyCount);
-            MarkPrinted(printJob, context.Rows, copyCount);
+            await Task.Run(() => PrintLabels(context, printerName, copyCount, cancellationToken), cancellationToken)
+                .ConfigureAwait(false);
+            await MarkPrintedAsync(printJob, context.Rows, copyCount).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
             printJob.Status = "Failed";
             printJob.ErrorMessage = ex.Message;
-            AppDb.Db.Updateable(printJob).ExecuteCommand();
+            await AppDb.Db.Updateable(printJob).ExecuteCommandAsync().ConfigureAwait(false);
             throw;
         }
     }
 
-    private PrintContext BuildPrintContext(long templateId, long batchId, IReadOnlyCollection<long> selectedRowIds, int copyCount)
+    private async Task<PrintContext> BuildPrintContextAsync(
+        long templateId,
+        long batchId,
+        IReadOnlyCollection<long> selectedRowIds,
+        int copyCount,
+        CancellationToken cancellationToken)
     {
         if (selectedRowIds.Count == 0)
             throw new InvalidOperationException("请选择要打印的数据行。");
 
-        var template = AppDb.Db.Queryable<LabelTemplate>().First(x => x.Id == templateId)
+        var templates = await AppDb.Db.Queryable<LabelTemplate>()
+            .Where(x => x.Id == templateId)
+            .Take(1)
+            .ToListAsync()
+            .ConfigureAwait(false);
+        var template = templates.FirstOrDefault()
             ?? throw new InvalidOperationException("模板不存在。");
 
-        var fields = AppDb.Db.Queryable<LabelTemplateField>()
+        var fields = await AppDb.Db.Queryable<LabelTemplateField>()
             .Where(x => x.TemplateId == templateId)
             .OrderBy(x => x.Sort)
-            .ToList();
+            .ToListAsync()
+            .ConfigureAwait(false);
 
         var ids = selectedRowIds.ToList();
-
-        var rows = AppDb.Db.Queryable<LabelImportRow>()
+        var rows = await AppDb.Db.Queryable<LabelImportRow>()
             .Where(x => x.BatchId == batchId && ids.Contains(x.Id) && x.IsValid)
             .OrderBy(x => x.RowIndex)
-            .ToList();
+            .ToListAsync()
+            .ConfigureAwait(false);
+
+        cancellationToken.ThrowIfCancellationRequested();
 
         if (rows.Count == 0)
             throw new InvalidOperationException("选中的数据中没有有效行，无法打印。");
@@ -106,14 +115,18 @@ public class LabelPrintService
         return new PrintContext(template, fields, rows, dataTable);
     }
 
-    private void PrintLabels(PrintContext context, string? printerName, int copyCount)
+    private void PrintLabels(PrintContext context, string? printerName, int copyCount, CancellationToken cancellationToken)
     {
         var settings = CreatePrinterSettings(printerName);
 
         foreach (var row in context.Rows)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             for (var copyIndex = 0; copyIndex < copyCount; copyIndex++)
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 var dataTable = DataTableBuilder.Build(
                     new[] { row },
                     context.Fields,
@@ -128,11 +141,51 @@ public class LabelPrintService
     private StiReport BuildRenderedReport(LabelTemplate template, DataTable dataTable)
     {
         var report = _templateStorage.LoadReport(template);
-        report.Dictionary.Databases.Clear();
-        report.RegData(template.DataSourceName, dataTable);
-        report.Dictionary.Synchronize();
-        report.Render();
+        RegisterReportData(report, template.DataSourceName, dataTable);
+        report.Render(false);
         return report;
+    }
+
+    private static void RegisterReportData(StiReport report, string dataSourceName, DataTable dataTable)
+    {
+        report.Dictionary.Databases.Clear();
+        report.RegData(dataSourceName, dataTable);
+        report.Dictionary.Synchronize();
+    }
+
+    private static LabelPrintJob BuildPrintJob(
+        LabelTemplate template,
+        long batchId,
+        int selectedRowCount,
+        string? printerName,
+        string? operatorName)
+    {
+        return new LabelPrintJob
+        {
+            Id = IdHelper.NewId(),
+            TemplateId = template.Id,
+            BatchId = batchId,
+            TemplateName = template.Name,
+            SelectedRowCount = selectedRowCount,
+            PrinterName = printerName,
+            Status = "Printing",
+            OperatorName = operatorName,
+            CreateTime = DateTime.Now
+        };
+    }
+
+    private static List<LabelPrintJobRow> BuildPrintJobRows(long printJobId, IEnumerable<LabelImportRow> rows, int copyCount)
+    {
+        return rows
+            .SelectMany(row => Enumerable.Range(0, copyCount).Select(_ => new LabelPrintJobRow
+            {
+                Id = IdHelper.NewId(),
+                PrintJobId = printJobId,
+                ImportRowId = row.Id,
+                RowIndex = row.RowIndex,
+                RowDataJson = row.RowDataJson
+            }))
+            .ToList();
     }
 
     private static PrinterSettings CreatePrinterSettings(string? printerName)
@@ -159,7 +212,7 @@ public class LabelPrintService
         return copyCount;
     }
 
-    private static void MarkPrinted(LabelPrintJob printJob, List<LabelImportRow> rows, int copyCount)
+    private static async Task MarkPrintedAsync(LabelPrintJob printJob, List<LabelImportRow> rows, int copyCount)
     {
         foreach (var row in rows)
         {
@@ -171,10 +224,25 @@ public class LabelPrintService
         printJob.Status = "Printed";
         printJob.PrintTime = DateTime.Now;
 
-        AppDb.Db.Ado.UseTran(() =>
+        await ExecuteTransactionAsync(async () =>
         {
-            AppDb.Db.Updateable(printJob).ExecuteCommand();
-            AppDb.Db.Updateable(rows).ExecuteCommand();
-        });
+            await AppDb.Db.Updateable(printJob).ExecuteCommandAsync().ConfigureAwait(false);
+            await AppDb.Db.Updateable(rows).ExecuteCommandAsync().ConfigureAwait(false);
+        }).ConfigureAwait(false);
+    }
+
+    private static async Task ExecuteTransactionAsync(Func<Task> operation)
+    {
+        await AppDb.Db.Ado.BeginTranAsync().ConfigureAwait(false);
+        try
+        {
+            await operation().ConfigureAwait(false);
+            await AppDb.Db.Ado.CommitTranAsync().ConfigureAwait(false);
+        }
+        catch
+        {
+            await AppDb.Db.Ado.RollbackTranAsync().ConfigureAwait(false);
+            throw;
+        }
     }
 }

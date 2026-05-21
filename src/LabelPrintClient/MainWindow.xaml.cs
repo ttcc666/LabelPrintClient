@@ -24,7 +24,7 @@ public partial class MainWindow : FluentWindow
         };
     }
 
-    private void NavItem_Click(object sender, RoutedEventArgs e)
+    private async void NavItem_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not NavigationViewItem clickedItem) return;
 
@@ -40,7 +40,7 @@ public partial class MainWindow : FluentWindow
         {
             case "PrintHistory":
                 WorkspaceContent.Content = _printHistoryView;
-                _printHistoryView.RefreshHistory();
+                await _printHistoryView.RefreshHistoryAsync();
                 break;
             case "TemplateManage":
                 WorkspaceContent.Content = _templateManageView;

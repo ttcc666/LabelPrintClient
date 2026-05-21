@@ -6,16 +6,22 @@ namespace LabelPrintClient.Services.Excel;
 
 public class ExcelTemplateExportService
 {
-    public void Export(long templateId, string savePath)
+    public async Task ExportAsync(long templateId, string savePath, CancellationToken cancellationToken = default)
     {
-        var fields = AppDb.Db.Queryable<LabelTemplateField>()
+        var fields = await AppDb.Db.Queryable<LabelTemplateField>()
             .Where(x => x.TemplateId == templateId)
             .OrderBy(x => x.Sort)
-            .ToList();
+            .ToListAsync()
+            .ConfigureAwait(false);
 
         if (fields.Count == 0)
             throw new InvalidOperationException("当前模板没有维护字段，无法生成 Excel 模板。");
 
+        await Task.Run(() => SaveWorkbook(fields, savePath), cancellationToken).ConfigureAwait(false);
+    }
+
+    private static void SaveWorkbook(IReadOnlyList<LabelTemplateField> fields, string savePath)
+    {
         using var workbook = new XLWorkbook();
         var sheet = workbook.Worksheets.Add("导入数据");
         var instructionSheet = workbook.Worksheets.Add("字段说明");

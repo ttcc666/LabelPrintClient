@@ -19,17 +19,25 @@ public class DatabaseTemplateStorageService : ILabelTemplateStorageService
         return report;
     }
 
-    public void SaveReport(LabelTemplate template, StiReport report)
+    public Task<StiReport> LoadReportAsync(LabelTemplate template, CancellationToken cancellationToken = default)
     {
-        using var ms = new MemoryStream();
-        report.Save(ms);
+        return Task.Run(() => LoadReport(template), cancellationToken);
+    }
 
-        var bytes = ms.ToArray();
+    public async Task SaveReportAsync(LabelTemplate template, StiReport report, CancellationToken cancellationToken = default)
+    {
+        var bytes = await Task.Run(() =>
+        {
+            using var ms = new MemoryStream();
+            report.Save(ms);
+            return ms.ToArray();
+        }, cancellationToken).ConfigureAwait(false);
+
         template.TemplateContent = bytes;
         template.TemplateFileName = string.IsNullOrWhiteSpace(template.TemplateFileName) ? $"{template.Name}.mrt" : template.TemplateFileName;
         template.TemplateHash = FileHashHelper.GetSha256(bytes);
         template.UpdateTime = DateTime.Now;
 
-        AppDb.Db.Updateable(template).ExecuteCommand();
+        await AppDb.Db.Updateable(template).ExecuteCommandAsync().ConfigureAwait(false);
     }
 }
