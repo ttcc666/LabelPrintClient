@@ -17,4 +17,6 @@ public class AppSettings
     public int DefaultPrintCopies { get; set; } = 1;
 
     public bool ConfirmBeforePrint { get; set; } = true;
+
+    public AppThemeMode ThemeMode { get; set; } = AppThemeMode.System;
 }

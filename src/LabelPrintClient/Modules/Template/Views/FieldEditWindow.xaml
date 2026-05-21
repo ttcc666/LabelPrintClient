@@ -1,0 +1,70 @@
+<Window x:Class="LabelPrintClient.Modules.Template.Views.FieldEditWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+        Title="字段维护"
+        Width="440"
+        Height="420"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="{DynamicResource ApplicationBackgroundBrush}">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- 标题 -->
+        <ui:TextBlock x:Name="TitleText" Grid.Row="0" FontTypography="Subtitle" Text="新增字段" Margin="0,0,0,16" />
+
+        <!-- 表单 -->
+        <StackPanel Grid.Row="1">
+            <Grid Margin="0,0,0,12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                    <TextBlock Text="字段名称" Margin="0,0,0,6" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                    <ui:TextBox x:Name="FieldNameBox" PlaceholderText="如：姓名" MaxLength="50" />
+                </StackPanel>
+                <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                    <TextBlock Text="字段编码" Margin="0,0,0,6" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                    <ui:TextBox x:Name="FieldCodeBox" PlaceholderText="如：Name" MaxLength="50" />
+                </StackPanel>
+            </Grid>
+
+            <Grid Margin="0,0,0,12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                    <TextBlock Text="数据类型" Margin="0,0,0,6" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                    <ComboBox x:Name="FieldTypeBox" SelectedIndex="0">
+                        <ComboBoxItem Content="文本 (string)" Tag="string" />
+                        <ComboBoxItem Content="整数 (int)" Tag="int" />
+                        <ComboBoxItem Content="小数 (decimal)" Tag="decimal" />
+                        <ComboBoxItem Content="日期 (date)" Tag="date" />
+                        <ComboBoxItem Content="布尔 (bool)" Tag="bool" />
+                    </ComboBox>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Margin="8,0,0,0" VerticalAlignment="Bottom">
+                    <CheckBox x:Name="IsRequiredBox" Content="必填字段" Height="36" VerticalContentAlignment="Center" />
+                </StackPanel>
+            </Grid>
+
+            <StackPanel Margin="0,0,0,12">
+                <TextBlock Text="备注说明" Margin="0,0,0,6" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                <ui:TextBox x:Name="RemarkBox" PlaceholderText="选填，关于该字段的补充说明" Height="80" TextWrapping="Wrap" AcceptsReturn="True" />
+            </StackPanel>
+        </StackPanel>
+
+        <!-- 底部按钮 -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
+            <ui:Button Content="确定" Appearance="Primary" Click="Ok_Click" Width="80" Margin="0,0,10,0" />
+            <ui:Button Content="取消" Click="Cancel_Click" Width="80" />
+        </StackPanel>
+    </Grid>
+</Window>

@@ -2,6 +2,7 @@ using System.IO;
 using System.Windows;
 using LabelPrintClient.Config;
 using LabelPrintClient.Database;
+using LabelPrintClient.Services;
 using Stimulsoft.Report;
 
 namespace LabelPrintClient;
@@ -20,6 +21,7 @@ public partial class App : System.Windows.Application
         {
             LoadStimulsoftLocalization();
             Settings = AppConfigService.LoadOrCreateDefault();
+            AppThemeService.Apply(Settings.ThemeMode);
             AppDb.Init(Settings);
             DbInitializer.InitTables();
         }

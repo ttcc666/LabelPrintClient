@@ -13,7 +13,52 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         
-        <ui:TitleBar x:Name="TitleBar" Title="标签打印客户端" Grid.Row="0" Margin="0,0,0,0" />
+        <ui:TitleBar x:Name="TitleBar" Title="标签打印客户端" Grid.Row="0" Margin="0,0,0,0">
+            <ui:TitleBar.TrailingContent>
+                <StackPanel Orientation="Horizontal"
+                            VerticalAlignment="Center"
+                            Margin="0,0,8,0">
+                    <TextBlock Text="主题"
+                               VerticalAlignment="Center"
+                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                               Margin="0,0,8,0" />
+                    <Border CornerRadius="6"
+                            Padding="2"
+                            BorderThickness="1"
+                            Background="{DynamicResource ControlFillColorDefaultBrush}"
+                            BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}">
+                        <StackPanel Orientation="Horizontal">
+                            <ui:Button x:Name="SystemThemeButton"
+                                       Content="系统"
+                                       Tag="System"
+                                       Width="44"
+                                       Height="28"
+                                       Padding="0"
+                                       ToolTip="跟随系统主题"
+                                       Click="ThemeButton_Click" />
+                            <ui:Button x:Name="LightThemeButton"
+                                       Content="浅色"
+                                       Tag="Light"
+                                       Width="44"
+                                       Height="28"
+                                       Padding="0"
+                                       Margin="2,0,0,0"
+                                       ToolTip="使用浅色主题"
+                                       Click="ThemeButton_Click" />
+                            <ui:Button x:Name="DarkThemeButton"
+                                       Content="深色"
+                                       Tag="Dark"
+                                       Width="44"
+                                       Height="28"
+                                       Padding="0"
+                                       Margin="2,0,0,0"
+                                       ToolTip="使用深色主题"
+                                       Click="ThemeButton_Click" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ui:TitleBar.TrailingContent>
+        </ui:TitleBar>
 
         <ui:NavigationView x:Name="RootNavigation"
                            Grid.Row="1"

@@ -1,0 +1,254 @@
+<UserControl x:Class="LabelPrintClient.Modules.PrintCenter.Views.PrintCenterView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:infra="clr-namespace:LabelPrintClient.Infrastructure"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
+    <UserControl.Resources>
+        <Style x:Key="SectionTitleStyle" TargetType="ui:TextBlock">
+            <Setter Property="FontTypography" Value="BodyStrong" />
+            <Setter Property="Margin" Value="4,0,0,8" />
+        </Style>
+
+        <Style x:Key="FormLabelStyle" TargetType="TextBlock">
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="0,0,8,0" />
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+        </Style>
+
+        <Style x:Key="CommandGroupStyle" TargetType="StackPanel">
+            <Setter Property="Orientation" Value="Horizontal" />
+            <Setter Property="MinHeight" Value="36" />
+            <Setter Property="Margin" Value="0,0,16,6" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- 顶部：模板选择、Excel 操作、筛选条件 -->
+        <ui:Card Grid.Row="0" Margin="0,0,0,8" Padding="10">
+            <Grid>
+                <WrapPanel VerticalAlignment="Center">
+                    <ui:TextBlock FontTypography="Subtitle" Text="标签打印中心" VerticalAlignment="Center" Margin="0,0,20,6" />
+                    <StackPanel Style="{StaticResource CommandGroupStyle}">
+                    <TextBlock Style="{StaticResource FormLabelStyle}" Text="分类" />
+                    <ComboBox x:Name="CategoryBox" Width="150" DisplayMemberPath="Name"
+                              infra:SearchableComboBoxBehavior.IsEnabled="True"
+                              infra:SearchableComboBoxBehavior.SearchMemberPath="Name"
+                              SelectionChanged="CategoryBox_SelectionChanged" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <StackPanel Style="{StaticResource CommandGroupStyle}">
+                    <TextBlock Style="{StaticResource FormLabelStyle}" Text="模板" />
+                    <ComboBox x:Name="TemplateBox" Width="170" DisplayMemberPath="Name"
+                              infra:SearchableComboBoxBehavior.IsEnabled="True"
+                              infra:SearchableComboBoxBehavior.SearchMemberPath="Name"
+                              SelectionChanged="TemplateBox_SelectionChanged" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <ui:Button Content="刷新" Click="Refresh_Click" Margin="0,0,8,6" Icon="{ui:SymbolIcon ArrowClockwise24}" />
+                    <ui:Button Content="下载 Excel 模板" Click="DownloadExcel_Click" Margin="0,0,8,6" Icon="{ui:SymbolIcon ArrowDown24}" />
+                    <ui:Button Content="导入 Excel" Appearance="Primary" Click="ImportExcel_Click" Margin="0,0,20,6" Icon="{ui:SymbolIcon ArrowUp24}" />
+                    <CheckBox x:Name="OnlyInvalidBox" Content="只看错误" VerticalAlignment="Center" Margin="0,0,16,6"
+                              Checked="Filter_Changed" Unchecked="Filter_Changed" />
+                    <CheckBox x:Name="OnlyUnprintedBox" Content="只看未打印" VerticalAlignment="Center" Margin="0,0,20,6"
+                              Checked="Filter_Changed" Unchecked="Filter_Changed" />
+                    <StackPanel Style="{StaticResource CommandGroupStyle}" Margin="0,0,0,6">
+                    <TextBlock Style="{StaticResource FormLabelStyle}" Text="打印机" />
+                    <ComboBox x:Name="PrinterNameBox" Width="220" VerticalAlignment="Center"
+                              infra:SearchableComboBoxBehavior.IsEnabled="True" />
+                    </StackPanel>
+                </WrapPanel>
+            </Grid>
+        </ui:Card>
+
+        <!-- 中部：批次列表 + 数据明细 -->
+        <Grid Grid.Row="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="1*" MinHeight="150" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="2*" MinHeight="200" />
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" Margin="0,0,0,4">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <DockPanel Grid.Row="0" Margin="0,0,0,8" LastChildFill="False">
+                    <ui:TextBlock DockPanel.Dock="Left" Style="{StaticResource SectionTitleStyle}" Text="导入批次记录" Margin="4,0,16,0" />
+                    <WrapPanel DockPanel.Dock="Right" HorizontalAlignment="Right">
+                        <ui:TextBox x:Name="BatchSearchBox"
+                                    Width="180"
+                                    PlaceholderText="批次/操作人"
+                                    Margin="0,0,8,0"
+                                    KeyDown="BatchSearchBox_KeyDown" />
+                        <ComboBox x:Name="BatchStatusFilterBox"
+                                  Width="110"
+                                  SelectedIndex="0"
+                                  SelectionChanged="BatchStatusFilterBox_SelectionChanged"
+                                  Margin="0,0,8,0">
+                            <ComboBoxItem Content="正常批次" Tag="Active" />
+                            <ComboBoxItem Content="全部" Tag="All" />
+                            <ComboBoxItem Content="已导入" Tag="Imported" />
+                            <ComboBoxItem Content="部分错误" Tag="PartError" />
+                            <ComboBoxItem Content="已作废" Tag="Voided" />
+                        </ComboBox>
+                        <ui:Button Content="查询" Click="BatchFilter_Click" Margin="0,0,8,0" />
+                        <ui:Button Content="刷新批次" Click="LoadBatches_Click" Icon="{ui:SymbolIcon ArrowClockwise24}" />
+                    </WrapPanel>
+                </DockPanel>
+                <ui:Card Grid.Row="1" Padding="0" VerticalAlignment="Stretch" VerticalContentAlignment="Stretch">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <ui:DataGrid x:Name="BatchGrid" SelectionChanged="BatchGrid_SelectionChanged"
+                                     IsReadOnly="True" Margin="0" BorderThickness="0"
+                                     AutoGenerateColumns="False" Grid.Row="0"
+                                     HorizontalScrollBarVisibility="Auto"
+                                     VerticalScrollBarVisibility="Auto">
+                            <DataGrid.Columns>
+                                <DataGridTemplateColumn Header="操作" Width="70">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <ui:Button Content="作废"
+                                                       Width="52"
+                                                       Height="28"
+                                                       Appearance="Danger"
+                                                       Click="VoidBatch_Click" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTextColumn Header="导入时间" Binding="{Binding ImportTime, StringFormat=MM-dd HH:mm}" Width="112" />
+                                <DataGridTextColumn Header="Excel" Binding="{Binding ExcelFileName}" Width="*" MinWidth="130" />
+                                <DataGridTextColumn Header="状态" Binding="{Binding Status}" Width="76" />
+                                <DataGridTextColumn Header="总" Binding="{Binding TotalRows}" Width="44" />
+                                <DataGridTextColumn Header="错" Binding="{Binding InvalidRows}" Width="44" />
+                                <DataGridTextColumn Header="操作人" Binding="{Binding OperatorName}" Width="90" />
+                            </DataGrid.Columns>
+                        </ui:DataGrid>
+                        <TextBlock x:Name="BatchEmptyText"
+                                   Grid.Row="0"
+                                   Text="暂无导入批次"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                   Visibility="Collapsed" />
+                        <Border Grid.Row="1" Padding="0,8,0,0" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" Margin="8,8,8,8">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                <TextBlock Text="每页" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                <ComboBox x:Name="BatchPageSizeBox" Width="68" SelectedIndex="0" SelectionChanged="BatchPageSizeBox_SelectionChanged" Margin="0,0,16,0" VerticalAlignment="Center">
+                                    <ComboBoxItem Content="20" />
+                                    <ComboBoxItem Content="50" />
+                                    <ComboBoxItem Content="100" />
+                                </ComboBox>
+                                <ui:Button x:Name="BatchFirstPageButton" Content="&lt;&lt;" Style="{StaticResource PagerButtonStyle}" Click="BatchFirstPage_Click" />
+                                <ui:Button x:Name="BatchPrevPageButton" Content="&lt;" Style="{StaticResource PagerButtonStyle}" Click="BatchPrevPage_Click" />
+                                <ui:TextBlock x:Name="BatchPageInfoText" VerticalAlignment="Center" MinWidth="70" TextAlignment="Center" FontWeight="SemiBold" />
+                                <ui:Button x:Name="BatchNextPageButton" Content="&gt;" Style="{StaticResource PagerButtonStyle}" Click="BatchNextPage_Click" />
+                                <ui:Button x:Name="BatchLastPageButton" Content="&gt;&gt;" Style="{StaticResource PagerButtonStyle}" Click="BatchLastPage_Click" />
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </ui:Card>
+            </Grid>
+
+            <!-- 拖拽条 -->
+            <GridSplitter Grid.Row="1" Height="6" HorizontalAlignment="Stretch" VerticalAlignment="Center" Background="Transparent" Cursor="SizeNS" Margin="0,2" />
+
+            <Grid Grid.Row="2" Margin="0,4,0,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <DockPanel Grid.Row="0" Margin="0,0,0,8" LastChildFill="False">
+                    <ui:TextBlock DockPanel.Dock="Left" Style="{StaticResource SectionTitleStyle}" Text="批次明细数据" Margin="4,0,16,0" />
+                    <WrapPanel DockPanel.Dock="Right" HorizontalAlignment="Right">
+                        <ui:TextBox x:Name="RowSearchBox"
+                                    Width="180"
+                                    PlaceholderText="行号/字段/错误"
+                                    Margin="0,0,8,0"
+                                    KeyDown="RowSearchBox_KeyDown" />
+                        <ui:Button Content="查询" Click="RowFilter_Click" Margin="0,0,8,0" />
+                        <ui:Button Content="清空" Click="ClearRowFilter_Click" />
+                    </WrapPanel>
+                </DockPanel>
+                <ui:Card Grid.Row="1" Padding="0" VerticalAlignment="Stretch" VerticalContentAlignment="Stretch">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <ui:DataGrid x:Name="RowGrid" Grid.Row="0"
+                                     AutoGenerateColumns="False"
+                                     CanUserAddRows="False"
+                                     FrozenColumnCount="2"
+                                     Margin="0"
+                                     BorderThickness="0"
+                                     HorizontalScrollBarVisibility="Auto"
+                                     VerticalScrollBarVisibility="Auto" />
+                        <TextBlock x:Name="RowEmptyText"
+                                   Grid.Row="0"
+                                   Text="请选择批次查看明细"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                   Visibility="Collapsed" />
+                        <Border Grid.Row="1" Padding="0,8,0,0" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" Margin="8,8,8,8">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                <TextBlock Text="每页" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                <ComboBox x:Name="PageSizeBox" Width="68" SelectedIndex="1" SelectionChanged="PageSizeBox_SelectionChanged" Margin="0,0,16,0" VerticalAlignment="Center">
+                                    <ComboBoxItem Content="20" />
+                                    <ComboBoxItem Content="50" />
+                                    <ComboBoxItem Content="100" />
+                                    <ComboBoxItem Content="200" />
+                                </ComboBox>
+                                <ui:Button x:Name="FirstPageButton" Content="&lt;&lt;" Style="{StaticResource PagerButtonStyle}" Click="FirstPage_Click" />
+                                <ui:Button x:Name="PrevPageButton" Content="&lt;" Style="{StaticResource PagerButtonStyle}" Click="PrevPage_Click" />
+                                <ui:TextBlock x:Name="PageInfoText" VerticalAlignment="Center" MinWidth="70" TextAlignment="Center" FontWeight="SemiBold" />
+                                <ui:Button x:Name="NextPageButton" Content="&gt;" Style="{StaticResource PagerButtonStyle}" Click="NextPage_Click" />
+                                <ui:Button x:Name="LastPageButton" Content="&gt;&gt;" Style="{StaticResource PagerButtonStyle}" Click="LastPage_Click" />
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </ui:Card>
+            </Grid>
+        </Grid>
+
+        <!-- 底部：批量打印操作 -->
+        <ui:Card Grid.Row="2" Padding="10" Margin="0,8,0,0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <ui:TextBlock x:Name="SummaryText"
+                              Grid.Row="0"
+                              VerticalAlignment="Center"
+                              FontTypography="BodyStrong"
+                              Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+
+                <WrapPanel Grid.Row="1" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,8,0,0">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
+                        <TextBlock Style="{StaticResource FormLabelStyle}" Text="份数" />
+                        <ui:TextBox x:Name="PrintCopiesBox" Width="72" Text="1" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <ui:Button Content="全选有效未打印" Click="SelectValidUnprinted_Click" Margin="0,0,8,0" />
+                    <ui:Button Content="全选有效行" Click="SelectValid_Click" Margin="0,0,8,0" />
+                    <ui:Button Content="反选" Click="ReverseSelect_Click" Margin="0,0,8,0" />
+                    <ui:Button Content="清空" Click="ClearSelect_Click" Margin="0,0,16,0" />
+                    <ui:Button Content="批量预览" Click="PreviewSelected_Click" Margin="0,0,8,0" Icon="{ui:SymbolIcon Eye24}" />
+                    <ui:Button Content="批量打印" Appearance="Primary" Click="PrintSelected_Click" Icon="{ui:SymbolIcon Print24}" />
+                </WrapPanel>
+            </Grid>
+        </ui:Card>
+    </Grid>
+</UserControl>

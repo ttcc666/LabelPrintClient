@@ -1,0 +1,37 @@
+<Window x:Class="LabelPrintClient.Modules.Template.Views.CategoryEditWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+        Title="分类维护"
+        Width="400"
+        Height="250"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="{DynamicResource ApplicationBackgroundBrush}">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- 标题 -->
+        <ui:TextBlock x:Name="TitleText" Grid.Row="0" FontTypography="Subtitle" Text="新增分类" Margin="0,0,0,16" />
+
+        <!-- 表单 -->
+        <StackPanel Grid.Row="1">
+            <StackPanel Margin="0,0,0,12">
+                <TextBlock Text="分类名称" Margin="0,0,0,6" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                <ui:TextBox x:Name="NameBox" PlaceholderText="请输入分类名称" MaxLength="50" />
+            </StackPanel>
+
+            <CheckBox x:Name="IsEnabledBox" Content="启用该分类" IsChecked="True" VerticalAlignment="Center" />
+        </StackPanel>
+
+        <!-- 底部按钮 -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
+            <ui:Button Content="确定" Appearance="Primary" Click="Ok_Click" Width="80" Margin="0,0,10,0" />
+            <ui:Button Content="取消" Click="Cancel_Click" Width="80" />
+        </StackPanel>
+    </Grid>
+</Window>

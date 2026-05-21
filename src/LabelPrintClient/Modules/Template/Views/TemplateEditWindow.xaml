@@ -1,0 +1,45 @@
+<Window x:Class="LabelPrintClient.Modules.Template.Views.TemplateEditWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+        Title="模板维护"
+        Width="420"
+        Height="320"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="{DynamicResource ApplicationBackgroundBrush}">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- 标题 -->
+        <ui:TextBlock x:Name="TitleText" Grid.Row="0" FontTypography="Subtitle" Text="新增模板" Margin="0,0,0,16" />
+
+        <!-- 表单 -->
+        <StackPanel Grid.Row="1">
+            <StackPanel Margin="0,0,0,12">
+                <TextBlock Text="模板名称" Margin="0,0,0,6" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                <ui:TextBox x:Name="NameBox" PlaceholderText="请输入模板名称" MaxLength="50" />
+            </StackPanel>
+
+            <StackPanel Margin="0,0,0,12">
+                <TextBlock Text="存储介质" Margin="0,0,0,6" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                <ComboBox x:Name="StorageTypeBox" SelectedIndex="0">
+                    <ComboBoxItem Content="本地物理文件 (LocalFile)" Tag="LocalFile" />
+                    <ComboBoxItem Content="数据库存储 (Database)" Tag="Database" />
+                </ComboBox>
+            </StackPanel>
+
+            <CheckBox x:Name="IsEnabledBox" Content="启用该模板" IsChecked="True" VerticalAlignment="Center" />
+        </StackPanel>
+
+        <!-- 底部按钮 -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
+            <ui:Button Content="确定" Appearance="Primary" Click="Ok_Click" Width="80" Margin="0,0,10,0" />
+            <ui:Button Content="取消" Click="Cancel_Click" Width="80" />
+        </StackPanel>
+    </Grid>
+</Window>

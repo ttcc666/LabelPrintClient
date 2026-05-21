@@ -1,0 +1,978 @@
+using System.IO;
+using System.Windows;
+using System.Windows.Controls;
+using LabelPrintClient.Config;
+using LabelPrintClient.Database;
+using LabelPrintClient.Infrastructure;
+using LabelPrintClient.Modules.PrintCenter.Models;
+using LabelPrintClient.Modules.Template.Models;
+using LabelPrintClient.Modules.Template.Services;
+
+namespace LabelPrintClient.Modules.Template.Views;
+
+public partial class TemplateManageView : System.Windows.Controls.UserControl
+{
+    private const int DefaultTemplatePageSize = 20;
+
+    private CancellationTokenSource? _categoryLoadCts;
+    private CancellationTokenSource? _templateLoadCts;
+    private CancellationTokenSource? _fieldLoadCts;
+    private int _templateCurrentPage = 1;
+    private int _templatePageSize = DefaultTemplatePageSize;
+    private int _templateTotalRows;
+    private int _templateTotalPages = 1;
+
+    public TemplateManageView()
+    {
+        InitializeComponent();
+        RunModeText.Text = App.Settings.RunMode.ToString();
+        Loaded += async (_, _) => await RefreshAllAsync();
+        Unloaded += (_, _) => CancelPendingLoads();
+    }
+
+    private LabelCategory? SelectedCategory => CategoryGrid.SelectedItem as LabelCategory;
+    private LabelTemplate? SelectedTemplate => TemplateGrid.SelectedItem as LabelTemplate;
+    private LabelTemplateField? SelectedField => FieldGrid.SelectedItem as LabelTemplateField;
+
+    private async void Refresh_Click(object sender, RoutedEventArgs e) => await RefreshAllAsync();
+
+    private async void CategoryFilter_Click(object sender, RoutedEventArgs e) => await RefreshAllAsync();
+
+    private async void ClearCategoryFilter_Click(object sender, RoutedEventArgs e)
+    {
+        CategorySearchBox.Text = string.Empty;
+        await RefreshAllAsync();
+    }
+
+    private async void CategorySearchBox_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key != System.Windows.Input.Key.Enter) return;
+        await RefreshAllAsync();
+    }
+
+    private async void TemplateFilter_Click(object sender, RoutedEventArgs e)
+    {
+        _templateCurrentPage = 1;
+        await LoadTemplatesAsync();
+    }
+
+    private async void ClearTemplateFilter_Click(object sender, RoutedEventArgs e)
+    {
+        TemplateSearchBox.Text = string.Empty;
+        _templateCurrentPage = 1;
+        await LoadTemplatesAsync();
+    }
+
+    private async void TemplateSearchBox_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key != System.Windows.Input.Key.Enter) return;
+        _templateCurrentPage = 1;
+        await LoadTemplatesAsync();
+    }
+
+    private async void FieldFilter_Click(object sender, RoutedEventArgs e) => await LoadFieldsAsync();
+
+    private async void ClearFieldFilter_Click(object sender, RoutedEventArgs e)
+    {
+        FieldSearchBox.Text = string.Empty;
+        await LoadFieldsAsync();
+    }
+
+    private async void FieldSearchBox_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key != System.Windows.Input.Key.Enter) return;
+        await LoadFieldsAsync();
+    }
+
+    private async Task RefreshAllAsync()
+    {
+        var token = ResetCancellation(ref _categoryLoadCts);
+        try
+        {
+            var keyword = CategorySearchBox?.Text.Trim() ?? string.Empty;
+            var categoryQuery = AppDb.Db.Queryable<LabelCategory>();
+            if (!string.IsNullOrWhiteSpace(keyword))
+                categoryQuery = categoryQuery.Where(x => x.Name.Contains(keyword));
+
+            var categories = await categoryQuery
+                    .OrderBy(x => x.Sort)
+                    .ToListAsync();
+
+            if (token.IsCancellationRequested ||
+                (CategorySearchBox?.Text.Trim() ?? string.Empty) != keyword)
+            {
+                return;
+            }
+
+            CategoryGrid.ItemsSource = categories;
+            ClearTemplates();
+            UpdateEmptyStates();
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show($"刷新失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private async void CategoryGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        _templateCurrentPage = 1;
+        await LoadTemplatesAsync();
+    }
+
+    private async Task LoadTemplatesAsync()
+    {
+        var category = SelectedCategory;
+        if (category == null)
+        {
+            ClearTemplates();
+            return;
+        }
+
+        var token = ResetCancellation(ref _templateLoadCts);
+        try
+        {
+            var keyword = TemplateSearchBox?.Text.Trim() ?? string.Empty;
+            var templateQuery = AppDb.Db.Queryable<LabelTemplate>()
+                .Where(x => x.CategoryId == category.Id);
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                if (TryParseTemplateStorageType(keyword, out var storageType))
+                    templateQuery = templateQuery.Where(x => x.StorageType == storageType || x.Name.Contains(keyword) || (x.TemplateFileName != null && x.TemplateFileName.Contains(keyword)));
+                else
+                    templateQuery = templateQuery.Where(x => x.Name.Contains(keyword) || (x.TemplateFileName != null && x.TemplateFileName.Contains(keyword)));
+            }
+
+            var totalRows = await templateQuery.CountAsync();
+            var totalPages = Math.Max(1, (int)Math.Ceiling(totalRows / (double)_templatePageSize));
+            var currentPage = Math.Clamp(_templateCurrentPage, 1, totalPages);
+
+            var templates = await templateQuery
+                .OrderBy(x => x.Name)
+                .Skip((currentPage - 1) * _templatePageSize)
+                .Take(_templatePageSize)
+                .ToListAsync();
+
+            if (token.IsCancellationRequested ||
+                SelectedCategory?.Id != category.Id ||
+                (TemplateSearchBox?.Text.Trim() ?? string.Empty) != keyword)
+            {
+                return;
+            }
+
+            _templateTotalRows = totalRows;
+            _templateTotalPages = totalPages;
+            _templateCurrentPage = currentPage;
+            TemplateGrid.ItemsSource = templates;
+            FieldGrid.ItemsSource = null;
+            UpdateTemplatePagination();
+            UpdateEmptyStates();
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show($"加载模板失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private async void TemplateGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        await LoadFieldsAsync();
+    }
+
+    private async Task LoadFieldsAsync(long? selectFieldId = null)
+    {
+        var template = SelectedTemplate;
+        if (template == null)
+        {
+            FieldGrid.ItemsSource = null;
+            return;
+        }
+
+        var token = ResetCancellation(ref _fieldLoadCts);
+        try
+        {
+            var keyword = FieldSearchBox?.Text.Trim() ?? string.Empty;
+            var fieldQuery = AppDb.Db.Queryable<LabelTemplateField>()
+                .Where(x => x.TemplateId == template.Id);
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                fieldQuery = fieldQuery.Where(x =>
+                    x.FieldName.Contains(keyword) ||
+                    x.FieldCode.Contains(keyword) ||
+                    x.FieldType.Contains(keyword) ||
+                    (x.Remark != null && x.Remark.Contains(keyword)));
+            }
+
+            var fields = await fieldQuery
+                    .OrderBy(x => x.Sort)
+                    .ToListAsync();
+
+            if (token.IsCancellationRequested ||
+                SelectedTemplate?.Id != template.Id ||
+                (FieldSearchBox?.Text.Trim() ?? string.Empty) != keyword)
+            {
+                return;
+            }
+            FieldGrid.ItemsSource = fields;
+            if (selectFieldId.HasValue)
+                FieldGrid.SelectedItem = fields.FirstOrDefault(x => x.Id == selectFieldId.Value);
+            UpdateEmptyStates();
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show($"加载字段失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    #region 分类维护 (Dialog 方式)
+
+    private async void AddCategory_Click(object sender, RoutedEventArgs e)
+    {
+        var parentWindow = Window.GetWindow(this);
+        var win = new CategoryEditWindow
+        {
+            Owner = parentWindow
+        };
+
+        if (win.ShowDialog() != true) return;
+
+        var category = win.Category;
+        if (await FindCategoryAsync(category.Name, 0) != null)
+        {
+            System.Windows.MessageBox.Show("分类名称已存在，请勿重复新增。", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        category.Id = IdHelper.NewId();
+        category.Sort = 100;
+
+        await AppDb.Db.Insertable(category).ExecuteCommandAsync();
+        await RefreshAllAsync();
+    }
+
+    private async void EditCategory_Click(object sender, RoutedEventArgs e)
+    {
+        var category = SelectedCategory;
+        if (category == null)
+        {
+            System.Windows.MessageBox.Show("请先选择要编辑的分类。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var parentWindow = Window.GetWindow(this);
+        var win = new CategoryEditWindow(category)
+        {
+            Owner = parentWindow
+        };
+
+        if (win.ShowDialog() != true) return;
+
+        var edited = win.Category;
+        var existing = await FindCategoryAsync(edited.Name, 0);
+        if (existing != null && existing.Id != edited.Id)
+        {
+            System.Windows.MessageBox.Show("分类名称已存在，无法重命名为此名称。", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        await AppDb.Db.Updateable(edited).ExecuteCommandAsync();
+        await RefreshAllAsync();
+    }
+
+    private async void DeleteCategory_Click(object sender, RoutedEventArgs e)
+    {
+        var category = SelectedCategory;
+        if (category == null)
+        {
+            System.Windows.MessageBox.Show("请先选择要删除的分类。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        if (System.Windows.MessageBox.Show($"确定删除分类 {category.Name}？\n这将会同步删除该分类下的所有模板和关联字段！该操作不可恢复！", "确认删除", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+        {
+            return;
+        }
+
+        await AppDb.Db.UseTranAsync(async () =>
+        {
+            var templates = await AppDb.Db.Queryable<LabelTemplate>().Where(x => x.CategoryId == category.Id).ToListAsync();
+            var templateIds = templates.Select(x => x.Id).ToList();
+
+            if (templateIds.Count > 0)
+            {
+                // 删除关联字段
+                await AppDb.Db.Deleteable<LabelTemplateField>().Where(x => templateIds.Contains(x.TemplateId)).ExecuteCommandAsync();
+                // 删除关联模板
+                await AppDb.Db.Deleteable<LabelTemplate>().Where(x => templateIds.Contains(x.Id)).ExecuteCommandAsync();
+            }
+
+            // 删除分类本身
+            await AppDb.Db.Deleteable<LabelCategory>().Where(x => x.Id == category.Id).ExecuteCommandAsync();
+        });
+
+        await RefreshAllAsync();
+    }
+
+    #endregion
+
+    #region 模板维护 (Dialog 方式)
+
+    private async void AddTemplate_Click(object sender, RoutedEventArgs e)
+    {
+        var category = SelectedCategory;
+        if (category == null)
+        {
+            System.Windows.MessageBox.Show("请先选择分类，再新增模板。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var parentWindow = Window.GetWindow(this);
+        var win = new TemplateEditWindow
+        {
+            Owner = parentWindow
+        };
+
+        if (win.ShowDialog() != true) return;
+
+        var template = win.Template;
+        if (await FindTemplateAsync(category.Id, template.Name) != null)
+        {
+            System.Windows.MessageBox.Show("当前分类下已存在同名模板，请勿重复新增。", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        template.Id = IdHelper.NewId();
+        template.CategoryId = category.Id;
+        template.DataSourceName = "LabelData";
+        template.TemplateFileName = $"{template.Name}.mrt";
+        template.Version = 1;
+
+        if (template.StorageType == TemplateStorageType.LocalFile)
+        {
+            template.TemplatePath = BuildLocalTemplatePath(template.Id);
+        }
+
+        await AppDb.Db.Insertable(template).ExecuteCommandAsync();
+        _templateCurrentPage = 1;
+        await LoadTemplatesAsync();
+    }
+
+    private async void EditTemplate_Click(object sender, RoutedEventArgs e)
+    {
+        var template = SelectedTemplate;
+        if (template == null)
+        {
+            System.Windows.MessageBox.Show("请先选择要编辑的模板。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var parentWindow = Window.GetWindow(this);
+        var win = new TemplateEditWindow(template)
+        {
+            Owner = parentWindow
+        };
+
+        if (win.ShowDialog() != true) return;
+
+        var edited = win.Template;
+        var existing = await FindTemplateAsync(edited.CategoryId, edited.Name);
+        if (existing != null && existing.Id != edited.Id)
+        {
+            System.Windows.MessageBox.Show("当前分类下已存在同名模板，无法重命名为此名称。", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        // 处理存储介质转换时的路径/内容调整
+        if (edited.StorageType == TemplateStorageType.LocalFile && template.StorageType == TemplateStorageType.Database)
+        {
+            edited.TemplatePath = BuildLocalTemplatePath(edited.Id);
+            edited.TemplateContent = null;
+        }
+        else if (edited.StorageType == TemplateStorageType.Database && template.StorageType == TemplateStorageType.LocalFile)
+        {
+            edited.TemplatePath = null;
+        }
+
+        await AppDb.Db.Updateable(edited).ExecuteCommandAsync();
+        await LoadTemplatesAsync();
+    }
+
+    private async void DeleteTemplate_Click(object sender, RoutedEventArgs e)
+    {
+        var template = SelectedTemplate;
+        if (template == null)
+        {
+            System.Windows.MessageBox.Show("请先选择要删除的模板。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        if (System.Windows.MessageBox.Show($"确定删除模板 {template.Name}？\n这将同步删除该模板下的所有字段，且不可恢复！", "确认删除", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+        {
+            return;
+        }
+
+        await AppDb.Db.UseTranAsync(async () =>
+        {
+            await AppDb.Db.Deleteable<LabelTemplateField>().Where(x => x.TemplateId == template.Id).ExecuteCommandAsync();
+            await AppDb.Db.Deleteable<LabelTemplate>().Where(x => x.Id == template.Id).ExecuteCommandAsync();
+        });
+
+        // 本地物理文件删除
+        if (template.StorageType == TemplateStorageType.LocalFile && !string.IsNullOrWhiteSpace(template.TemplatePath))
+        {
+            try
+            {
+                if (File.Exists(template.TemplatePath))
+                    File.Delete(template.TemplatePath);
+            }
+            catch { }
+        }
+
+        await LoadTemplatesAsync();
+    }
+
+    #endregion
+
+    #region 字段维护 (Dialog 方式)
+
+    private async void AddField_Click(object sender, RoutedEventArgs e)
+    {
+        var template = SelectedTemplate;
+        if (template == null)
+        {
+            System.Windows.MessageBox.Show("请先选择模板，再新增字段。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var parentWindow = Window.GetWindow(this);
+        var win = new FieldEditWindow
+        {
+            Owner = parentWindow
+        };
+
+        if (win.ShowDialog() != true) return;
+
+        var field = win.Field;
+        var fields = await AppDb.Db.Queryable<LabelTemplateField>()
+            .Where(x => x.TemplateId == template.Id)
+            .ToListAsync();
+
+        var duplicateFieldError = GetDuplicateFieldError(fields, field.FieldName, field.FieldCode, null);
+        if (duplicateFieldError != null)
+        {
+            System.Windows.MessageBox.Show(duplicateFieldError, "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        var maxSort = fields.Count == 0 ? 0 : fields.Max(x => x.Sort);
+        field.Id = IdHelper.NewId();
+        field.TemplateId = template.Id;
+        field.Sort = maxSort + 10;
+
+        await AppDb.Db.Insertable(field).ExecuteCommandAsync();
+        await NormalizeFieldSortAsync(template.Id);
+        await LoadFieldsAsync(field.Id);
+    }
+
+    private async void EditField_Click(object sender, RoutedEventArgs e)
+    {
+        var field = SelectedField;
+        if (field == null)
+        {
+            System.Windows.MessageBox.Show("请先选择要编辑的字段。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var parentWindow = Window.GetWindow(this);
+        var win = new FieldEditWindow(field)
+        {
+            Owner = parentWindow
+        };
+
+        if (win.ShowDialog() != true) return;
+
+        var edited = win.Field;
+        var fields = await AppDb.Db.Queryable<LabelTemplateField>()
+            .Where(x => x.TemplateId == edited.TemplateId)
+            .ToListAsync();
+
+        var duplicateFieldError = GetDuplicateFieldError(fields, edited.FieldName, edited.FieldCode, edited.Id);
+        if (duplicateFieldError != null)
+        {
+            System.Windows.MessageBox.Show(duplicateFieldError, "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        await AppDb.Db.Updateable(edited).ExecuteCommandAsync();
+        await LoadFieldsAsync(edited.Id);
+    }
+
+    private async void DeleteField_Click(object sender, RoutedEventArgs e)
+    {
+        var field = SelectedField;
+        if (field == null)
+        {
+            System.Windows.MessageBox.Show("请先选择要删除的字段。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        if (System.Windows.MessageBox.Show($"确定删除字段 {field.FieldName}？", "确认", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+        {
+            return;
+        }
+
+        await AppDb.Db.Deleteable<LabelTemplateField>().Where(x => x.Id == field.Id).ExecuteCommandAsync();
+        await NormalizeFieldSortAsync(field.TemplateId);
+        await LoadFieldsAsync();
+    }
+
+    #endregion
+
+    private async void UploadTemplate_Click(object sender, RoutedEventArgs e)
+    {
+        var template = SelectedTemplate;
+        if (template == null)
+        {
+            System.Windows.MessageBox.Show("请先选择模板。");
+            return;
+        }
+
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Filter = "STI 报表模板|*.mrt|所有文件|*.*"
+        };
+        if (dialog.ShowDialog() != true) return;
+
+        try
+        {
+            await RunQueuedAsync(sender, BackgroundTaskKind.Upload, "正在上传模板...", context =>
+                UploadTemplateAsync(template, dialog.FileName, context.CancellationToken));
+            await LoadTemplatesAsync();
+            System.Windows.MessageBox.Show("模板已保存。");
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show($"模板保存失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private async Task UploadTemplateAsync(LabelTemplate template, string sourceFileName, CancellationToken cancellationToken)
+    {
+        if (App.Settings.RunMode == AppRunMode.LocalSqlite)
+        {
+            var targetPath = BuildLocalTemplatePath(template.Id);
+            await Task.Run(() => File.Copy(sourceFileName, targetPath, true), cancellationToken);
+            template.StorageType = TemplateStorageType.LocalFile;
+            template.TemplatePath = targetPath;
+            template.TemplateFileName = Path.GetFileName(sourceFileName);
+            template.TemplateHash = await FileHashHelper.GetSha256Async(targetPath, cancellationToken);
+        }
+        else
+        {
+            var bytes = await File.ReadAllBytesAsync(sourceFileName, cancellationToken);
+            template.StorageType = TemplateStorageType.Database;
+            template.TemplateFileName = Path.GetFileName(sourceFileName);
+            template.TemplateContent = bytes;
+            template.TemplatePath = null;
+            template.TemplateHash = FileHashHelper.GetSha256(bytes);
+        }
+
+        template.UpdateTime = DateTime.Now;
+        await AppDb.Db.Updateable(template).ExecuteCommandAsync();
+    }
+
+    private async void TemplateFirstPage_Click(object sender, RoutedEventArgs e)
+    {
+        if (_templateCurrentPage <= 1) return;
+        _templateCurrentPage = 1;
+        await LoadTemplatesAsync();
+    }
+
+    private async void TemplatePrevPage_Click(object sender, RoutedEventArgs e)
+    {
+        if (_templateCurrentPage <= 1) return;
+        _templateCurrentPage--;
+        await LoadTemplatesAsync();
+    }
+
+    private async void TemplateNextPage_Click(object sender, RoutedEventArgs e)
+    {
+        if (_templateCurrentPage >= _templateTotalPages) return;
+        _templateCurrentPage++;
+        await LoadTemplatesAsync();
+    }
+
+    private async void TemplateLastPage_Click(object sender, RoutedEventArgs e)
+    {
+        if (_templateCurrentPage >= _templateTotalPages) return;
+        _templateCurrentPage = _templateTotalPages;
+        await LoadTemplatesAsync();
+    }
+
+    private async void TemplatePageSizeBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        _templatePageSize = GetSelectedTemplatePageSize();
+        _templateCurrentPage = 1;
+        if (SelectedCategory != null)
+            await LoadTemplatesAsync();
+        else
+            UpdateTemplatePagination();
+    }
+
+    private async void DesignTemplate_Click(object sender, RoutedEventArgs e)
+    {
+        var template = SelectedTemplate;
+        if (template == null)
+        {
+            System.Windows.MessageBox.Show("请先选择模板。");
+            return;
+        }
+
+        var fields = await AppDb.Db.Queryable<LabelTemplateField>()
+            .Where(x => x.TemplateId == template.Id)
+            .OrderBy(x => x.Sort)
+            .ToListAsync();
+
+        if (fields.Count == 0)
+        {
+            System.Windows.MessageBox.Show("请先维护模板字段，设计器会根据字段注册 LabelData 数据源。");
+            return;
+        }
+
+        try
+        {
+            var storage = LabelTemplateStorageFactory.Create(App.Settings.RunMode);
+            var designer = new StiTemplateDesignerService(storage);
+            await RunQueuedAsync(sender, BackgroundTaskKind.Design, "正在打开设计器...", context =>
+                designer.DesignAsync(template, fields, context.CancellationToken));
+            await LoadTemplatesAsync();
+            System.Windows.MessageBox.Show("模板设计已保存。");
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show($"打开设计器失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private void FieldGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        // 移除了表单填充逻辑，选择改变现在仅用于选中数据
+    }
+
+    private async void SeedDemo_Click(object sender, RoutedEventArgs e)
+    {
+        var category = await FindCategoryAsync("产品标签", 0);
+        if (category == null)
+        {
+            category = new LabelCategory
+            {
+                Id = IdHelper.NewId(),
+                Name = "产品标签",
+                Sort = 10,
+                IsEnabled = true
+            };
+            await AppDb.Db.Insertable(category).ExecuteCommandAsync();
+        }
+
+        var template = await FindTemplateAsync(category.Id, "产品基础标签");
+        if (template == null)
+        {
+            var storageType = App.Settings.RunMode == AppRunMode.LocalSqlite
+                ? TemplateStorageType.LocalFile
+                : TemplateStorageType.Database;
+
+            var templateId = IdHelper.NewId();
+            template = new LabelTemplate
+            {
+                Id = templateId,
+                CategoryId = category.Id,
+                Name = "产品基础标签",
+                StorageType = storageType,
+                DataSourceName = "LabelData",
+                TemplateFileName = "产品基础标签.mrt",
+                TemplatePath = storageType == TemplateStorageType.LocalFile
+                    ? BuildLocalTemplatePath(templateId)
+                    : null,
+                Version = 1,
+                IsEnabled = true
+            };
+            await AppDb.Db.Insertable(template).ExecuteCommandAsync();
+        }
+
+        var existsFields = await AppDb.Db.Queryable<LabelTemplateField>()
+            .Where(x => x.TemplateId == template.Id)
+            .AnyAsync();
+        if (!existsFields)
+        {
+            var fields = new List<LabelTemplateField>
+            {
+                NewField(template.Id, "产品名称", "ProductName", "string", true, 10, "产品中文名称"),
+                NewField(template.Id, "条码", "Barcode", "string", true, 20, "一维码或二维码内容"),
+                NewField(template.Id, "规格", "Spec", "string", false, 30, "如 500ml"),
+                NewField(template.Id, "数量", "Qty", "int", true, 40, "打印数量或产品数量"),
+                NewField(template.Id, "生产日期", "ProduceDate", "date", false, 50, "yyyy-MM-dd")
+            };
+            await AppDb.Db.Insertable(fields).ExecuteCommandAsync();
+        }
+
+        await RefreshAllAsync();
+        System.Windows.MessageBox.Show("示例分类、模板和字段已初始化。请继续上传或设计 .mrt 模板。");
+    }
+
+    private static LabelTemplateField NewField(long templateId, string name, string code, string type, bool required, int sort, string remark)
+    {
+        return new LabelTemplateField
+        {
+            Id = IdHelper.NewId(),
+            TemplateId = templateId,
+            FieldName = name,
+            FieldCode = code,
+            FieldType = type,
+            IsRequired = required,
+            Sort = sort,
+            Remark = remark
+        };
+    }
+
+    private static string ResolveTemplateFolder()
+    {
+        var folder = App.Settings.LocalTemplateFolder;
+        if (!Path.IsPathRooted(folder))
+            folder = Path.Combine(AppContext.BaseDirectory, folder);
+        Directory.CreateDirectory(folder);
+        return folder;
+    }
+
+    private static string BuildLocalTemplatePath(long templateId)
+    {
+        return Path.Combine(ResolveTemplateFolder(), $"{templateId}.mrt");
+    }
+
+    private void ClearTemplates()
+    {
+        if (TemplateGrid != null)
+            TemplateGrid.ItemsSource = null;
+        if (FieldGrid != null)
+            FieldGrid.ItemsSource = null;
+
+        _templateCurrentPage = 1;
+        _templateTotalRows = 0;
+        _templateTotalPages = 1;
+        UpdateTemplatePagination();
+        UpdateEmptyStates();
+    }
+
+    private void UpdateTemplatePagination()
+    {
+        if (TemplatePageInfoText == null ||
+            TemplateFirstPageButton == null || TemplatePrevPageButton == null ||
+            TemplateNextPageButton == null || TemplateLastPageButton == null)
+        {
+            return;
+        }
+
+        TemplatePageInfoText.Text = $"{_templateCurrentPage} / {_templateTotalPages}，共 {_templateTotalRows} 个";
+
+        var hasRows = _templateTotalRows > 0;
+        TemplateFirstPageButton.IsEnabled = hasRows && _templateCurrentPage > 1;
+        TemplatePrevPageButton.IsEnabled = hasRows && _templateCurrentPage > 1;
+        TemplateNextPageButton.IsEnabled = hasRows && _templateCurrentPage < _templateTotalPages;
+        TemplateLastPageButton.IsEnabled = hasRows && _templateCurrentPage < _templateTotalPages;
+    }
+
+    private void UpdateEmptyStates()
+    {
+        if (CategoryEmptyText != null)
+        {
+            var categoryCount = CategoryGrid?.ItemsSource?.Cast<object>().Count() ?? 0;
+            CategoryEmptyText.Visibility = categoryCount == 0 ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        if (TemplateEmptyText != null)
+        {
+            TemplateEmptyText.Text = SelectedCategory == null ? "请选择分类查看模板" : "当前分类暂无模板";
+            TemplateEmptyText.Visibility = _templateTotalRows == 0 ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        if (FieldEmptyText != null)
+        {
+            var fieldCount = FieldGrid?.ItemsSource?.Cast<object>().Count() ?? 0;
+            FieldEmptyText.Text = SelectedTemplate == null ? "请选择模板查看字段" : "当前模板暂无字段";
+            FieldEmptyText.Visibility = fieldCount == 0 ? Visibility.Visible : Visibility.Collapsed;
+        }
+    }
+
+    private int GetSelectedTemplatePageSize()
+    {
+        if (TemplatePageSizeBox?.SelectedItem is ComboBoxItem item &&
+            int.TryParse(item.Content?.ToString(), out var pageSize) &&
+            pageSize > 0)
+        {
+            return pageSize;
+        }
+
+        return DefaultTemplatePageSize;
+    }
+
+    private static bool TryParseTemplateStorageType(string keyword, out TemplateStorageType storageType)
+    {
+        var normalized = keyword.Trim();
+        if (normalized.Contains("本地", StringComparison.OrdinalIgnoreCase) ||
+            normalized.Contains("file", StringComparison.OrdinalIgnoreCase) ||
+            normalized.Contains("local", StringComparison.OrdinalIgnoreCase))
+        {
+            storageType = TemplateStorageType.LocalFile;
+            return true;
+        }
+
+        if (normalized.Contains("数据库", StringComparison.OrdinalIgnoreCase) ||
+            normalized.Contains("database", StringComparison.OrdinalIgnoreCase) ||
+            normalized.Contains("db", StringComparison.OrdinalIgnoreCase))
+        {
+            storageType = TemplateStorageType.Database;
+            return true;
+        }
+
+        return Enum.TryParse(normalized, true, out storageType);
+    }
+
+    private async Task<LabelCategory?> FindCategoryAsync(string name, long parentId)
+    {
+        var categories = await AppDb.Db.Queryable<LabelCategory>()
+            .Where(x => x.ParentId == parentId)
+            .ToListAsync();
+        return categories.FirstOrDefault(x => string.Equals(x.Name.Trim(), name, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private async Task<LabelTemplate?> FindTemplateAsync(long categoryId, string name)
+    {
+        var templates = await AppDb.Db.Queryable<LabelTemplate>()
+            .Where(x => x.CategoryId == categoryId)
+            .ToListAsync();
+        return templates.FirstOrDefault(x => string.Equals(x.Name.Trim(), name, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private async void MoveFieldUp_Click(object sender, RoutedEventArgs e)
+    {
+        await MoveSelectedFieldAsync(-1);
+    }
+
+    private async void MoveFieldDown_Click(object sender, RoutedEventArgs e)
+    {
+        await MoveSelectedFieldAsync(1);
+    }
+
+    private async Task MoveSelectedFieldAsync(int direction)
+    {
+        var template = SelectedTemplate;
+        var field = SelectedField;
+        if (template == null || field == null)
+        {
+            System.Windows.MessageBox.Show("请先选择字段。");
+            return;
+        }
+
+        var fields = await AppDb.Db.Queryable<LabelTemplateField>()
+            .Where(x => x.TemplateId == template.Id)
+            .OrderBy(x => x.Sort)
+            .OrderBy(x => x.Id)
+            .ToListAsync();
+
+        var index = fields.FindIndex(x => x.Id == field.Id);
+        var targetIndex = index + direction;
+        if (index < 0 || targetIndex < 0 || targetIndex >= fields.Count)
+            return;
+
+        (fields[index].Sort, fields[targetIndex].Sort) = (fields[targetIndex].Sort, fields[index].Sort);
+        await AppDb.Db.Updateable(new[] { fields[index], fields[targetIndex] }).ExecuteCommandAsync();
+        await NormalizeFieldSortAsync(template.Id);
+        await LoadFieldsAsync(field.Id);
+    }
+
+    private async Task NormalizeFieldSortAsync(long templateId)
+    {
+        var fields = await AppDb.Db.Queryable<LabelTemplateField>()
+            .Where(x => x.TemplateId == templateId)
+            .OrderBy(x => x.Sort)
+            .OrderBy(x => x.Id)
+            .ToListAsync();
+
+        for (var i = 0; i < fields.Count; i++)
+            fields[i].Sort = (i + 1) * 10;
+
+        if (fields.Count > 0)
+            await AppDb.Db.Updateable(fields).ExecuteCommandAsync();
+    }
+
+    private static string? GetDuplicateFieldError(IEnumerable<LabelTemplateField> fields, string name, string code, long? excludeFieldId)
+    {
+        var candidates = excludeFieldId.HasValue
+            ? fields.Where(x => x.Id != excludeFieldId.Value)
+            : fields;
+
+        if (candidates.Any(x => string.Equals(x.FieldName.Trim(), name, StringComparison.OrdinalIgnoreCase)))
+            return "字段名已存在，请勿重复新增。";
+
+        if (candidates.Any(x => string.Equals(x.FieldCode.Trim(), code, StringComparison.OrdinalIgnoreCase)))
+            return "字段编码已存在，请勿重复新增。";
+
+        return null;
+    }
+
+    private async Task RunQueuedAsync(object sender, string runningText, Func<CancellationToken, Task> operation)
+    {
+        await RunQueuedAsync(sender, BackgroundTaskKind.Other, runningText, context => operation(context.CancellationToken));
+    }
+
+    private async Task RunQueuedAsync(object sender, BackgroundTaskKind kind, string runningText, Func<BackgroundTaskContext, Task> operation)
+    {
+        var element = sender as UIElement;
+        var modeText = App.Settings.RunMode.ToString();
+
+        if (element != null)
+            element.IsEnabled = false;
+        RunModeText.Text = $"{modeText} · {runningText}";
+
+        try
+        {
+            await BackgroundTaskQueue.Shared.EnqueueAsync(kind, runningText, operation);
+        }
+        finally
+        {
+            if (element != null)
+                element.IsEnabled = true;
+            RunModeText.Text = modeText;
+        }
+    }
+
+    private static CancellationToken ResetCancellation(ref CancellationTokenSource? cts)
+    {
+        cts?.Cancel();
+        cts?.Dispose();
+        cts = new CancellationTokenSource();
+        return cts.Token;
+    }
+
+    private void CancelPendingLoads()
+    {
+        CancelAndDispose(ref _categoryLoadCts);
+        CancelAndDispose(ref _templateLoadCts);
+        CancelAndDispose(ref _fieldLoadCts);
+    }
+
+    private static void CancelAndDispose(ref CancellationTokenSource? cts)
+    {
+        cts?.Cancel();
+        cts?.Dispose();
+        cts = null;
+    }
+}

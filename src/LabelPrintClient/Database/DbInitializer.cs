@@ -1,4 +1,5 @@
-using LabelPrintClient.Models;
+using LabelPrintClient.Modules.PrintCenter.Models;
+using LabelPrintClient.Modules.Template.Models;
 
 namespace LabelPrintClient.Database;
 

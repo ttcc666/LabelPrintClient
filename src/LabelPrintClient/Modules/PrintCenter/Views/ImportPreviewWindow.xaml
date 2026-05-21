@@ -1,0 +1,73 @@
+<Window x:Class="LabelPrintClient.Modules.PrintCenter.Views.ImportPreviewWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+        Title="导入前预览"
+        Width="980"
+        Height="620"
+        WindowStartupLocation="CenterOwner">
+    <Grid Margin="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <ui:Card Grid.Row="0" Padding="10" Margin="0,0,0,8">
+            <DockPanel LastChildFill="False">
+                <StackPanel DockPanel.Dock="Left">
+                    <ui:TextBlock FontTypography="Subtitle" Text="导入前预览" />
+                    <TextBlock x:Name="SummaryText"
+                               Margin="0,4,0,0"
+                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                               TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+                <WrapPanel DockPanel.Dock="Right" VerticalAlignment="Center">
+                    <ui:TextBox x:Name="PreviewSearchBox"
+                                Width="180"
+                                PlaceholderText="行号/字段/错误"
+                                Margin="0,0,8,0"
+                                KeyDown="PreviewSearchBox_KeyDown" />
+                    <ui:Button Content="查询" Click="ApplyFilter_Click" Margin="0,0,8,0" />
+                    <ui:Button Content="清空" Click="ClearFilter_Click" Margin="0,0,12,0" />
+                    <CheckBox x:Name="OnlyErrorRowsBox"
+                              Content="只看错误"
+                              VerticalAlignment="Center"
+                              Checked="OnlyErrorRowsBox_Changed"
+                              Unchecked="OnlyErrorRowsBox_Changed" />
+                </WrapPanel>
+            </DockPanel>
+        </ui:Card>
+
+        <ui:Card Grid.Row="1" Padding="0" VerticalAlignment="Stretch" VerticalContentAlignment="Stretch">
+            <Grid>
+                <ui:DataGrid x:Name="PreviewGrid"
+                             AutoGenerateColumns="False"
+                             IsReadOnly="True"
+                             Margin="0"
+                             BorderThickness="0"
+                             HorizontalScrollBarVisibility="Auto"
+                             VerticalScrollBarVisibility="Auto" />
+                <TextBlock x:Name="EmptyText"
+                           Text="没有可预览的数据"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                           Visibility="Collapsed" />
+            </Grid>
+        </ui:Card>
+
+        <ui:Card Grid.Row="2" Padding="10" Margin="0,8,0,0">
+            <DockPanel LastChildFill="False">
+                <TextBlock DockPanel.Dock="Left"
+                           Text="确认后才会写入导入批次和明细数据。"
+                           VerticalAlignment="Center"
+                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                <WrapPanel DockPanel.Dock="Right">
+                    <ui:Button Content="取消" Click="Cancel_Click" Margin="0,0,8,0" />
+                    <ui:Button Content="确认导入" Appearance="Primary" Click="Confirm_Click" Icon="{ui:SymbolIcon Checkmark24}" />
+                </WrapPanel>
+            </DockPanel>
+        </ui:Card>
+    </Grid>
+</Window>
