@@ -1,4 +1,4 @@
-using LabelPrintClient.Infrastructure;
+﻿using LabelPrintClient.Infrastructure;
 using LabelPrintClient.Modules.Template.Models;
 
 namespace LabelPrintClient.Modules.PrintCenter.ViewModels;
@@ -79,3 +79,4 @@ public static class GridRowDataHelper
             data[key] = string.Empty;
     }
 }
+

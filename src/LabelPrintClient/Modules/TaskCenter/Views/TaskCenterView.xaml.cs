@@ -1,4 +1,4 @@
-using System.Collections.Specialized;
+﻿using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
@@ -156,3 +156,5 @@ public partial class TaskCenterView : System.Windows.Controls.UserControl
                value.Contains(keyword, StringComparison.OrdinalIgnoreCase);
     }
 }
+
+

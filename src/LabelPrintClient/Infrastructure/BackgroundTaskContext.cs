@@ -1,4 +1,4 @@
-namespace LabelPrintClient.Infrastructure;
+﻿namespace LabelPrintClient.Infrastructure;
 
 public sealed class BackgroundTaskContext
 {
@@ -30,3 +30,4 @@ public sealed class BackgroundTaskContext
         Report(new BackgroundTaskProgress(current, total, message));
     }
 }
+

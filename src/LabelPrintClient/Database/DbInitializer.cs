@@ -1,4 +1,4 @@
-using LabelPrintClient.Modules.PrintCenter.Models;
+﻿using LabelPrintClient.Modules.PrintCenter.Models;
 using LabelPrintClient.Modules.Template.Models;
 
 namespace LabelPrintClient.Database;
@@ -18,3 +18,4 @@ public static class DbInitializer
         AppDb.Db.CodeFirst.InitTables<LabelPrintJobRow>();
     }
 }
+

@@ -1,4 +1,4 @@
-namespace LabelPrintClient.Config;
+﻿namespace LabelPrintClient.Config;
 
 public enum AppThemeMode
 {
@@ -6,3 +6,4 @@ public enum AppThemeMode
     Light = 1,
     Dark = 2
 }
+

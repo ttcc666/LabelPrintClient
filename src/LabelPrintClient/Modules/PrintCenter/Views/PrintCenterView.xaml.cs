@@ -483,7 +483,7 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         RowGrid.Columns.Add(new DataGridTemplateColumn
         {
             Header = "操作",
-            Width = 124,
+            Width = DataGridLength.Auto,
             CellTemplate = BuildRowActionTemplate()
         });
         RowGrid.Columns.Add(new DataGridCheckBoxColumn
@@ -535,16 +535,14 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         };
     }
 
-    private static FrameworkElementFactory BuildRowActionButton(string content, RoutedEventHandler clickHandler, bool isPrimary)
+    private static FrameworkElementFactory BuildRowActionButton(string content, System.Windows.RoutedEventHandler clickHandler, bool isPrimary)
     {
-        var button = new FrameworkElementFactory(typeof(Wpf.Ui.Controls.Button));
-        button.SetValue(ContentControl.ContentProperty, content);
-        button.SetValue(FrameworkElement.WidthProperty, 52.0);
-        button.SetValue(FrameworkElement.HeightProperty, 28.0);
-        button.SetBinding(UIElement.IsEnabledProperty, new System.Windows.Data.Binding(nameof(ImportRowGridItem.IsValid)));
+        var button = new FrameworkElementFactory(typeof(System.Windows.Controls.Button));
+        button.SetValue(System.Windows.Controls.ContentControl.ContentProperty, content);
+        button.SetValue(System.Windows.FrameworkElement.HeightProperty, 28.0);
+        button.SetValue(System.Windows.FrameworkElement.StyleProperty, System.Windows.Application.Current.FindResource(isPrimary ? "ButtonPrimary" : "ButtonDanger"));
+        button.SetBinding(System.Windows.UIElement.IsEnabledProperty, new System.Windows.Data.Binding(nameof(ImportRowGridItem.IsValid)));
         button.AddHandler(System.Windows.Controls.Primitives.ButtonBase.ClickEvent, clickHandler);
-        if (isPrimary)
-            button.SetValue(Wpf.Ui.Controls.Button.AppearanceProperty, Wpf.Ui.Controls.ControlAppearance.Primary);
         return button;
     }
 
@@ -1094,3 +1092,5 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         cts = null;
     }
 }
+
+

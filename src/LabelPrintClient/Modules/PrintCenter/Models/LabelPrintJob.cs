@@ -1,4 +1,4 @@
-using SqlSugar;
+﻿using SqlSugar;
 
 namespace LabelPrintClient.Modules.PrintCenter.Models;
 
@@ -34,3 +34,4 @@ public class LabelPrintJob
     [SugarColumn(ColumnDataType = "TEXT", IsNullable = true)]
     public string? ErrorMessage { get; set; }
 }
+

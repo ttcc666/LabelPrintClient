@@ -1,4 +1,4 @@
-using System.Data;
+﻿using System.Data;
 using LabelPrintClient.Infrastructure;
 using LabelPrintClient.Modules.PrintCenter.Models;
 using LabelPrintClient.Modules.Template.Models;
@@ -39,3 +39,4 @@ public static class DataTableBuilder
         return table;
     }
 }
+

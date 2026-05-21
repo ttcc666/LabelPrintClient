@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using LabelPrintClient.Config;
 using SqlSugar;
 
@@ -84,3 +84,4 @@ public static class AppDb
         return string.Join(';', parts);
     }
 }
+

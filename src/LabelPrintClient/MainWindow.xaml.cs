@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using HandyControl.Controls;
 using LabelPrintClient.Config;
 using LabelPrintClient.Modules.PrintCenter.Views;
 using LabelPrintClient.Modules.Template.Views;
@@ -7,11 +8,10 @@ using LabelPrintClient.Modules.PrintHistory.Views;
 using LabelPrintClient.Modules.TaskCenter.Views;
 using LabelPrintClient.Modules.Settings.Views;
 using LabelPrintClient.Services;
-using Wpf.Ui.Controls;
 
 namespace LabelPrintClient;
 
-public partial class MainWindow : FluentWindow
+public partial class MainWindow : System.Windows.Window
 {
     private readonly PrintCenterView _printCenterView = new();
     private readonly PrintHistoryView _printHistoryView = new();
@@ -27,25 +27,17 @@ public partial class MainWindow : FluentWindow
         WorkspaceContent.Content = _printCenterView;
         Loaded += (_, _) =>
         {
-            if (RootNavigation.MenuItems.Count > 0 && RootNavigation.MenuItems[0] is NavigationViewItem firstItem)
+            if (RootNavigation.Items.Count > 0)
             {
-                firstItem.IsActive = true;
+                RootNavigation.SelectedIndex = 0;
             }
         };
         Closed += (_, _) => AppThemeService.ThemeModeChanged -= AppThemeService_ThemeModeChanged;
     }
 
-    private async void NavItem_Click(object sender, RoutedEventArgs e)
+    private async void RootNavigation_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (sender is not NavigationViewItem clickedItem) return;
-
-        foreach (var menuItem in RootNavigation.MenuItems)
-        {
-            if (menuItem is NavigationViewItem item)
-            {
-                item.IsActive = (item == clickedItem);
-            }
-        }
+        if (RootNavigation.SelectedItem is not ListBoxItem clickedItem) return;
 
         switch (clickedItem.Tag?.ToString())
         {
@@ -103,8 +95,20 @@ public partial class MainWindow : FluentWindow
 
     private void SelectThemeMode(AppThemeMode themeMode)
     {
-        SystemThemeButton.Appearance = themeMode == AppThemeMode.System ? ControlAppearance.Primary : ControlAppearance.Transparent;
-        LightThemeButton.Appearance = themeMode == AppThemeMode.Light ? ControlAppearance.Primary : ControlAppearance.Transparent;
-        DarkThemeButton.Appearance = themeMode == AppThemeMode.Dark ? ControlAppearance.Primary : ControlAppearance.Transparent;
+        var primaryBrush = FindResource("PrimaryBrush") as System.Windows.Media.Brush ?? System.Windows.Media.Brushes.DodgerBlue;
+        var transparentBrush = System.Windows.Media.Brushes.Transparent;
+        var whiteText = System.Windows.Media.Brushes.White;
+        var primaryText = FindResource("PrimaryTextBrush") as System.Windows.Media.Brush ?? System.Windows.Media.Brushes.Black;
+
+        SystemThemeButton.Background = themeMode == AppThemeMode.System ? primaryBrush : transparentBrush;
+        SystemThemeButton.Foreground = themeMode == AppThemeMode.System ? whiteText : primaryText;
+
+        LightThemeButton.Background = themeMode == AppThemeMode.Light ? primaryBrush : transparentBrush;
+        LightThemeButton.Foreground = themeMode == AppThemeMode.Light ? whiteText : primaryText;
+
+        DarkThemeButton.Background = themeMode == AppThemeMode.Dark ? primaryBrush : transparentBrush;
+        DarkThemeButton.Foreground = themeMode == AppThemeMode.Dark ? whiteText : primaryText;
     }
 }
+
+

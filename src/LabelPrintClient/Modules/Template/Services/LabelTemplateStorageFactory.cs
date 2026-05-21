@@ -1,4 +1,4 @@
-using LabelPrintClient.Config;
+﻿using LabelPrintClient.Config;
 
 namespace LabelPrintClient.Modules.Template.Services;
 
@@ -11,3 +11,4 @@ public static class LabelTemplateStorageFactory
             : new DatabaseTemplateStorageService();
     }
 }
+

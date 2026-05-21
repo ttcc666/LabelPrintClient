@@ -1,4 +1,4 @@
-using SqlSugar;
+﻿using SqlSugar;
 
 namespace LabelPrintClient.Modules.PrintCenter.Models;
 
@@ -31,3 +31,4 @@ public class LabelImportRow
 
     public DateTime CreateTime { get; set; } = DateTime.Now;
 }
+

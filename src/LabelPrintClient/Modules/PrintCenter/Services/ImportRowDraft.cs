@@ -1,4 +1,4 @@
-namespace LabelPrintClient.Modules.PrintCenter.Services;
+﻿namespace LabelPrintClient.Modules.PrintCenter.Services;
 
 public class ImportRowDraft
 {
@@ -12,3 +12,4 @@ public class ImportRowDraft
 
     public string ErrorMessage => string.Join("；", Errors);
 }
+

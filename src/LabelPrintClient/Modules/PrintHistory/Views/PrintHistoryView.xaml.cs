@@ -262,7 +262,7 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
         RowGrid.Columns.Add(new DataGridTemplateColumn
         {
             Header = "操作",
-            Width = 70,
+            Width = DataGridLength.Auto,
             CellTemplate = BuildRowActionTemplate()
         });
         RowGrid.Columns.Add(new DataGridTextColumn
@@ -321,14 +321,13 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
 
     private DataTemplate BuildRowActionTemplate()
     {
-        var button = new FrameworkElementFactory(typeof(Wpf.Ui.Controls.Button));
-        button.SetValue(ContentControl.ContentProperty, "重打");
-        button.SetValue(FrameworkElement.WidthProperty, 52.0);
-        button.SetValue(FrameworkElement.HeightProperty, 28.0);
-        button.SetValue(Wpf.Ui.Controls.Button.AppearanceProperty, Wpf.Ui.Controls.ControlAppearance.Primary);
-        button.AddHandler(System.Windows.Controls.Primitives.ButtonBase.ClickEvent, new RoutedEventHandler(ReprintJobRow_Click));
+        var button = new FrameworkElementFactory(typeof(System.Windows.Controls.Button));
+        button.SetValue(System.Windows.Controls.ContentControl.ContentProperty, "重打");
+        button.SetValue(System.Windows.FrameworkElement.HeightProperty, 28.0);
+        button.SetValue(System.Windows.FrameworkElement.StyleProperty, System.Windows.Application.Current.FindResource("ButtonPrimary"));
+        button.AddHandler(System.Windows.Controls.Primitives.ButtonBase.ClickEvent, new System.Windows.RoutedEventHandler(ReprintJobRow_Click));
 
-        return new DataTemplate
+        return new System.Windows.DataTemplate
         {
             VisualTree = button
         };

@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -55,3 +55,4 @@ public static class AppConfigService
         return options;
     }
 }
+

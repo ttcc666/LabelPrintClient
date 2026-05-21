@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Windows;
 using LabelPrintClient.Config;
 using LabelPrintClient.Database;
@@ -44,3 +44,5 @@ public partial class App : System.Windows.Application
             StiOptions.Localization.Load(localizationFile);
     }
 }
+
+

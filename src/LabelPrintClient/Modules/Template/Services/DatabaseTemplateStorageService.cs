@@ -1,4 +1,4 @@
-using LabelPrintClient.Database;
+﻿using LabelPrintClient.Database;
 using LabelPrintClient.Infrastructure;
 using LabelPrintClient.Modules.PrintCenter.Models;
 using LabelPrintClient.Modules.Template.Models;
@@ -42,3 +42,4 @@ public class DatabaseTemplateStorageService : ILabelTemplateStorageService
         await AppDb.Db.Updateable(template).ExecuteCommandAsync().ConfigureAwait(false);
     }
 }
+

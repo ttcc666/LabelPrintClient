@@ -1,4 +1,4 @@
-using LabelPrintClient.Modules.PrintCenter.Models;
+﻿using LabelPrintClient.Modules.PrintCenter.Models;
 using LabelPrintClient.Modules.Template.Models;
 using Stimulsoft.Report;
 
@@ -12,3 +12,4 @@ public interface ILabelTemplateStorageService
 
     Task SaveReportAsync(LabelTemplate template, StiReport report, CancellationToken cancellationToken = default);
 }
+

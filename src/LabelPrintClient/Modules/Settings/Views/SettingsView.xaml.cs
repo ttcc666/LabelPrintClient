@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Drawing.Printing;
 using System.Windows;
 using System.Windows.Controls;
@@ -310,3 +310,5 @@ public partial class SettingsView : System.Windows.Controls.UserControl
         return Directory.Exists(path) ? path : AppContext.BaseDirectory;
     }
 }
+
+

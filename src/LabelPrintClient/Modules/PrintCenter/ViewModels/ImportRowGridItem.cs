@@ -1,4 +1,4 @@
-using LabelPrintClient.Infrastructure;
+﻿using LabelPrintClient.Infrastructure;
 
 namespace LabelPrintClient.Modules.PrintCenter.ViewModels;
 
@@ -26,3 +26,4 @@ public class ImportRowGridItem : NotifyObject
 
     public Dictionary<string, string> Data { get; set; } = new();
 }
+

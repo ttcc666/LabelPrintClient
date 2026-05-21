@@ -1,10 +1,11 @@
-<UserControl x:Class="LabelPrintClient.Modules.Template.Views.TemplateManageView"
+﻿<UserControl x:Class="LabelPrintClient.Modules.Template.Views.TemplateManageView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
+        xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+             xmlns:hc="https://handyorg.github.io/handycontrol">
     <UserControl.Resources>
-        <Style x:Key="SectionTitleStyle" TargetType="ui:TextBlock">
-            <Setter Property="FontTypography" Value="BodyStrong" />
+        <Style x:Key="SectionTitleStyle" TargetType="TextBlock">
+
             <Setter Property="Margin" Value="4,0,0,8" />
         </Style>
     </UserControl.Resources>
@@ -16,20 +17,25 @@
         </Grid.RowDefinitions>
 
         <!-- 顶部：页面命令条 -->
-        <ui:Card Grid.Row="0" Margin="0,0,0,8" Padding="10">
+        <Border Background="{DynamicResource RegionBrush}" CornerRadius="4" Grid.Row="0" Margin="0,0,0,8" Padding="10">
             <DockPanel LastChildFill="False">
                 <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center">
-                    <ui:TextBlock FontTypography="Subtitle" Text="模板维护" VerticalAlignment="Center" Margin="0,0,20,0" />
+                    <TextBlock Text="模板维护" VerticalAlignment="Center" Margin="0,0,20,0" />
                     <TextBlock Text="模式: " VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                     <TextBlock x:Name="RunModeText" VerticalAlignment="Center" FontWeight="SemiBold" />
                 </StackPanel>
 
                 <WrapPanel DockPanel.Dock="Right" HorizontalAlignment="Right" VerticalAlignment="Center">
-                    <ui:Button Content="刷新" Click="Refresh_Click" Margin="0,0,8,0" Icon="{ui:SymbolIcon ArrowClockwise24}" />
-                    <ui:Button Content="初始化示例数据" Click="SeedDemo_Click" Icon="{ui:SymbolIcon Database24}" />
+                    <Button  Click="Refresh_Click" Margin="0,0,8,0" >
+        <StackPanel Orientation="Horizontal">
+            <iconPacks:PackIconMaterial Kind="Refresh" Margin="0,0,6,0" VerticalAlignment="Center"/>
+            <TextBlock Text="刷新" VerticalAlignment="Center"/>
+        </StackPanel>
+    </Button>
+                    <Button Content="初始化示例数据" Click="SeedDemo_Click" />
                 </WrapPanel>
             </DockPanel>
-        </ui:Card>
+        </Border>
 
         <!-- 主从三栏：分类 -> 模板 -> 字段 -->
         <Grid Grid.Row="1">
@@ -48,8 +54,8 @@
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
-                <ui:TextBlock Grid.Row="0" Style="{StaticResource SectionTitleStyle}" Text="标签分类" />
-                <ui:Card Grid.Row="1" Padding="10" VerticalAlignment="Stretch" VerticalContentAlignment="Stretch">
+                <TextBlock Grid.Row="0" Style="{StaticResource SectionTitleStyle}" Text="标签分类" />
+                <Border Background="{DynamicResource RegionBrush}" CornerRadius="4" Grid.Row="1" Padding="10" VerticalAlignment="Stretch">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -59,23 +65,38 @@
                         
                         <!-- 分类操作按钮栏 -->
                         <WrapPanel Grid.Row="0" Margin="0,0,0,4">
-                            <ui:Button Content="新增分类" Appearance="Primary" Click="AddCategory_Click" Margin="0,0,8,8" Icon="{ui:SymbolIcon Add24}" />
-                            <ui:Button Content="编辑" Click="EditCategory_Click" Margin="0,0,8,8" Icon="{ui:SymbolIcon Edit24}" />
-                            <ui:Button Content="删除" Appearance="Danger" Click="DeleteCategory_Click" Margin="0,0,8,8" Icon="{ui:SymbolIcon Delete24}" />
+                            <Button Content="新增分类" Click="AddCategory_Click" Margin="0,0,8,8" />
+                            <Button Content="编辑" Click="EditCategory_Click" Margin="0,0,8,8" />
+                            <Button  Style="{StaticResource ButtonDanger}" Click="DeleteCategory_Click" Margin="0,0,8,8" >
+        <StackPanel Orientation="Horizontal">
+            <iconPacks:PackIconMaterial Kind="Delete" Margin="0,0,6,0" VerticalAlignment="Center"/>
+            <TextBlock Text="删除" VerticalAlignment="Center"/>
+        </StackPanel>
+    </Button>
                         </WrapPanel>
 
                         <!-- 分类搜索过滤 -->
                         <WrapPanel Grid.Row="1" Margin="0,0,0,4">
-                            <ui:TextBox x:Name="CategorySearchBox"
+                            <TextBox x:Name="CategorySearchBox"
                                         Width="130"
-                                        PlaceholderText="搜索分类"
+                                       
                                         Margin="0,0,8,8"
                                         KeyDown="CategorySearchBox_KeyDown" />
-                            <ui:Button Content="查询" Click="CategoryFilter_Click" Margin="0,0,8,8" />
-                            <ui:Button Content="清空" Click="ClearCategoryFilter_Click" Margin="0,0,8,8" />
+                            <Button  Style="{StaticResource ButtonPrimary}" Click="CategoryFilter_Click" Margin="0,0,8,8" >
+        <StackPanel Orientation="Horizontal">
+            <iconPacks:PackIconMaterial Kind="Magnify" Margin="0,0,6,0" VerticalAlignment="Center"/>
+            <TextBlock Text="查询" VerticalAlignment="Center"/>
+        </StackPanel>
+    </Button>
+                            <Button  Style="{StaticResource ButtonDanger}" Click="ClearCategoryFilter_Click" Margin="0,0,8,8" >
+        <StackPanel Orientation="Horizontal">
+            <iconPacks:PackIconMaterial Kind="FilterRemoveOutline" Margin="0,0,6,0" VerticalAlignment="Center"/>
+            <TextBlock Text="清空" VerticalAlignment="Center"/>
+        </StackPanel>
+    </Button>
                         </WrapPanel>
 
-                        <ui:DataGrid x:Name="CategoryGrid"
+                        <DataGrid x:Name="CategoryGrid"
                                      Grid.Row="2"
                                      SelectionChanged="CategoryGrid_SelectionChanged"
                                      AutoGenerateColumns="False"
@@ -87,7 +108,7 @@
                                 <DataGridTextColumn Header="名称" Binding="{Binding Name}" Width="*" MinWidth="120" />
                                 <DataGridCheckBoxColumn Header="启用" Binding="{Binding IsEnabled}" Width="56" />
                             </DataGrid.Columns>
-                        </ui:DataGrid>
+                        </DataGrid>
                         <TextBlock x:Name="CategoryEmptyText"
                                    Grid.Row="2"
                                    Text="暂无标签分类"
@@ -96,7 +117,7 @@
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                    Visibility="Collapsed" />
                     </Grid>
-                </ui:Card>
+                </Border>
             </Grid>
 
             <!-- 拖拽条 1 -->
@@ -109,8 +130,8 @@
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
-                <ui:TextBlock Grid.Row="0" Style="{StaticResource SectionTitleStyle}" Text="标签模板" Margin="4,0,0,0" />
-                <ui:Card Grid.Row="1" Padding="10" VerticalAlignment="Stretch" VerticalContentAlignment="Stretch">
+                <TextBlock Grid.Row="0" Style="{StaticResource SectionTitleStyle}" Text="标签模板" Margin="4,0,0,0" />
+                <Border Background="{DynamicResource RegionBrush}" CornerRadius="4" Grid.Row="1" Padding="10" VerticalAlignment="Stretch">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -121,25 +142,40 @@
                         
                         <!-- 模板操作按钮栏 -->
                         <WrapPanel Grid.Row="0" Margin="0,0,0,2">
-                            <ui:Button Content="新增模板" Appearance="Primary" Click="AddTemplate_Click" Margin="0,0,8,8" Icon="{ui:SymbolIcon Add24}" />
-                            <ui:Button Content="编辑" Click="EditTemplate_Click" Margin="0,0,8,8" Icon="{ui:SymbolIcon Edit24}" />
-                            <ui:Button Content="删除" Appearance="Danger" Click="DeleteTemplate_Click" Margin="0,0,8,8" Icon="{ui:SymbolIcon Delete24}" />
+                            <Button Content="新增模板" Click="AddTemplate_Click" Margin="0,0,8,8" />
+                            <Button Content="编辑" Click="EditTemplate_Click" Margin="0,0,8,8" />
+                            <Button  Style="{StaticResource ButtonDanger}" Click="DeleteTemplate_Click" Margin="0,0,8,8" >
+        <StackPanel Orientation="Horizontal">
+            <iconPacks:PackIconMaterial Kind="Delete" Margin="0,0,6,0" VerticalAlignment="Center"/>
+            <TextBlock Text="删除" VerticalAlignment="Center"/>
+        </StackPanel>
+    </Button>
                         </WrapPanel>
 
                         <!-- 模板搜索与报表设计 -->
                         <WrapPanel Grid.Row="1" Margin="0,0,0,2">
-                            <ui:TextBox x:Name="TemplateSearchBox"
+                            <TextBox x:Name="TemplateSearchBox"
                                         Width="120"
-                                        PlaceholderText="搜索模板"
+                                       
                                         Margin="0,0,8,8"
                                         KeyDown="TemplateSearchBox_KeyDown" />
-                            <ui:Button Content="查询" Click="TemplateFilter_Click" Margin="0,0,8,8" />
-                            <ui:Button Content="清空" Click="ClearTemplateFilter_Click" Margin="0,0,8,8" />
-                            <ui:Button Content="上传 .mrt" Click="UploadTemplate_Click" Margin="0,0,8,8" Icon="{ui:SymbolIcon ArrowUp24}" />
-                            <ui:Button Content="设计器" Click="DesignTemplate_Click" Margin="0,0,8,8" Icon="{ui:SymbolIcon Edit24}" />
+                            <Button  Style="{StaticResource ButtonPrimary}" Click="TemplateFilter_Click" Margin="0,0,8,8" >
+        <StackPanel Orientation="Horizontal">
+            <iconPacks:PackIconMaterial Kind="Magnify" Margin="0,0,6,0" VerticalAlignment="Center"/>
+            <TextBlock Text="查询" VerticalAlignment="Center"/>
+        </StackPanel>
+    </Button>
+                            <Button  Style="{StaticResource ButtonDanger}" Click="ClearTemplateFilter_Click" Margin="0,0,8,8" >
+        <StackPanel Orientation="Horizontal">
+            <iconPacks:PackIconMaterial Kind="FilterRemoveOutline" Margin="0,0,6,0" VerticalAlignment="Center"/>
+            <TextBlock Text="清空" VerticalAlignment="Center"/>
+        </StackPanel>
+    </Button>
+                            <Button Content="上传 .mrt" Click="UploadTemplate_Click" Margin="0,0,8,8" />
+                            <Button Content="设计器" Click="DesignTemplate_Click" Margin="0,0,8,8" />
                         </WrapPanel>
 
-                        <ui:DataGrid x:Name="TemplateGrid"
+                        <DataGrid x:Name="TemplateGrid"
                                      Grid.Row="2"
                                      SelectionChanged="TemplateGrid_SelectionChanged"
                                      AutoGenerateColumns="False"
@@ -152,7 +188,7 @@
                                 <DataGridTextColumn Header="存储" Binding="{Binding StorageType}" Width="70" />
                                 <DataGridTextColumn Header="文件" Binding="{Binding TemplateFileName}" Width="*" MinWidth="120" />
                             </DataGrid.Columns>
-                        </ui:DataGrid>
+                        </DataGrid>
                         <TextBlock x:Name="TemplateEmptyText"
                                    Grid.Row="2"
                                    Text="请选择分类查看模板"
@@ -169,16 +205,16 @@
                                     <ComboBoxItem Content="20" />
                                     <ComboBoxItem Content="50" />
                                 </ComboBox>
-                                <ui:Button x:Name="TemplateFirstPageButton" Content="&lt;&lt;" Style="{StaticResource PagerButtonStyle}" Click="TemplateFirstPage_Click" />
-                                <ui:Button x:Name="TemplatePrevPageButton" Content="&lt;" Style="{StaticResource PagerButtonStyle}" Click="TemplatePrevPage_Click" />
-                                <ui:TextBlock x:Name="TemplatePageInfoText" VerticalAlignment="Center" MinWidth="70" TextAlignment="Center" FontWeight="SemiBold" />
-                                <ui:Button x:Name="TemplateNextPageButton" Content="&gt;" Style="{StaticResource PagerButtonStyle}" Click="TemplateNextPage_Click" />
-                                <ui:Button x:Name="TemplateLastPageButton" Content="&gt;&gt;" Style="{StaticResource PagerButtonStyle}" Click="TemplateLastPage_Click" />
+                                <Button x:Name="TemplateFirstPageButton" Content="&lt;&lt;" Style="{StaticResource PagerButtonStyle}" Click="TemplateFirstPage_Click" />
+                                <Button x:Name="TemplatePrevPageButton" Content="&lt;" Style="{StaticResource PagerButtonStyle}" Click="TemplatePrevPage_Click" />
+                                <TextBlock x:Name="TemplatePageInfoText" VerticalAlignment="Center" MinWidth="70" TextAlignment="Center" FontWeight="SemiBold" />
+                                <Button x:Name="TemplateNextPageButton" Content="&gt;" Style="{StaticResource PagerButtonStyle}" Click="TemplateNextPage_Click" />
+                                <Button x:Name="TemplateLastPageButton" Content="&gt;&gt;" Style="{StaticResource PagerButtonStyle}" Click="TemplateLastPage_Click" />
                             </StackPanel>
                         </Border>
 
                     </Grid>
-                </ui:Card>
+                </Border>
             </Grid>
 
             <!-- 拖拽条 2 -->
@@ -191,8 +227,8 @@
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
-                <ui:TextBlock Grid.Row="0" Style="{StaticResource SectionTitleStyle}" Text="模板字段" />
-                <ui:Card Grid.Row="1" Padding="10" VerticalAlignment="Stretch" VerticalContentAlignment="Stretch">
+                <TextBlock Grid.Row="0" Style="{StaticResource SectionTitleStyle}" Text="模板字段" />
+                <Border Background="{DynamicResource RegionBrush}" CornerRadius="4" Grid.Row="1" Padding="10" VerticalAlignment="Stretch">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -203,26 +239,41 @@
                         <StackPanel Grid.Row="0" Margin="0,0,0,2">
                             <!-- 字段操作按钮栏 -->
                             <WrapPanel Margin="0,0,0,2">
-                                <ui:Button Content="新增字段" Appearance="Primary" Click="AddField_Click" Margin="0,0,8,8" Icon="{ui:SymbolIcon Add24}" />
-                                <ui:Button Content="编辑" Click="EditField_Click" Margin="0,0,8,8" Icon="{ui:SymbolIcon Edit24}" />
-                                <ui:Button Content="删除" Appearance="Danger" Click="DeleteField_Click" Margin="0,0,8,8" Icon="{ui:SymbolIcon Delete24}" />
-                                <ui:Button Content="上移" Click="MoveFieldUp_Click" Margin="0,0,8,8" />
-                                <ui:Button Content="下移" Click="MoveFieldDown_Click" Margin="0,0,8,8" />
+                                <Button Content="新增字段" Click="AddField_Click" Margin="0,0,8,8" />
+                                <Button Content="编辑" Click="EditField_Click" Margin="0,0,8,8" />
+                                <Button  Style="{StaticResource ButtonDanger}" Click="DeleteField_Click" Margin="0,0,8,8" >
+        <StackPanel Orientation="Horizontal">
+            <iconPacks:PackIconMaterial Kind="Delete" Margin="0,0,6,0" VerticalAlignment="Center"/>
+            <TextBlock Text="删除" VerticalAlignment="Center"/>
+        </StackPanel>
+    </Button>
+                                <Button Content="上移" Click="MoveFieldUp_Click" Margin="0,0,8,8" />
+                                <Button Content="下移" Click="MoveFieldDown_Click" Margin="0,0,8,8" />
                             </WrapPanel>
 
                             <!-- 字段搜索过滤 -->
                             <WrapPanel Margin="0,0,0,2">
-                                <ui:TextBox x:Name="FieldSearchBox"
+                                <TextBox x:Name="FieldSearchBox"
                                             Width="140"
-                                            PlaceholderText="搜索字段"
+                                           
                                             Margin="0,0,8,8"
                                             KeyDown="FieldSearchBox_KeyDown" />
-                                <ui:Button Content="查询" Click="FieldFilter_Click" Margin="0,0,8,8" />
-                                <ui:Button Content="清空" Click="ClearFieldFilter_Click" Margin="0,0,8,8" />
+                                <Button  Style="{StaticResource ButtonPrimary}" Click="FieldFilter_Click" Margin="0,0,8,8" >
+        <StackPanel Orientation="Horizontal">
+            <iconPacks:PackIconMaterial Kind="Magnify" Margin="0,0,6,0" VerticalAlignment="Center"/>
+            <TextBlock Text="查询" VerticalAlignment="Center"/>
+        </StackPanel>
+    </Button>
+                                <Button  Style="{StaticResource ButtonDanger}" Click="ClearFieldFilter_Click" Margin="0,0,8,8" >
+        <StackPanel Orientation="Horizontal">
+            <iconPacks:PackIconMaterial Kind="FilterRemoveOutline" Margin="0,0,6,0" VerticalAlignment="Center"/>
+            <TextBlock Text="清空" VerticalAlignment="Center"/>
+        </StackPanel>
+    </Button>
                             </WrapPanel>
                         </StackPanel>
 
-                        <ui:DataGrid x:Name="FieldGrid"
+                        <DataGrid x:Name="FieldGrid"
                                      Grid.Row="1"
                                      AutoGenerateColumns="False"
                                      IsReadOnly="True"
@@ -238,7 +289,7 @@
                                 <DataGridCheckBoxColumn Header="必填" Binding="{Binding IsRequired}" Width="56" />
                                 <DataGridTextColumn Header="备注" Binding="{Binding Remark}" Width="*" MinWidth="140" />
                             </DataGrid.Columns>
-                        </ui:DataGrid>
+                        </DataGrid>
                         <TextBlock x:Name="FieldEmptyText"
                                    Grid.Row="1"
                                    Text="请选择模板查看字段"
@@ -247,8 +298,13 @@
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                    Visibility="Collapsed" />
                     </Grid>
-                </ui:Card>
+                </Border>
             </Grid>
         </Grid>
     </Grid>
 </UserControl>
+
+
+
+
+

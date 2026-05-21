@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using LabelPrintClient.Modules.Template.Models;
 
@@ -93,3 +93,5 @@ public partial class FieldEditWindow : Window
         }
     }
 }
+
+

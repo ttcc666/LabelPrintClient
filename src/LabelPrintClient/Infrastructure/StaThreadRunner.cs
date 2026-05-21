@@ -1,4 +1,4 @@
-namespace LabelPrintClient.Infrastructure;
+﻿namespace LabelPrintClient.Infrastructure;
 
 public static class StaThreadRunner
 {
@@ -46,3 +46,4 @@ public static class StaThreadRunner
         return await completion.Task.ConfigureAwait(false);
     }
 }
+

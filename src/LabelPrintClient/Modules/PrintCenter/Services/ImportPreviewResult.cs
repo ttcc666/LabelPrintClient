@@ -1,4 +1,4 @@
-using LabelPrintClient.Modules.PrintCenter.Models;
+﻿using LabelPrintClient.Modules.PrintCenter.Models;
 using LabelPrintClient.Modules.Template.Models;
 
 namespace LabelPrintClient.Modules.PrintCenter.Services;
@@ -27,3 +27,4 @@ public sealed class ImportPreviewResult
 
     public int InvalidRows => Rows.Count(x => !x.IsValid);
 }
+

@@ -1,4 +1,4 @@
-using System.Data;
+﻿using System.Data;
 using LabelPrintClient.Modules.PrintCenter.Models;
 using LabelPrintClient.Modules.Template.Models;
 
@@ -9,3 +9,4 @@ public record PrintContext(
     List<LabelTemplateField> Fields,
     List<LabelImportRow> Rows,
     DataTable DataTable);
+

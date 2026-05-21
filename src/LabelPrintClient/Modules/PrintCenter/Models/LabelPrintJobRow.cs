@@ -1,4 +1,4 @@
-using SqlSugar;
+﻿using SqlSugar;
 
 namespace LabelPrintClient.Modules.PrintCenter.Models;
 
@@ -17,3 +17,4 @@ public class LabelPrintJobRow
     [SugarColumn(ColumnDataType = "TEXT")]
     public string RowDataJson { get; set; } = "{}";
 }
+

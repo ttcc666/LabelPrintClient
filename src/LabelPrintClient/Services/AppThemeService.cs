@@ -1,7 +1,7 @@
 using LabelPrintClient.Config;
 using System.Windows;
-using Wpf.Ui.Appearance;
-using Wpf.Ui.Controls;
+using HandyControl.Themes;
+using HandyControl.Data;
 
 namespace LabelPrintClient.Services;
 
@@ -83,48 +83,19 @@ public static class AppThemeService
         }
     }
 
-    public static ApplicationTheme ResolveTheme(AppThemeMode mode)
-    {
-        return mode switch
-        {
-            AppThemeMode.Light => ApplicationTheme.Light,
-            AppThemeMode.Dark => ApplicationTheme.Dark,
-            _ => ResolveSystemTheme()
-        };
-    }
-
-    private static ApplicationTheme ResolveSystemTheme()
-    {
-        try
-        {
-            return ApplicationThemeManager.GetSystemTheme() switch
-            {
-                SystemTheme.Dark or
-                SystemTheme.HCBlack or
-                SystemTheme.HC1 or
-                SystemTheme.HC2 or
-                SystemTheme.Glow or
-                SystemTheme.CapturedMotion => ApplicationTheme.Dark,
-                _ => ApplicationTheme.Light
-            };
-        }
-        catch
-        {
-            return ApplicationTheme.Light;
-        }
-    }
-
     private static void ApplyInternal(AppThemeMode mode)
     {
-        var theme = ResolveTheme(mode);
-
         try
         {
-            ApplicationThemeManager.Apply(theme, WindowBackdropType.Mica, true);
+            var dicts = System.Windows.Application.Current.Resources.MergedDictionaries;
+            dicts.Clear();
+            string skinStr = mode == AppThemeMode.Dark ? "SkinDark" : "SkinDefault";
+            dicts.Add(new ResourceDictionary { Source = new Uri($"pack://application:,,,/HandyControl;component/Themes/{skinStr}.xaml", UriKind.Absolute) });
+            dicts.Add(new ResourceDictionary { Source = new Uri("pack://application:,,,/HandyControl;component/Themes/Theme.xaml", UriKind.Absolute) });
         }
         catch
         {
-            ApplicationThemeManager.Apply(theme, WindowBackdropType.None, true);
         }
     }
 }
+

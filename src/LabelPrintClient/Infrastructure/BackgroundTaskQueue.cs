@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Windows;
 
 namespace LabelPrintClient.Infrastructure;
@@ -144,3 +144,4 @@ public sealed class BackgroundTaskQueue
         dispatcher.Invoke(action);
     }
 }
+

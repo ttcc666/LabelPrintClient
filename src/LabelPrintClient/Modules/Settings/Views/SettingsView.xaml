@@ -1,11 +1,12 @@
-<UserControl x:Class="LabelPrintClient.Modules.Settings.Views.SettingsView"
+﻿<UserControl x:Class="LabelPrintClient.Modules.Settings.Views.SettingsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
              xmlns:infra="clr-namespace:LabelPrintClient.Infrastructure"
-             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
+             xmlns:hc="https://handyorg.github.io/handycontrol">
     <UserControl.Resources>
-        <Style x:Key="SectionTitleStyle" TargetType="ui:TextBlock">
-            <Setter Property="FontTypography" Value="BodyStrong" />
+        <Style x:Key="SectionTitleStyle" TargetType="TextBlock">
+
             <Setter Property="Margin" Value="4,0,0,8" />
         </Style>
 
@@ -28,10 +29,10 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <ui:Card Grid.Row="0" Margin="0,0,0,8" Padding="10">
+        <Border Background="{DynamicResource RegionBrush}" CornerRadius="4" Grid.Row="0" Margin="0,0,0,8" Padding="10">
             <DockPanel LastChildFill="True">
-                <ui:TextBlock DockPanel.Dock="Left"
-                              FontTypography="Subtitle"
+                <TextBlock DockPanel.Dock="Left"
+                             
                               Text="系统配置"
                               VerticalAlignment="Center"
                               Margin="0,0,20,0" />
@@ -40,7 +41,7 @@
                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                            TextTrimming="CharacterEllipsis" />
             </DockPanel>
-        </ui:Card>
+        </Border>
 
         <Grid Grid.Row="1">
             <Grid.RowDefinitions>
@@ -48,9 +49,9 @@
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
-            <ui:TextBlock Grid.Row="0" Style="{StaticResource SectionTitleStyle}" Text="应用运行配置" />
+            <TextBlock Grid.Row="0" Style="{StaticResource SectionTitleStyle}" Text="应用运行配置" />
 
-            <ui:Card Grid.Row="1" Padding="16" VerticalAlignment="Top">
+            <Border Background="{DynamicResource RegionBrush}" CornerRadius="4" Grid.Row="1" Padding="16" VerticalAlignment="Top">
                 <Grid MaxWidth="920" HorizontalAlignment="Left">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -83,8 +84,13 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Style="{StaticResource FormLabelStyle}" Text="SQLite 连接串" />
-                        <ui:TextBox x:Name="SqliteConnectionBox" Grid.Column="1" MinWidth="520" Margin="0,0,8,0" />
-                        <ui:Button Grid.Column="2" Content="测试" Click="TestSqliteConnection_Click" />
+                        <TextBox x:Name="SqliteConnectionBox" Grid.Column="1" MinWidth="520" Margin="0,0,8,0" />
+                        <Button Grid.Column="2"  Click="TestSqliteConnection_Click" >
+        <StackPanel Orientation="Horizontal">
+            <iconPacks:PackIconMaterial Kind="Connection" Margin="0,0,6,0" VerticalAlignment="Center"/>
+            <TextBlock Text="测试" VerticalAlignment="Center"/>
+        </StackPanel>
+    </Button>
                     </Grid>
 
                     <Grid Grid.Row="2" Style="{StaticResource FormRowStyle}">
@@ -94,8 +100,13 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Style="{StaticResource FormLabelStyle}" Text="PostgreSQL 连接串" />
-                        <ui:TextBox x:Name="PostgreSqlConnectionBox" Grid.Column="1" MinWidth="520" Margin="0,0,8,0" />
-                        <ui:Button Grid.Column="2" Content="测试" Click="TestPostgreSqlConnection_Click" />
+                        <TextBox x:Name="PostgreSqlConnectionBox" Grid.Column="1" MinWidth="520" Margin="0,0,8,0" />
+                        <Button Grid.Column="2"  Click="TestPostgreSqlConnection_Click" >
+        <StackPanel Orientation="Horizontal">
+            <iconPacks:PackIconMaterial Kind="Connection" Margin="0,0,6,0" VerticalAlignment="Center"/>
+            <TextBlock Text="测试" VerticalAlignment="Center"/>
+        </StackPanel>
+    </Button>
                     </Grid>
 
                     <Grid Grid.Row="3" Style="{StaticResource FormRowStyle}">
@@ -105,8 +116,13 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Style="{StaticResource FormLabelStyle}" Text="本地模板目录" />
-                        <ui:TextBox x:Name="LocalTemplateFolderBox" Grid.Column="1" MinWidth="420" Margin="0,0,8,0" />
-                        <ui:Button Grid.Column="2" Content="浏览" Click="BrowseTemplateFolder_Click" Icon="{ui:SymbolIcon FolderOpen24}" />
+                        <TextBox x:Name="LocalTemplateFolderBox" Grid.Column="1" MinWidth="420" Margin="0,0,8,0" />
+                        <Button Grid.Column="2"  Click="BrowseTemplateFolder_Click" >
+        <StackPanel Orientation="Horizontal">
+            <iconPacks:PackIconMaterial Kind="FolderOpen" Margin="0,0,6,0" VerticalAlignment="Center"/>
+            <TextBlock Text="浏览" VerticalAlignment="Center"/>
+        </StackPanel>
+    </Button>
                     </Grid>
 
                     <Grid Grid.Row="4" Style="{StaticResource FormRowStyle}">
@@ -115,7 +131,7 @@
                             <ColumnDefinition Width="360" />
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Style="{StaticResource FormLabelStyle}" Text="操作人" />
-                        <ui:TextBox x:Name="OperatorNameBox" Grid.Column="1" Width="260" HorizontalAlignment="Left" />
+                        <TextBox x:Name="OperatorNameBox" Grid.Column="1" Width="260" HorizontalAlignment="Left" />
                     </Grid>
 
                     <Grid Grid.Row="5" Style="{StaticResource FormRowStyle}">
@@ -138,7 +154,7 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Style="{StaticResource FormLabelStyle}" Text="默认打印" />
                         <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                            <ui:TextBox x:Name="DefaultPrintCopiesBox" Width="80" Margin="0,0,12,0" />
+                            <TextBox x:Name="DefaultPrintCopiesBox" Width="80" Margin="0,0,12,0" />
                             <TextBlock Text="份" VerticalAlignment="Center" Margin="0,0,20,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                             <CheckBox x:Name="ConfirmBeforePrintBox" Content="打印前确认" VerticalAlignment="Center" />
                         </StackPanel>
@@ -163,21 +179,36 @@
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                TextWrapping="Wrap" />
                 </Grid>
-            </ui:Card>
+            </Border>
         </Grid>
 
-        <ui:Card Grid.Row="2" Padding="10" Margin="0,8,0,0">
+        <Border Background="{DynamicResource RegionBrush}" CornerRadius="4" Grid.Row="2" Padding="10" Margin="0,8,0,0">
             <DockPanel LastChildFill="False">
-                <ui:TextBlock x:Name="StatusText"
+                <TextBlock x:Name="StatusText"
                               DockPanel.Dock="Left"
                               VerticalAlignment="Center"
-                              FontTypography="BodyStrong"
+                             
                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                 <WrapPanel DockPanel.Dock="Right" HorizontalAlignment="Right">
-                    <ui:Button Content="重新加载" Click="Reload_Click" Margin="0,0,8,0" Icon="{ui:SymbolIcon ArrowClockwise24}" />
-                    <ui:Button Content="保存配置" Appearance="Primary" Click="Save_Click" Icon="{ui:SymbolIcon Save24}" />
+                    <Button  Click="Reload_Click" Margin="0,0,8,0" >
+        <StackPanel Orientation="Horizontal">
+            <iconPacks:PackIconMaterial Kind="Reload" Margin="0,0,6,0" VerticalAlignment="Center"/>
+            <TextBlock Text="重新加载" VerticalAlignment="Center"/>
+        </StackPanel>
+    </Button>
+                    <Button  Style="{StaticResource ButtonPrimary}" Click="Save_Click" >
+        <StackPanel Orientation="Horizontal">
+            <iconPacks:PackIconMaterial Kind="ContentSave" Margin="0,0,6,0" VerticalAlignment="Center"/>
+            <TextBlock Text="保存配置" VerticalAlignment="Center"/>
+        </StackPanel>
+    </Button>
                 </WrapPanel>
             </DockPanel>
-        </ui:Card>
+        </Border>
     </Grid>
 </UserControl>
+
+
+
+
+

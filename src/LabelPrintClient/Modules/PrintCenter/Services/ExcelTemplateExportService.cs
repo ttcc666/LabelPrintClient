@@ -1,4 +1,4 @@
-using ClosedXML.Excel;
+﻿using ClosedXML.Excel;
 using LabelPrintClient.Database;
 using LabelPrintClient.Modules.PrintCenter.Models;
 using LabelPrintClient.Modules.Template.Models;
@@ -124,3 +124,4 @@ public class ExcelTemplateExportService
         };
     }
 }
+

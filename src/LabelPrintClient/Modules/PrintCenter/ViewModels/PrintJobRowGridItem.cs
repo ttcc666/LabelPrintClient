@@ -1,4 +1,4 @@
-namespace LabelPrintClient.Modules.PrintCenter.ViewModels;
+﻿namespace LabelPrintClient.Modules.PrintCenter.ViewModels;
 
 public class PrintJobRowGridItem
 {
@@ -10,3 +10,4 @@ public class PrintJobRowGridItem
 
     public Dictionary<string, string> Data { get; set; } = new();
 }
+

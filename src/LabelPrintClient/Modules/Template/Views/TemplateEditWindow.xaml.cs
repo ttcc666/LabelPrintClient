@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using LabelPrintClient.Config;
 using LabelPrintClient.Modules.Template.Models;
@@ -126,3 +126,5 @@ public partial class TemplateEditWindow : Window
         Close();
     }
 }
+
+

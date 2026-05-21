@@ -1,4 +1,4 @@
-using System.Windows.Input;
+﻿using System.Windows.Input;
 
 namespace LabelPrintClient.Infrastructure;
 
@@ -23,3 +23,4 @@ public class RelayCommand : ICommand
         remove => CommandManager.RequerySuggested -= value;
     }
 }
+

@@ -1,4 +1,4 @@
-namespace LabelPrintClient.Infrastructure;
+﻿namespace LabelPrintClient.Infrastructure;
 
 public enum BackgroundTaskKind
 {
@@ -10,3 +10,4 @@ public enum BackgroundTaskKind
     Print,
     Upload
 }
+

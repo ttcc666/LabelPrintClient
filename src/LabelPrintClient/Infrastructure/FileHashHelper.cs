@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -44,3 +44,4 @@ public static class FileHashHelper
         return sb.ToString();
     }
 }
+

@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
@@ -314,3 +314,4 @@ public static class SearchableComboBoxBehavior
         }
     }
 }
+

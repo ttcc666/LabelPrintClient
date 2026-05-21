@@ -1,4 +1,4 @@
-namespace LabelPrintClient.Infrastructure;
+﻿namespace LabelPrintClient.Infrastructure;
 
 public enum BackgroundTaskStatus
 {
@@ -8,3 +8,4 @@ public enum BackgroundTaskStatus
     Failed,
     Canceled
 }
+

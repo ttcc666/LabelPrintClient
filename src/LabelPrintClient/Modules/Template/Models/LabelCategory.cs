@@ -1,4 +1,4 @@
-using SqlSugar;
+﻿using SqlSugar;
 
 namespace LabelPrintClient.Modules.Template.Models;
 
@@ -28,3 +28,4 @@ public class LabelCategory
 
     public override string ToString() => Name;
 }
+

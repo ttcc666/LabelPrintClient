@@ -1,4 +1,4 @@
-using System.Data;
+﻿using System.Data;
 using System.Drawing.Printing;
 using LabelPrintClient.Config;
 using LabelPrintClient.Database;
@@ -363,3 +363,4 @@ public class LabelPrintService
         }
     }
 }
+

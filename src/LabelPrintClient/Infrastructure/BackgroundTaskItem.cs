@@ -1,4 +1,4 @@
-namespace LabelPrintClient.Infrastructure;
+﻿namespace LabelPrintClient.Infrastructure;
 
 public sealed class BackgroundTaskItem : NotifyObject
 {
@@ -145,3 +145,4 @@ public sealed class BackgroundTaskItem : NotifyObject
         Message = message;
     }
 }
+

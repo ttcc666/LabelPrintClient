@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using LabelPrintClient.Modules.Template.Models;
 
 namespace LabelPrintClient.Modules.Template.Views;
@@ -55,3 +55,5 @@ public partial class CategoryEditWindow : Window
         Close();
     }
 }
+
+

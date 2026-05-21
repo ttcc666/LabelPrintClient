@@ -1,4 +1,4 @@
-namespace LabelPrintClient.Infrastructure;
+﻿namespace LabelPrintClient.Infrastructure;
 
 public static class IdHelper
 {
@@ -35,3 +35,4 @@ public static class IdHelper
         }
     }
 }
+

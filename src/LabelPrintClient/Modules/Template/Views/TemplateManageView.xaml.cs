@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using LabelPrintClient.Config;
@@ -976,3 +976,5 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         cts = null;
     }
 }
+
+
