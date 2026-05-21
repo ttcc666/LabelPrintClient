@@ -9,7 +9,9 @@ public partial class MainWindow : FluentWindow
 {
     private readonly PrintCenterView _printCenterView = new();
     private readonly PrintHistoryView _printHistoryView = new();
+    private readonly TaskCenterView _taskCenterView = new();
     private readonly TemplateManageView _templateManageView = new();
+    private readonly SettingsView _settingsView = new();
 
     public MainWindow()
     {
@@ -42,8 +44,14 @@ public partial class MainWindow : FluentWindow
                 WorkspaceContent.Content = _printHistoryView;
                 await _printHistoryView.RefreshHistoryAsync();
                 break;
+            case "TaskCenter":
+                WorkspaceContent.Content = _taskCenterView;
+                break;
             case "TemplateManage":
                 WorkspaceContent.Content = _templateManageView;
+                break;
+            case "Settings":
+                WorkspaceContent.Content = _settingsView;
                 break;
             default:
                 WorkspaceContent.Content = _printCenterView;

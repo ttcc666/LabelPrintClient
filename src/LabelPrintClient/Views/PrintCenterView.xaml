@@ -44,9 +44,15 @@
                     <ComboBox x:Name="TemplateBox" Width="170" DisplayMemberPath="Name"
                               SelectionChanged="TemplateBox_SelectionChanged" VerticalAlignment="Center" />
                     </StackPanel>
+                    <ui:TextBox x:Name="TemplateSearchBox"
+                                Width="150"
+                                PlaceholderText="搜索模板"
+                                TextChanged="TemplateSearchBox_TextChanged"
+                                Margin="0,0,12,6"
+                                VerticalAlignment="Center" />
                     <ui:Button Content="刷新" Click="Refresh_Click" Margin="0,0,8,6" Icon="{ui:SymbolIcon ArrowClockwise24}" />
                     <ui:Button Content="下载 Excel 模板" Click="DownloadExcel_Click" Margin="0,0,8,6" Icon="{ui:SymbolIcon ArrowDown24}" />
-                    <ui:Button Content="导入 Excel 入库" Appearance="Primary" Click="ImportExcel_Click" Margin="0,0,20,6" Icon="{ui:SymbolIcon ArrowUp24}" />
+                    <ui:Button Content="导入 Excel" Appearance="Primary" Click="ImportExcel_Click" Margin="0,0,20,6" Icon="{ui:SymbolIcon ArrowUp24}" />
                     <CheckBox x:Name="OnlyInvalidBox" Content="只看错误" VerticalAlignment="Center" Margin="0,0,16,6"
                               Checked="Filter_Changed" Unchecked="Filter_Changed" />
                     <CheckBox x:Name="OnlyUnprintedBox" Content="只看未打印" VerticalAlignment="Center" Margin="0,0,20,6"
@@ -74,14 +80,29 @@
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
-                <Grid Grid.Row="0" Margin="0,0,0,8">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <ui:TextBlock Grid.Column="0" Style="{StaticResource SectionTitleStyle}" Text="导入批次记录" Margin="4,0,0,0" />
-                    <ui:Button Grid.Column="1" Content="刷新批次" Click="LoadBatches_Click" Icon="{ui:SymbolIcon ArrowClockwise24}" />
-                </Grid>
+                <DockPanel Grid.Row="0" Margin="0,0,0,8" LastChildFill="False">
+                    <ui:TextBlock DockPanel.Dock="Left" Style="{StaticResource SectionTitleStyle}" Text="导入批次记录" Margin="4,0,16,0" />
+                    <WrapPanel DockPanel.Dock="Right" HorizontalAlignment="Right">
+                        <ui:TextBox x:Name="BatchSearchBox"
+                                    Width="180"
+                                    PlaceholderText="批次/操作人"
+                                    Margin="0,0,8,0"
+                                    KeyDown="BatchSearchBox_KeyDown" />
+                        <ComboBox x:Name="BatchStatusFilterBox"
+                                  Width="110"
+                                  SelectedIndex="0"
+                                  SelectionChanged="BatchStatusFilterBox_SelectionChanged"
+                                  Margin="0,0,8,0">
+                            <ComboBoxItem Content="正常批次" Tag="Active" />
+                            <ComboBoxItem Content="全部" Tag="All" />
+                            <ComboBoxItem Content="已导入" Tag="Imported" />
+                            <ComboBoxItem Content="部分错误" Tag="PartError" />
+                            <ComboBoxItem Content="已作废" Tag="Voided" />
+                        </ComboBox>
+                        <ui:Button Content="查询" Click="BatchFilter_Click" Margin="0,0,8,0" />
+                        <ui:Button Content="刷新批次" Click="LoadBatches_Click" Icon="{ui:SymbolIcon ArrowClockwise24}" />
+                    </WrapPanel>
+                </DockPanel>
                 <ui:Card Grid.Row="1" Padding="0" VerticalAlignment="Stretch" VerticalContentAlignment="Stretch">
                     <Grid>
                         <Grid.RowDefinitions>
@@ -94,12 +115,32 @@
                                      HorizontalScrollBarVisibility="Auto"
                                      VerticalScrollBarVisibility="Auto">
                             <DataGrid.Columns>
+                                <DataGridTemplateColumn Header="操作" Width="70">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <ui:Button Content="作废"
+                                                       Width="52"
+                                                       Height="28"
+                                                       Appearance="Danger"
+                                                       Click="VoidBatch_Click" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
                                 <DataGridTextColumn Header="导入时间" Binding="{Binding ImportTime, StringFormat=MM-dd HH:mm}" Width="112" />
                                 <DataGridTextColumn Header="Excel" Binding="{Binding ExcelFileName}" Width="*" MinWidth="130" />
+                                <DataGridTextColumn Header="状态" Binding="{Binding Status}" Width="76" />
                                 <DataGridTextColumn Header="总" Binding="{Binding TotalRows}" Width="44" />
                                 <DataGridTextColumn Header="错" Binding="{Binding InvalidRows}" Width="44" />
+                                <DataGridTextColumn Header="操作人" Binding="{Binding OperatorName}" Width="90" />
                             </DataGrid.Columns>
                         </ui:DataGrid>
+                        <TextBlock x:Name="BatchEmptyText"
+                                   Grid.Row="0"
+                                   Text="暂无导入批次"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                   Visibility="Collapsed" />
                         <Border Grid.Row="1" Padding="0,8,0,0" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" Margin="8,8,8,8">
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                                 <TextBlock Text="每页" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
@@ -145,6 +186,13 @@
                                      BorderThickness="0"
                                      HorizontalScrollBarVisibility="Auto"
                                      VerticalScrollBarVisibility="Auto" />
+                        <TextBlock x:Name="RowEmptyText"
+                                   Grid.Row="0"
+                                   Text="请选择批次查看明细"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                   Visibility="Collapsed" />
                         <Border Grid.Row="1" Padding="0,8,0,0" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" Margin="8,8,8,8">
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                                 <TextBlock Text="每页" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />

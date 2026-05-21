@@ -1,0 +1,273 @@
+using System.IO;
+using System.Drawing.Printing;
+using System.Windows;
+using System.Windows.Controls;
+using LabelPrintClient.Config;
+using LabelPrintClient.Services.Config;
+using WinForms = System.Windows.Forms;
+
+namespace LabelPrintClient.Views;
+
+public partial class SettingsView : System.Windows.Controls.UserControl
+{
+    private const int MaxPrintCopies = 999;
+    private const string SystemDefaultPrinterText = "使用系统默认打印机";
+
+    public SettingsView()
+    {
+        InitializeComponent();
+        Loaded += (_, _) =>
+        {
+            LoadPrinters();
+            LoadSettings();
+        };
+    }
+
+    private void Reload_Click(object sender, RoutedEventArgs e)
+    {
+        LoadSettings();
+    }
+
+    private void BrowseTemplateFolder_Click(object sender, RoutedEventArgs e)
+    {
+        using var dialog = new WinForms.FolderBrowserDialog
+        {
+            Description = "选择本地模板保存目录",
+            UseDescriptionForTitle = true,
+            SelectedPath = ResolveInitialFolder(LocalTemplateFolderBox.Text)
+        };
+
+        if (dialog.ShowDialog() == WinForms.DialogResult.OK)
+        {
+            LocalTemplateFolderBox.Text = dialog.SelectedPath;
+        }
+    }
+
+    private void Save_Click(object sender, RoutedEventArgs e)
+    {
+        if (!TryBuildSettings(out var settings, out var errorMessage))
+        {
+            System.Windows.MessageBox.Show(errorMessage, "配置校验失败", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        try
+        {
+            AppConfigService.Save(settings);
+            ApplyToRuntimeSettings(settings);
+            StatusText.Text = $"配置已保存：{DateTime.Now:HH:mm:ss}。重启应用后完全生效。";
+            System.Windows.MessageBox.Show("配置已保存。运行模式、数据库连接和模板目录相关配置需要重启应用后完全生效。", "保存成功", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show($"保存配置失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private async void TestSqliteConnection_Click(object sender, RoutedEventArgs e)
+    {
+        await TestConnectionAsync(sender, AppRunMode.LocalSqlite, SqliteConnectionBox.Text.Trim(), "SQLite");
+    }
+
+    private async void TestPostgreSqlConnection_Click(object sender, RoutedEventArgs e)
+    {
+        await TestConnectionAsync(sender, AppRunMode.LanPostgreSql, PostgreSqlConnectionBox.Text.Trim(), "PostgreSQL");
+    }
+
+    private void LoadSettings()
+    {
+        try
+        {
+            ConfigPathText.Text = AppConfigService.GetConfigPath();
+            FillForm(AppConfigService.LoadOrCreateDefault());
+            StatusText.Text = $"配置已加载：{DateTime.Now:HH:mm:ss}";
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show($"加载配置失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private void FillForm(AppSettings settings)
+    {
+        SelectRunMode(settings.RunMode);
+        SqliteConnectionBox.Text = settings.SqliteConnection;
+        PostgreSqlConnectionBox.Text = settings.PostgreSqlConnection;
+        LocalTemplateFolderBox.Text = settings.LocalTemplateFolder;
+        OperatorNameBox.Text = settings.OperatorName;
+        SelectDefaultPrinter(settings.DefaultPrinterName);
+        DefaultPrintCopiesBox.Text = Math.Clamp(settings.DefaultPrintCopies, 1, MaxPrintCopies).ToString();
+        ConfirmBeforePrintBox.IsChecked = settings.ConfirmBeforePrint;
+    }
+
+    private bool TryBuildSettings(out AppSettings settings, out string errorMessage)
+    {
+        settings = new AppSettings();
+        errorMessage = string.Empty;
+
+        if (!TryGetSelectedRunMode(out var runMode))
+        {
+            errorMessage = "请选择运行模式。";
+            return false;
+        }
+
+        var sqliteConnection = SqliteConnectionBox.Text.Trim();
+        var postgreSqlConnection = PostgreSqlConnectionBox.Text.Trim();
+        var localTemplateFolder = LocalTemplateFolderBox.Text.Trim();
+        var operatorName = OperatorNameBox.Text.Trim();
+        var defaultPrinterName = GetSelectedDefaultPrinterName();
+
+        if (runMode == AppRunMode.LocalSqlite && string.IsNullOrWhiteSpace(sqliteConnection))
+        {
+            errorMessage = "本地 SQLite 模式下，SQLite 连接串不能为空。";
+            return false;
+        }
+
+        if (runMode == AppRunMode.LanPostgreSql && string.IsNullOrWhiteSpace(postgreSqlConnection))
+        {
+            errorMessage = "局域网 PostgreSQL 模式下，PostgreSQL 连接串不能为空。";
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(localTemplateFolder))
+        {
+            errorMessage = "本地模板目录不能为空。";
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(operatorName))
+        {
+            errorMessage = "操作人不能为空。";
+            return false;
+        }
+
+        if (!int.TryParse(DefaultPrintCopiesBox.Text.Trim(), out var defaultPrintCopies) ||
+            defaultPrintCopies < 1 ||
+            defaultPrintCopies > MaxPrintCopies)
+        {
+            errorMessage = $"默认打印份数必须是 1 到 {MaxPrintCopies} 之间的整数。";
+            return false;
+        }
+
+        settings.RunMode = runMode;
+        settings.SqliteConnection = sqliteConnection;
+        settings.PostgreSqlConnection = postgreSqlConnection;
+        settings.LocalTemplateFolder = localTemplateFolder;
+        settings.OperatorName = operatorName;
+        settings.DefaultPrinterName = defaultPrinterName;
+        settings.DefaultPrintCopies = defaultPrintCopies;
+        settings.ConfirmBeforePrint = ConfirmBeforePrintBox.IsChecked == true;
+        return true;
+    }
+
+    private void LoadPrinters()
+    {
+        var printers = PrinterSettings.InstalledPrinters
+            .Cast<string>()
+            .OrderBy(x => x)
+            .ToList();
+
+        printers.Insert(0, SystemDefaultPrinterText);
+        DefaultPrinterBox.ItemsSource = printers;
+    }
+
+    private void SelectDefaultPrinter(string? printerName)
+    {
+        if (DefaultPrinterBox.ItemsSource is not IEnumerable<string> printers)
+            return;
+
+        if (!string.IsNullOrWhiteSpace(printerName))
+        {
+            var matched = printers.FirstOrDefault(x => string.Equals(x, printerName, StringComparison.OrdinalIgnoreCase));
+            if (!string.IsNullOrWhiteSpace(matched))
+            {
+                DefaultPrinterBox.SelectedItem = matched;
+                return;
+            }
+        }
+
+        DefaultPrinterBox.SelectedIndex = 0;
+    }
+
+    private string? GetSelectedDefaultPrinterName()
+    {
+        var printerName = DefaultPrinterBox.SelectedItem as string;
+        return string.IsNullOrWhiteSpace(printerName) ||
+               string.Equals(printerName, SystemDefaultPrinterText, StringComparison.Ordinal)
+            ? null
+            : printerName.Trim();
+    }
+
+    private void SelectRunMode(AppRunMode runMode)
+    {
+        foreach (var item in RunModeBox.Items.OfType<ComboBoxItem>())
+        {
+            if (string.Equals(item.Tag?.ToString(), runMode.ToString(), StringComparison.OrdinalIgnoreCase))
+            {
+                RunModeBox.SelectedItem = item;
+                return;
+            }
+        }
+
+        RunModeBox.SelectedIndex = 0;
+    }
+
+    private bool TryGetSelectedRunMode(out AppRunMode runMode)
+    {
+        runMode = AppRunMode.LocalSqlite;
+        if (RunModeBox.SelectedItem is not ComboBoxItem item)
+            return false;
+
+        return Enum.TryParse(item.Tag?.ToString(), out runMode);
+    }
+
+    private static void ApplyToRuntimeSettings(AppSettings settings)
+    {
+        App.Settings.RunMode = settings.RunMode;
+        App.Settings.SqliteConnection = settings.SqliteConnection;
+        App.Settings.PostgreSqlConnection = settings.PostgreSqlConnection;
+        App.Settings.LocalTemplateFolder = settings.LocalTemplateFolder;
+        App.Settings.OperatorName = settings.OperatorName;
+        App.Settings.DefaultPrinterName = settings.DefaultPrinterName;
+        App.Settings.DefaultPrintCopies = settings.DefaultPrintCopies;
+        App.Settings.ConfirmBeforePrint = settings.ConfirmBeforePrint;
+    }
+
+    private async Task TestConnectionAsync(object sender, AppRunMode runMode, string connectionString, string displayName)
+    {
+        var testButton = sender as UIElement;
+        if (testButton != null)
+            testButton.IsEnabled = false;
+
+        StatusText.Text = $"正在测试 {displayName} 连接...";
+
+        try
+        {
+            await ConnectionTestService.TestAsync(runMode, connectionString);
+            StatusText.Text = $"{displayName} 连接测试成功：{DateTime.Now:HH:mm:ss}";
+            System.Windows.MessageBox.Show($"{displayName} 连接测试成功。", "连接测试", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            StatusText.Text = $"{displayName} 连接测试失败：{ex.Message}";
+            System.Windows.MessageBox.Show($"{displayName} 连接测试失败：{ex.Message}", "连接测试", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            if (testButton != null)
+                testButton.IsEnabled = true;
+        }
+    }
+
+    private static string ResolveInitialFolder(string folder)
+    {
+        if (string.IsNullOrWhiteSpace(folder))
+            return AppContext.BaseDirectory;
+
+        var path = Path.IsPathRooted(folder)
+            ? folder
+            : Path.Combine(AppContext.BaseDirectory, folder);
+
+        return Directory.Exists(path) ? path : AppContext.BaseDirectory;
+    }
+}

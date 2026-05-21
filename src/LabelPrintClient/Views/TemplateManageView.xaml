@@ -77,6 +77,13 @@
                                 <DataGridCheckBoxColumn Header="启用" Binding="{Binding IsEnabled}" Width="56" />
                             </DataGrid.Columns>
                         </ui:DataGrid>
+                        <TextBlock x:Name="CategoryEmptyText"
+                                   Grid.Row="1"
+                                   Text="暂无标签分类"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                   Visibility="Collapsed" />
                     </Grid>
                 </ui:Card>
             </Grid>
@@ -128,6 +135,13 @@
                                 <DataGridTextColumn Header="文件" Binding="{Binding TemplateFileName}" Width="*" MinWidth="120" />
                             </DataGrid.Columns>
                         </ui:DataGrid>
+                        <TextBlock x:Name="TemplateEmptyText"
+                                   Grid.Row="2"
+                                   Text="请选择分类查看模板"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                   Visibility="Collapsed" />
 
                         <Border Grid.Row="3" Padding="0,8,0,0" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" Margin="0,8,0,0">
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
@@ -189,6 +203,10 @@
                                 <ui:TextBox Grid.Column="0" x:Name="FieldRemarkBox" PlaceholderText="备注说明" Margin="0,0,8,0" />
                                 <WrapPanel Grid.Column="1">
                                     <ui:Button Content="新增" Appearance="Primary" Click="AddField_Click" Margin="0,0,8,0" Icon="{ui:SymbolIcon Add24}" />
+                                    <ui:Button Content="保存" Click="SaveField_Click" Margin="0,0,8,0" Icon="{ui:SymbolIcon Save24}" />
+                                    <ui:Button Content="清空" Click="ClearFieldForm_Click" Margin="0,0,8,0" />
+                                    <ui:Button Content="上移" Click="MoveFieldUp_Click" Margin="0,0,8,0" />
+                                    <ui:Button Content="下移" Click="MoveFieldDown_Click" Margin="0,0,8,0" />
                                     <ui:Button Content="删除" Appearance="Danger" Click="DeleteField_Click" Icon="{ui:SymbolIcon Delete24}" />
                                 </WrapPanel>
                             </Grid>
@@ -198,6 +216,7 @@
                                      Grid.Row="1"
                                      AutoGenerateColumns="False"
                                      IsReadOnly="True"
+                                     SelectionChanged="FieldGrid_SelectionChanged"
                                      Margin="0"
                                      HorizontalScrollBarVisibility="Auto"
                                      VerticalScrollBarVisibility="Auto">
@@ -210,6 +229,13 @@
                                 <DataGridTextColumn Header="备注" Binding="{Binding Remark}" Width="*" MinWidth="140" />
                             </DataGrid.Columns>
                         </ui:DataGrid>
+                        <TextBlock x:Name="FieldEmptyText"
+                                   Grid.Row="1"
+                                   Text="请选择模板查看字段"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                   Visibility="Collapsed" />
                     </Grid>
                 </ui:Card>
             </Grid>

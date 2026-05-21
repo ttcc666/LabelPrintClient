@@ -1,10 +1,12 @@
 using System.Collections.ObjectModel;
+using System.Drawing.Printing;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using LabelPrintClient.Database;
 using LabelPrintClient.Infrastructure;
 using LabelPrintClient.Models;
+using LabelPrintClient.Services.Print;
 using LabelPrintClient.ViewModels;
 
 namespace LabelPrintClient.Views;
@@ -13,6 +15,7 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
 {
     private const int DefaultJobPageSize = 20;
     private const int DefaultRowPageSize = 50;
+    private const int MaxPrintCopies = 999;
 
     private readonly ObservableCollection<PrintJobGridItem> _jobs = new();
     private readonly ObservableCollection<PrintJobRowGridItem> _rows = new();
@@ -30,7 +33,11 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
     public PrintHistoryView()
     {
         InitializeComponent();
-        Loaded += async (_, _) => await RefreshHistoryAsync();
+        Loaded += async (_, _) =>
+        {
+            LoadPrinters();
+            await RefreshHistoryAsync();
+        };
         Unloaded += (_, _) => CancelPendingLoads();
     }
 
@@ -93,6 +100,7 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
 
             JobGrid.ItemsSource = _jobs;
             UpdateJobPagination();
+            UpdateEmptyStates();
 
             if (_jobs.Count == 0)
             {
@@ -173,6 +181,7 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
             RowGrid.ItemsSource = _rows;
             UpdateRowPagination();
             UpdateSummary();
+            UpdateEmptyStates();
         }
         catch (OperationCanceledException)
         {
@@ -186,6 +195,12 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
     private void BuildRowGridColumns(IReadOnlyList<LabelTemplateField> fields, IReadOnlyList<PrintJobRowGridItem> rows)
     {
         RowGrid.Columns.Clear();
+        RowGrid.Columns.Add(new DataGridTemplateColumn
+        {
+            Header = "操作",
+            Width = 70,
+            CellTemplate = BuildRowActionTemplate()
+        });
         RowGrid.Columns.Add(new DataGridTextColumn
         {
             Header = "Excel行",
@@ -236,6 +251,82 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
         RowGrid.ItemsSource = _rows;
         UpdateRowPagination();
         UpdateSummary();
+        UpdateEmptyStates();
+    }
+
+    private DataTemplate BuildRowActionTemplate()
+    {
+        var button = new FrameworkElementFactory(typeof(Wpf.Ui.Controls.Button));
+        button.SetValue(ContentControl.ContentProperty, "重打");
+        button.SetValue(FrameworkElement.WidthProperty, 52.0);
+        button.SetValue(FrameworkElement.HeightProperty, 28.0);
+        button.SetValue(Wpf.Ui.Controls.Button.AppearanceProperty, Wpf.Ui.Controls.ControlAppearance.Primary);
+        button.AddHandler(System.Windows.Controls.Primitives.ButtonBase.ClickEvent, new RoutedEventHandler(ReprintJobRow_Click));
+
+        return new DataTemplate
+        {
+            VisualTree = button
+        };
+    }
+
+    private async void ReprintJob_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { DataContext: PrintJobGridItem job })
+            return;
+        if (!TryGetPrintOptions(out var printerName, out var printCopies))
+            return;
+
+        await ExecuteHistoryPrintAsync(
+            sender,
+            $"确定重打印任务 {job.TemplateName} 的历史数据，{printCopies} 份？",
+            context => new LabelPrintService(App.Settings).ReprintJobAsync(
+                job.Id,
+                printerName,
+                printCopies,
+                context.CancellationToken,
+                context.Progress));
+    }
+
+    private async void RetryJob_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { DataContext: PrintJobGridItem job })
+            return;
+
+        if (!string.Equals(job.Status, "Failed", StringComparison.OrdinalIgnoreCase))
+        {
+            System.Windows.MessageBox.Show("只有失败的打印任务可以失败重试。");
+            return;
+        }
+        if (!TryGetPrintOptions(out var printerName, out var printCopies))
+            return;
+
+        await ExecuteHistoryPrintAsync(
+            sender,
+            $"确定重试失败任务 {job.TemplateName}，{printCopies} 份？请确认现场没有重复出纸。",
+            context => new LabelPrintService(App.Settings).ReprintJobAsync(
+                job.Id,
+                printerName,
+                printCopies,
+                context.CancellationToken,
+                context.Progress));
+    }
+
+    private async void ReprintJobRow_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { DataContext: PrintJobRowGridItem row })
+            return;
+        if (!TryGetPrintOptions(out var printerName, out var printCopies))
+            return;
+
+        await ExecuteHistoryPrintAsync(
+            sender,
+            $"确定重打印 Excel 第 {row.RowIndex} 行，{printCopies} 份？",
+            context => new LabelPrintService(App.Settings).ReprintJobRowAsync(
+                row.Id,
+                printerName,
+                printCopies,
+                context.CancellationToken,
+                context.Progress));
     }
 
     private async void JobFirstPage_Click(object sender, RoutedEventArgs e)
@@ -366,6 +457,99 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
         }
 
         return null;
+    }
+
+    private void LoadPrinters()
+    {
+        var printerNames = PrinterSettings.InstalledPrinters
+            .Cast<string>()
+            .OrderBy(x => x)
+            .ToList();
+
+        PrinterNameBox.ItemsSource = printerNames;
+        PrintCopiesBox.Text = Math.Clamp(App.Settings.DefaultPrintCopies, 1, MaxPrintCopies).ToString();
+
+        if (!string.IsNullOrWhiteSpace(App.Settings.DefaultPrinterName) &&
+            printerNames.Contains(App.Settings.DefaultPrinterName))
+        {
+            PrinterNameBox.SelectedItem = App.Settings.DefaultPrinterName;
+            return;
+        }
+
+        var defaultPrinter = new PrinterSettings().PrinterName;
+        if (!string.IsNullOrWhiteSpace(defaultPrinter) && printerNames.Contains(defaultPrinter))
+            PrinterNameBox.SelectedItem = defaultPrinter;
+        else if (printerNames.Count > 0)
+            PrinterNameBox.SelectedIndex = 0;
+    }
+
+    private bool TryGetPrintOptions(out string printerName, out int printCopies)
+    {
+        printerName = (PrinterNameBox.SelectedItem as string)?.Trim() ?? string.Empty;
+        printCopies = 1;
+
+        if (string.IsNullOrWhiteSpace(printerName))
+        {
+            System.Windows.MessageBox.Show("请先选择打印机。");
+            return false;
+        }
+
+        if (!int.TryParse(PrintCopiesBox.Text.Trim(), out var copies) ||
+            copies < 1 ||
+            copies > MaxPrintCopies)
+        {
+            System.Windows.MessageBox.Show($"打印份数必须是 1 到 {MaxPrintCopies} 之间的整数。");
+            return false;
+        }
+
+        printCopies = copies;
+        return true;
+    }
+
+    private async Task ExecuteHistoryPrintAsync(
+        object sender,
+        string confirmMessage,
+        Func<BackgroundTaskContext, Task> operation)
+    {
+        if (App.Settings.ConfirmBeforePrint &&
+            System.Windows.MessageBox.Show(confirmMessage, "确认打印", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+        {
+            return;
+        }
+
+        var element = sender as UIElement;
+        if (element != null)
+            element.IsEnabled = false;
+
+        try
+        {
+            await BackgroundTaskQueue.Shared.EnqueueAsync(BackgroundTaskKind.Print, "正在提交历史打印...", operation);
+            System.Windows.MessageBox.Show("打印任务已完成。");
+            await RefreshHistoryAsync();
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show($"打印失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            if (element != null)
+                element.IsEnabled = true;
+        }
+    }
+
+    private void UpdateEmptyStates()
+    {
+        if (JobEmptyText != null)
+            JobEmptyText.Visibility = _jobTotalRows == 0 ? Visibility.Visible : Visibility.Collapsed;
+
+        if (RowEmptyText != null)
+        {
+            RowEmptyText.Text = SelectedJob == null
+                ? "请选择打印任务查看明细"
+                : "当前打印任务没有明细";
+            RowEmptyText.Visibility = _rowTotalRows == 0 ? Visibility.Visible : Visibility.Collapsed;
+        }
     }
 
     private int GetSelectedJobPageSize()

@@ -11,4 +11,10 @@ public class AppSettings
     public string LocalTemplateFolder { get; set; } = "Templates";
 
     public string OperatorName { get; set; } = "admin";
+
+    public string? DefaultPrinterName { get; set; }
+
+    public int DefaultPrintCopies { get; set; } = 1;
+
+    public bool ConfirmBeforePrint { get; set; } = true;
 }

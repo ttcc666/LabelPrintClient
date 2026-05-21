@@ -24,16 +24,20 @@
 
         <ui:Card Grid.Row="0" Margin="0,0,0,8" Padding="10">
             <DockPanel LastChildFill="False">
-                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center">
+                <WrapPanel DockPanel.Dock="Left" VerticalAlignment="Center">
                     <ui:TextBlock FontTypography="Subtitle" Text="打印记录" VerticalAlignment="Center" Margin="0,0,20,0" />
                     <TextBlock Style="{StaticResource FormLabelStyle}" Text="状态" />
-                    <ComboBox x:Name="StatusFilterBox" Width="120" SelectedIndex="0" SelectionChanged="Filter_Changed">
+                    <ComboBox x:Name="StatusFilterBox" Width="120" SelectedIndex="0" SelectionChanged="Filter_Changed" Margin="0,0,16,0">
                         <ComboBoxItem Content="全部" />
                         <ComboBoxItem Content="已打印" Tag="Printed" />
                         <ComboBoxItem Content="失败" Tag="Failed" />
                         <ComboBoxItem Content="打印中" Tag="Printing" />
                     </ComboBox>
-                </StackPanel>
+                    <TextBlock Style="{StaticResource FormLabelStyle}" Text="打印机" />
+                    <ComboBox x:Name="PrinterNameBox" Width="220" IsTextSearchEnabled="True" Margin="0,0,16,0" />
+                    <TextBlock Style="{StaticResource FormLabelStyle}" Text="份数" />
+                    <ui:TextBox x:Name="PrintCopiesBox" Width="72" Text="1" Margin="0,0,16,0" />
+                </WrapPanel>
 
                 <ui:Button DockPanel.Dock="Right"
                            Content="刷新"
@@ -74,6 +78,16 @@
                                      HorizontalScrollBarVisibility="Auto"
                                      VerticalScrollBarVisibility="Auto">
                             <DataGrid.Columns>
+                                <DataGridTemplateColumn Header="操作" Width="126">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                <ui:Button Content="重打" Width="52" Height="28" Margin="0,0,6,0" Click="ReprintJob_Click" />
+                                                <ui:Button Content="重试" Width="52" Height="28" Appearance="Primary" Click="RetryJob_Click" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
                                 <DataGridTextColumn Header="状态" Binding="{Binding StatusText}" Width="76" />
                                 <DataGridTextColumn Header="创建时间" Binding="{Binding CreateTime, StringFormat=MM-dd HH:mm}" Width="112" />
                                 <DataGridTextColumn Header="打印时间" Binding="{Binding PrintTime, StringFormat=MM-dd HH:mm}" Width="112" />
@@ -128,6 +142,13 @@
                                      BorderThickness="0"
                                      HorizontalScrollBarVisibility="Auto"
                                      VerticalScrollBarVisibility="Auto" />
+                        <TextBlock x:Name="RowEmptyText"
+                                   Grid.Row="0"
+                                   Text="请选择打印任务查看明细"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                   Visibility="Collapsed" />
                         <Border Grid.Row="1" Padding="0,8,0,0" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" Margin="8,8,8,8">
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                                 <TextBlock Text="每页" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
@@ -148,6 +169,15 @@
                 </ui:Card>
             </Grid>
         </Grid>
+
+        <TextBlock x:Name="JobEmptyText"
+                   Grid.Row="1"
+                   Text="暂无打印任务"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"
+                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                   Visibility="Collapsed"
+                   IsHitTestVisible="False" />
 
         <ui:Card Grid.Row="2" Padding="10" Margin="0,8,0,0">
             <ui:TextBlock x:Name="HistorySummaryText"

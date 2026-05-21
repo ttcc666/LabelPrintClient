@@ -14,6 +14,15 @@ public class LabelImportService
         string? operatorName,
         CancellationToken cancellationToken = default)
     {
+        var preview = await PreviewExcelAsync(templateId, excelPath, cancellationToken).ConfigureAwait(false);
+        return await CommitImportAsync(preview, operatorName, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<ImportPreviewResult> PreviewExcelAsync(
+        long templateId,
+        string excelPath,
+        CancellationToken cancellationToken = default)
+    {
         var templates = await AppDb.Db.Queryable<LabelTemplate>()
             .Where(x => x.Id == templateId)
             .Take(1)
@@ -36,8 +45,37 @@ public class LabelImportService
             throw new InvalidOperationException("Excel 中没有可导入的数据行。");
 
         var fileHash = await FileHashHelper.GetSha256Async(excelPath, cancellationToken).ConfigureAwait(false);
-        var batch = BuildBatch(template, excelPath, fileHash, drafts, operatorName);
-        var rows = BuildRows(template.Id, batch.Id, drafts);
+        return new ImportPreviewResult
+        {
+            TemplateId = template.Id,
+            TemplateName = template.Name,
+            TemplateVersion = template.Version,
+            ExcelPath = excelPath,
+            ExcelFileName = Path.GetFileName(excelPath),
+            ExcelFileHash = fileHash,
+            Fields = fields,
+            Rows = drafts
+        };
+    }
+
+    public async Task<long> CommitImportAsync(
+        ImportPreviewResult preview,
+        string? operatorName,
+        CancellationToken cancellationToken = default)
+    {
+        if (preview.Rows.Count == 0)
+            throw new InvalidOperationException("没有可导入的数据行。");
+
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var template = new LabelTemplate
+        {
+            Id = preview.TemplateId,
+            Name = preview.TemplateName,
+            Version = preview.TemplateVersion
+        };
+        var batch = BuildBatch(template, preview.ExcelPath, preview.ExcelFileHash, preview.Rows, operatorName);
+        var rows = BuildRows(preview.TemplateId, batch.Id, preview.Rows);
 
         await AppDb.Db.Ado.BeginTranAsync().ConfigureAwait(false);
         try

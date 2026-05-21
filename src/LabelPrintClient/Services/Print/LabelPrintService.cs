@@ -45,7 +45,8 @@ public class LabelPrintService
         IReadOnlyCollection<long> selectedRowIds,
         string? printerName,
         int copyCount = 1,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        IProgress<BackgroundTaskProgress>? progress = null)
     {
         copyCount = ValidateCopyCount(copyCount);
         var context = await BuildPrintContextAsync(templateId, batchId, selectedRowIds, 1, cancellationToken)
@@ -62,7 +63,7 @@ public class LabelPrintService
 
         try
         {
-            await Task.Run(() => PrintLabels(context, printerName, copyCount, cancellationToken), cancellationToken)
+            await Task.Run(() => PrintLabels(context, printerName, copyCount, cancellationToken, progress), cancellationToken)
                 .ConfigureAwait(false);
             await MarkPrintedAsync(printJob, context.Rows, copyCount).ConfigureAwait(false);
         }
@@ -73,6 +74,64 @@ public class LabelPrintService
             await AppDb.Db.Updateable(printJob).ExecuteCommandAsync().ConfigureAwait(false);
             throw;
         }
+    }
+
+    public async Task ReprintJobAsync(
+        long printJobId,
+        string? printerName,
+        int copyCount = 1,
+        CancellationToken cancellationToken = default,
+        IProgress<BackgroundTaskProgress>? progress = null)
+    {
+        var job = await LoadPrintJobAsync(printJobId).ConfigureAwait(false);
+        var rows = await AppDb.Db.Queryable<LabelPrintJobRow>()
+            .Where(x => x.PrintJobId == printJobId)
+            .OrderBy(x => x.RowIndex)
+            .ToListAsync()
+            .ConfigureAwait(false);
+
+        var rowIds = rows
+            .Select(x => x.ImportRowId)
+            .Distinct()
+            .ToList();
+
+        if (rowIds.Count == 0)
+            throw new InvalidOperationException("当前打印任务没有可重打印的明细。");
+
+        await PrintSelectedRowsAsync(
+            job.TemplateId,
+            job.BatchId,
+            rowIds,
+            printerName,
+            copyCount,
+            cancellationToken,
+            progress).ConfigureAwait(false);
+    }
+
+    public async Task ReprintJobRowAsync(
+        long printJobRowId,
+        string? printerName,
+        int copyCount = 1,
+        CancellationToken cancellationToken = default,
+        IProgress<BackgroundTaskProgress>? progress = null)
+    {
+        var jobRows = await AppDb.Db.Queryable<LabelPrintJobRow>()
+            .Where(x => x.Id == printJobRowId)
+            .Take(1)
+            .ToListAsync()
+            .ConfigureAwait(false);
+        var jobRow = jobRows.FirstOrDefault()
+            ?? throw new InvalidOperationException("打印明细不存在。");
+
+        var job = await LoadPrintJobAsync(jobRow.PrintJobId).ConfigureAwait(false);
+        await PrintSelectedRowsAsync(
+            job.TemplateId,
+            job.BatchId,
+            new[] { jobRow.ImportRowId },
+            printerName,
+            copyCount,
+            cancellationToken,
+            progress).ConfigureAwait(false);
     }
 
     private async Task<PrintContext> BuildPrintContextAsync(
@@ -115,9 +174,17 @@ public class LabelPrintService
         return new PrintContext(template, fields, rows, dataTable);
     }
 
-    private void PrintLabels(PrintContext context, string? printerName, int copyCount, CancellationToken cancellationToken)
+    private void PrintLabels(
+        PrintContext context,
+        string? printerName,
+        int copyCount,
+        CancellationToken cancellationToken,
+        IProgress<BackgroundTaskProgress>? progress)
     {
         var settings = CreatePrinterSettings(printerName);
+        var total = context.Rows.Count * copyCount;
+        var completed = 0;
+        progress?.Report(new BackgroundTaskProgress(completed, total, "开始提交打印任务"));
 
         foreach (var row in context.Rows)
         {
@@ -134,6 +201,8 @@ public class LabelPrintService
 
                 var report = BuildRenderedReport(context.Template, dataTable);
                 report.Print(false, settings);
+                completed++;
+                progress?.Report(new BackgroundTaskProgress(completed, total, $"已提交 Excel 第 {row.RowIndex} 行"));
             }
         }
     }
@@ -210,6 +279,18 @@ public class LabelPrintService
             throw new InvalidOperationException($"打印份数必须是 1 到 {MaxCopyCount} 之间的整数。");
 
         return copyCount;
+    }
+
+    private static async Task<LabelPrintJob> LoadPrintJobAsync(long printJobId)
+    {
+        var jobs = await AppDb.Db.Queryable<LabelPrintJob>()
+            .Where(x => x.Id == printJobId)
+            .Take(1)
+            .ToListAsync()
+            .ConfigureAwait(false);
+
+        return jobs.FirstOrDefault()
+            ?? throw new InvalidOperationException("打印任务不存在。");
     }
 
     private static async Task MarkPrintedAsync(LabelPrintJob printJob, List<LabelImportRow> rows, int copyCount)

@@ -3,6 +3,7 @@ using System.Drawing.Printing;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows.Input;
 using LabelPrintClient.Database;
 using LabelPrintClient.Infrastructure;
 using LabelPrintClient.Models;
@@ -20,6 +21,7 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
     private const int MaxPrintCopies = 999;
 
     private readonly ObservableCollection<ImportRowGridItem> _rows = new();
+    private readonly List<LabelTemplate> _allTemplates = new();
     private CancellationTokenSource? _refreshCts;
     private CancellationTokenSource? _templateLoadCts;
     private CancellationTokenSource? _batchLoadCts;
@@ -58,8 +60,16 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
             .ToList();
 
         PrinterNameBox.ItemsSource = printerNames;
+        PrintCopiesBox.Text = Math.Clamp(App.Settings.DefaultPrintCopies, 1, MaxPrintCopies).ToString();
 
         var defaultPrinter = new PrinterSettings().PrinterName;
+        if (!string.IsNullOrWhiteSpace(App.Settings.DefaultPrinterName) &&
+            printerNames.Contains(App.Settings.DefaultPrinterName))
+        {
+            PrinterNameBox.SelectedItem = App.Settings.DefaultPrinterName;
+            return;
+        }
+
         var preferredPrinter = printerNames.FirstOrDefault(x => !IsVirtualDocumentPrinter(x));
 
         if (!string.IsNullOrWhiteSpace(defaultPrinter) &&
@@ -102,6 +112,7 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
             if (token.IsCancellationRequested) return;
 
             CategoryBox.ItemsSource = categories;
+            _allTemplates.Clear();
             TemplateBox.ItemsSource = null;
             ClearBatches();
             ClearRows();
@@ -120,6 +131,7 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         var category = SelectedCategory;
         if (category == null)
         {
+            _allTemplates.Clear();
             TemplateBox.ItemsSource = null;
             ClearBatches();
             ClearRows();
@@ -127,6 +139,7 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         }
 
         var token = ResetCancellation(ref _templateLoadCts);
+        _allTemplates.Clear();
         TemplateBox.ItemsSource = null;
         ClearBatches();
         ClearRows();
@@ -139,7 +152,9 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
                 .ToListAsync();
 
             if (token.IsCancellationRequested || SelectedCategory?.Id != category.Id) return;
-            TemplateBox.ItemsSource = templates;
+            _allTemplates.Clear();
+            _allTemplates.AddRange(templates);
+            ApplyTemplateFilter();
         }
         catch (OperationCanceledException)
         {
@@ -156,7 +171,53 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         await LoadBatchesAsync();
     }
 
+    private void TemplateSearchBox_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        ApplyTemplateFilter();
+    }
+
+    private void ApplyTemplateFilter()
+    {
+        if (TemplateBox == null)
+            return;
+
+        var currentTemplateId = SelectedTemplate?.Id;
+        var keyword = TemplateSearchBox?.Text.Trim() ?? string.Empty;
+        var filtered = string.IsNullOrWhiteSpace(keyword)
+            ? _allTemplates.ToList()
+            : _allTemplates
+                .Where(x => x.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
+                            (!string.IsNullOrWhiteSpace(x.TemplateFileName) &&
+                             x.TemplateFileName.Contains(keyword, StringComparison.OrdinalIgnoreCase)))
+                .ToList();
+
+        TemplateBox.ItemsSource = filtered;
+        TemplateBox.SelectedItem = filtered.FirstOrDefault(x => x.Id == currentTemplateId);
+    }
+
     private async void LoadBatches_Click(object sender, RoutedEventArgs e) => await LoadBatchesAsync();
+
+    private async void BatchFilter_Click(object sender, RoutedEventArgs e)
+    {
+        _batchCurrentPage = 1;
+        await LoadBatchesAsync();
+    }
+
+    private async void BatchStatusFilterBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (!IsLoaded) return;
+
+        _batchCurrentPage = 1;
+        await LoadBatchesAsync();
+    }
+
+    private async void BatchSearchBox_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key != System.Windows.Input.Key.Enter) return;
+
+        _batchCurrentPage = 1;
+        await LoadBatchesAsync();
+    }
 
     private async Task LoadBatchesAsync()
     {
@@ -171,8 +232,21 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         var token = ResetCancellation(ref _batchLoadCts);
         try
         {
+            var keyword = BatchSearchBox?.Text.Trim() ?? string.Empty;
+            var statusFilter = GetSelectedBatchStatusFilter();
             var batchQuery = AppDb.Db.Queryable<LabelImportBatch>()
                 .Where(x => x.TemplateId == template.Id);
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                batchQuery = batchQuery.Where(x =>
+                    x.ExcelFileName.Contains(keyword) ||
+                    (x.OperatorName != null && x.OperatorName.Contains(keyword)));
+            }
+
+            if (string.Equals(statusFilter, "Active", StringComparison.OrdinalIgnoreCase))
+                batchQuery = batchQuery.Where(x => x.Status != "Voided");
+            else if (!string.Equals(statusFilter, "All", StringComparison.OrdinalIgnoreCase))
+                batchQuery = batchQuery.Where(x => x.Status == statusFilter);
 
             var totalRows = await batchQuery.CountAsync();
             var totalPages = Math.Max(1, (int)Math.Ceiling(totalRows / (double)_batchPageSize));
@@ -193,6 +267,7 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
             BatchGrid.ItemsSource = batches;
             ClearRows();
             UpdateBatchPagination();
+            UpdateBatchEmptyState();
         }
         catch (OperationCanceledException)
         {
@@ -221,8 +296,8 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
 
         try
         {
-            await RunQueuedAsync(sender, "正在生成 Excel 模板...", ct =>
-                new ExcelTemplateExportService().ExportAsync(templateId, dialog.FileName, ct));
+            await RunQueuedAsync(sender, BackgroundTaskKind.Export, "正在生成 Excel 模板...", context =>
+                new ExcelTemplateExportService().ExportAsync(templateId, dialog.FileName, context.CancellationToken));
             System.Windows.MessageBox.Show("Excel 模板已生成。");
         }
         catch (Exception ex)
@@ -249,8 +324,22 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         try
         {
             var service = new LabelImportService();
-            var batchId = await RunQueuedAsync(sender, "正在导入 Excel 数据...", ct =>
-                service.ImportExcelAsync(templateId, dialog.FileName, App.Settings.OperatorName, ct));
+            var preview = await RunQueuedAsync(sender, BackgroundTaskKind.Import, "正在读取 Excel 数据...", context =>
+                service.PreviewExcelAsync(templateId, dialog.FileName, context.CancellationToken));
+
+            var previewWindow = new ImportPreviewWindow(preview)
+            {
+                Owner = Window.GetWindow(this)
+            };
+
+            if (previewWindow.ShowDialog() != true)
+            {
+                SummaryText.Text = "已取消导入，未写入批次数据。";
+                return;
+            }
+
+            var batchId = await RunQueuedAsync(sender, BackgroundTaskKind.Import, "正在提交导入数据...", context =>
+                service.CommitImportAsync(preview, App.Settings.OperatorName, context.CancellationToken));
 
             if (SelectedTemplate?.Id == templateId)
             {
@@ -273,6 +362,33 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
     {
         _rowCurrentPage = 1;
         await LoadRowsAsync();
+    }
+
+    private async void VoidBatch_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { DataContext: LabelImportBatch batch })
+            return;
+
+        if (string.Equals(batch.Status, "Voided", StringComparison.OrdinalIgnoreCase))
+        {
+            System.Windows.MessageBox.Show("当前批次已经作废。");
+            return;
+        }
+
+        if (System.Windows.MessageBox.Show($"确定作废批次 {batch.ExcelFileName}？作废后默认列表会隐藏该批次，但历史记录仍保留。", "确认作废", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+            return;
+
+        try
+        {
+            batch.Status = "Voided";
+            await AppDb.Db.Updateable(batch).ExecuteCommandAsync();
+            await LoadBatchesAsync();
+            System.Windows.MessageBox.Show("批次已作废。");
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show($"作废批次失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
     private async Task LoadRowsAsync()
@@ -344,6 +460,7 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
                 _rows.Add(item);
             }
             RowGrid.ItemsSource = _rows;
+            UpdateRowEmptyState(batch);
             UpdateSummary();
         }
         catch (OperationCanceledException)
@@ -434,6 +551,7 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         _rowTotalRows = 0;
         _rowTotalPages = 1;
         RowGrid.ItemsSource = _rows;
+        UpdateRowEmptyState(null);
         UpdateSummary();
     }
 
@@ -446,6 +564,7 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         _batchTotalRows = 0;
         _batchTotalPages = 1;
         UpdateBatchPagination();
+        UpdateBatchEmptyState();
     }
 
     private async Task ApplyFilterAsync()
@@ -455,6 +574,46 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
     }
 
     private async void Filter_Changed(object sender, RoutedEventArgs e) => await ApplyFilterAsync();
+
+    private string GetSelectedBatchStatusFilter()
+    {
+        if (BatchStatusFilterBox?.SelectedItem is ComboBoxItem item)
+            return item.Tag?.ToString() ?? "Active";
+
+        return "Active";
+    }
+
+    private void UpdateBatchEmptyState()
+    {
+        if (BatchEmptyText == null)
+            return;
+
+        if (SelectedTemplate == null)
+            BatchEmptyText.Text = "请选择模板查看导入批次";
+        else if (_batchTotalRows == 0)
+            BatchEmptyText.Text = "暂无符合条件的导入批次";
+        else
+            BatchEmptyText.Text = string.Empty;
+
+        BatchEmptyText.Visibility = _batchTotalRows == 0 ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void UpdateRowEmptyState(LabelImportBatch? batch)
+    {
+        if (RowEmptyText == null)
+            return;
+
+        if (SelectedTemplate == null)
+            RowEmptyText.Text = "请选择模板";
+        else if (batch == null)
+            RowEmptyText.Text = "请选择批次查看明细";
+        else if (_rowTotalRows == 0)
+            RowEmptyText.Text = "暂无符合条件的明细数据";
+        else
+            RowEmptyText.Text = string.Empty;
+
+        RowEmptyText.Visibility = _rowTotalRows == 0 ? Visibility.Visible : Visibility.Collapsed;
+    }
 
     private void Row_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
@@ -580,8 +739,8 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
 
         try
         {
-            await RunQueuedAsync(sender, "正在打开标签预览...", ct =>
-                new LabelPrintService(App.Settings).PreviewSelectedRowsAsync(template.Id, batch.Id, new[] { row.Id }, printCopies, ct));
+            await RunQueuedAsync(sender, BackgroundTaskKind.Preview, "正在打开标签预览...", context =>
+                new LabelPrintService(App.Settings).PreviewSelectedRowsAsync(template.Id, batch.Id, new[] { row.Id }, printCopies, context.CancellationToken));
         }
         catch (Exception ex)
         {
@@ -600,13 +759,24 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         if (!TryGetPrinterName(out var printerName))
             return;
 
-        if (System.Windows.MessageBox.Show($"确定打印 Excel 第 {row.RowIndex} 行数据，{printCopies} 张？", "确认打印", MessageBoxButton.YesNo) != MessageBoxResult.Yes)
+        if (!EnsureBatchCanPrint(batch))
+            return;
+
+        if (App.Settings.ConfirmBeforePrint &&
+            System.Windows.MessageBox.Show($"确定打印 Excel 第 {row.RowIndex} 行数据，{printCopies} 张？", "确认打印", MessageBoxButton.YesNo) != MessageBoxResult.Yes)
             return;
 
         try
         {
-            await RunQueuedAsync(sender, "正在打印当前行...", ct =>
-                new LabelPrintService(App.Settings).PrintSelectedRowsAsync(template.Id, batch.Id, new[] { row.Id }, printerName, printCopies, ct));
+            await RunQueuedAsync(sender, BackgroundTaskKind.Print, "正在打印当前行...", context =>
+                new LabelPrintService(App.Settings).PrintSelectedRowsAsync(
+                    template.Id,
+                    batch.Id,
+                    new[] { row.Id },
+                    printerName,
+                    printCopies,
+                    context.CancellationToken,
+                    context.Progress));
             System.Windows.MessageBox.Show("打印任务已完成。");
             await LoadRowsAsync();
         }
@@ -638,8 +808,8 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
 
         try
         {
-            await RunQueuedAsync(sender, "正在打开批量预览...", ct =>
-                new LabelPrintService(App.Settings).PreviewSelectedRowsAsync(template.Id, batch.Id, selectedIds, printCopies, ct));
+            await RunQueuedAsync(sender, BackgroundTaskKind.Preview, "正在打开批量预览...", context =>
+                new LabelPrintService(App.Settings).PreviewSelectedRowsAsync(template.Id, batch.Id, selectedIds, printCopies, context.CancellationToken));
         }
         catch (Exception ex)
         {
@@ -670,14 +840,25 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         if (!TryGetPrinterName(out var printerName))
             return;
 
+        if (!EnsureBatchCanPrint(batch))
+            return;
+
         var totalLabels = selectedIds.Count * printCopies;
-        if (System.Windows.MessageBox.Show($"确定批量打印选中的 {selectedIds.Count} 行数据，每行 {printCopies} 张，共 {totalLabels} 张？", "确认批量打印", MessageBoxButton.YesNo) != MessageBoxResult.Yes)
+        if (App.Settings.ConfirmBeforePrint &&
+            System.Windows.MessageBox.Show($"确定批量打印选中的 {selectedIds.Count} 行数据，每行 {printCopies} 张，共 {totalLabels} 张？", "确认批量打印", MessageBoxButton.YesNo) != MessageBoxResult.Yes)
             return;
 
         try
         {
-            await RunQueuedAsync(sender, "正在批量打印...", ct =>
-                new LabelPrintService(App.Settings).PrintSelectedRowsAsync(template.Id, batch.Id, selectedIds, printerName, printCopies, ct));
+            await RunQueuedAsync(sender, BackgroundTaskKind.Print, "正在批量打印...", context =>
+                new LabelPrintService(App.Settings).PrintSelectedRowsAsync(
+                    template.Id,
+                    batch.Id,
+                    selectedIds,
+                    printerName,
+                    printCopies,
+                    context.CancellationToken,
+                    context.Progress));
             System.Windows.MessageBox.Show("打印任务已完成。");
             await LoadRowsAsync();
         }
@@ -740,6 +921,15 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         return false;
     }
 
+    private static bool EnsureBatchCanPrint(LabelImportBatch batch)
+    {
+        if (!string.Equals(batch.Status, "Voided", StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        System.Windows.MessageBox.Show("当前批次已作废，不能从打印中心继续打印。可以在打印记录中按历史任务重打印。", "批次已作废", MessageBoxButton.OK, MessageBoxImage.Warning);
+        return false;
+    }
+
     private List<long> GetSelectedValidRowIds()
     {
         return _rows
@@ -750,17 +940,36 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
 
     private async Task RunQueuedAsync(object sender, string runningText, Func<CancellationToken, Task> operation)
     {
+        await RunQueuedAsync(
+            sender,
+            BackgroundTaskKind.Other,
+            runningText,
+            context => operation(context.CancellationToken));
+    }
+
+    private async Task<T> RunQueuedAsync<T>(object sender, string runningText, Func<CancellationToken, Task<T>> operation)
+    {
+        return await RunQueuedAsync(
+            sender,
+            BackgroundTaskKind.Other,
+            runningText,
+            context => operation(context.CancellationToken));
+    }
+
+    private async Task RunQueuedAsync(object sender, BackgroundTaskKind kind, string runningText, Func<BackgroundTaskContext, Task> operation)
+    {
         await RunQueuedAsync<object?>(
             sender,
+            kind,
             runningText,
-            async token =>
+            async context =>
             {
-                await operation(token);
+                await operation(context);
                 return null;
             });
     }
 
-    private async Task<T> RunQueuedAsync<T>(object sender, string runningText, Func<CancellationToken, Task<T>> operation)
+    private async Task<T> RunQueuedAsync<T>(object sender, BackgroundTaskKind kind, string runningText, Func<BackgroundTaskContext, Task<T>> operation)
     {
         var element = GetTemporarilyDisabledElement(sender);
         if (element != null)
@@ -771,7 +980,7 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
 
         try
         {
-            return await BackgroundTaskQueue.Shared.EnqueueAsync(operation);
+            return await BackgroundTaskQueue.Shared.EnqueueAsync(kind, runningText, operation);
         }
         finally
         {

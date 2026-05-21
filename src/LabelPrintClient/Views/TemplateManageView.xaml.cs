@@ -21,6 +21,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
     private int _templatePageSize = DefaultTemplatePageSize;
     private int _templateTotalRows;
     private int _templateTotalPages = 1;
+    private long? _editingFieldId;
 
     public TemplateManageView()
     {
@@ -32,6 +33,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
 
     private LabelCategory? SelectedCategory => CategoryGrid.SelectedItem as LabelCategory;
     private LabelTemplate? SelectedTemplate => TemplateGrid.SelectedItem as LabelTemplate;
+    private LabelTemplateField? SelectedField => FieldGrid.SelectedItem as LabelTemplateField;
 
     private async void Refresh_Click(object sender, RoutedEventArgs e) => await RefreshAllAsync();
 
@@ -48,6 +50,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
 
             CategoryGrid.ItemsSource = categories;
             ClearTemplates();
+            UpdateEmptyStates();
         }
         catch (OperationCanceledException)
         {
@@ -97,6 +100,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
             TemplateGrid.ItemsSource = templates;
             FieldGrid.ItemsSource = null;
             UpdateTemplatePagination();
+            UpdateEmptyStates();
         }
         catch (OperationCanceledException)
         {
@@ -109,15 +113,16 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
 
     private async void TemplateGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        await LoadFieldsAsync();
+            await LoadFieldsAsync();
     }
 
-    private async Task LoadFieldsAsync()
+    private async Task LoadFieldsAsync(long? selectFieldId = null)
     {
         var template = SelectedTemplate;
         if (template == null)
         {
             FieldGrid.ItemsSource = null;
+            ClearFieldForm();
             return;
         }
 
@@ -131,6 +136,11 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
 
             if (token.IsCancellationRequested || SelectedTemplate?.Id != template.Id) return;
             FieldGrid.ItemsSource = fields;
+            if (selectFieldId.HasValue)
+                FieldGrid.SelectedItem = fields.FirstOrDefault(x => x.Id == selectFieldId.Value);
+            else
+                ClearFieldForm();
+            UpdateEmptyStates();
         }
         catch (OperationCanceledException)
         {
@@ -236,7 +246,8 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
 
         try
         {
-            await RunQueuedAsync(sender, "正在上传模板...", ct => UploadTemplateAsync(template, dialog.FileName, ct));
+            await RunQueuedAsync(sender, BackgroundTaskKind.Upload, "正在上传模板...", context =>
+                UploadTemplateAsync(template, dialog.FileName, context.CancellationToken));
             await LoadTemplatesAsync();
             System.Windows.MessageBox.Show("模板已保存。");
         }
@@ -333,7 +344,8 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         {
             var storage = LabelTemplateStorageFactory.Create(App.Settings.RunMode);
             var designer = new StiTemplateDesignerService(storage);
-            await RunQueuedAsync(sender, "正在打开设计器...", ct => designer.DesignAsync(template, fields, ct));
+            await RunQueuedAsync(sender, BackgroundTaskKind.Design, "正在打开设计器...", context =>
+                designer.DesignAsync(template, fields, context.CancellationToken));
             await LoadTemplatesAsync();
             System.Windows.MessageBox.Show("模板设计已保存。");
         }
@@ -352,19 +364,13 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
             return;
         }
 
-        var name = FieldNameBox.Text.Trim();
-        var code = FieldCodeBox.Text.Trim();
-        var type = ((ComboBoxItem)FieldTypeBox.SelectedItem).Content?.ToString() ?? "string";
-        if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(code))
-        {
-            System.Windows.MessageBox.Show("字段名和字段编码不能为空。");
+        if (!TryReadFieldForm(out var name, out var code, out var type, out var isRequired, out var remark))
             return;
-        }
 
         var fields = await AppDb.Db.Queryable<LabelTemplateField>()
             .Where(x => x.TemplateId == template.Id)
             .ToListAsync();
-        var duplicateFieldError = GetDuplicateFieldError(fields, name, code);
+        var duplicateFieldError = GetDuplicateFieldError(fields, name, code, null);
         if (duplicateFieldError != null)
         {
             System.Windows.MessageBox.Show(duplicateFieldError);
@@ -379,16 +385,76 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
             FieldName = name,
             FieldCode = code,
             FieldType = type,
-            IsRequired = FieldRequiredBox.IsChecked == true,
-            Remark = FieldRemarkBox.Text.Trim(),
+            IsRequired = isRequired,
+            Remark = remark,
             Sort = maxSort + 10
         };
 
         await AppDb.Db.Insertable(field).ExecuteCommandAsync();
-        FieldNameBox.Text = string.Empty;
-        FieldCodeBox.Text = string.Empty;
-        FieldRemarkBox.Text = string.Empty;
-        await LoadFieldsAsync();
+        await NormalizeFieldSortAsync(template.Id);
+        await LoadFieldsAsync(field.Id);
+    }
+
+    private async void SaveField_Click(object sender, RoutedEventArgs e)
+    {
+        var template = SelectedTemplate;
+        if (template == null)
+        {
+            System.Windows.MessageBox.Show("请先选择模板。");
+            return;
+        }
+
+        var fieldId = _editingFieldId ?? SelectedField?.Id;
+        if (fieldId == null)
+        {
+            System.Windows.MessageBox.Show("请先选择要编辑的字段。");
+            return;
+        }
+
+        if (!TryReadFieldForm(out var name, out var code, out var type, out var isRequired, out var remark))
+            return;
+
+        var fields = await AppDb.Db.Queryable<LabelTemplateField>()
+            .Where(x => x.TemplateId == template.Id)
+            .ToListAsync();
+        var duplicateFieldError = GetDuplicateFieldError(fields, name, code, fieldId.Value);
+        if (duplicateFieldError != null)
+        {
+            System.Windows.MessageBox.Show(duplicateFieldError);
+            return;
+        }
+
+        var field = fields.FirstOrDefault(x => x.Id == fieldId.Value);
+        if (field == null)
+        {
+            System.Windows.MessageBox.Show("字段不存在，请刷新后重试。");
+            return;
+        }
+
+        field.FieldName = name;
+        field.FieldCode = code;
+        field.FieldType = type;
+        field.IsRequired = isRequired;
+        field.Remark = remark;
+
+        await AppDb.Db.Updateable(field).ExecuteCommandAsync();
+        await LoadFieldsAsync(field.Id);
+    }
+
+    private void ClearFieldForm_Click(object sender, RoutedEventArgs e)
+    {
+        FieldGrid.SelectedItem = null;
+        ClearFieldForm();
+    }
+
+    private async void MoveFieldUp_Click(object sender, RoutedEventArgs e)
+    {
+        await MoveSelectedFieldAsync(-1);
+    }
+
+    private async void MoveFieldDown_Click(object sender, RoutedEventArgs e)
+    {
+        await MoveSelectedFieldAsync(1);
     }
 
     private async void DeleteField_Click(object sender, RoutedEventArgs e)
@@ -396,7 +462,20 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         if (FieldGrid.SelectedItem is not LabelTemplateField field) return;
         if (System.Windows.MessageBox.Show($"确定删除字段 {field.FieldName}？", "确认", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
         await AppDb.Db.Deleteable<LabelTemplateField>().Where(x => x.Id == field.Id).ExecuteCommandAsync();
+        await NormalizeFieldSortAsync(field.TemplateId);
+        ClearFieldForm();
         await LoadFieldsAsync();
+    }
+
+    private void FieldGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (SelectedField == null)
+        {
+            ClearFieldForm();
+            return;
+        }
+
+        FillFieldForm(SelectedField);
     }
 
     private async void SeedDemo_Click(object sender, RoutedEventArgs e)
@@ -499,6 +578,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         _templateTotalRows = 0;
         _templateTotalPages = 1;
         UpdateTemplatePagination();
+        UpdateEmptyStates();
     }
 
     private void UpdateTemplatePagination()
@@ -517,6 +597,28 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         TemplatePrevPageButton.IsEnabled = hasRows && _templateCurrentPage > 1;
         TemplateNextPageButton.IsEnabled = hasRows && _templateCurrentPage < _templateTotalPages;
         TemplateLastPageButton.IsEnabled = hasRows && _templateCurrentPage < _templateTotalPages;
+    }
+
+    private void UpdateEmptyStates()
+    {
+        if (CategoryEmptyText != null)
+        {
+            var categoryCount = CategoryGrid?.ItemsSource?.Cast<object>().Count() ?? 0;
+            CategoryEmptyText.Visibility = categoryCount == 0 ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        if (TemplateEmptyText != null)
+        {
+            TemplateEmptyText.Text = SelectedCategory == null ? "请选择分类查看模板" : "当前分类暂无模板";
+            TemplateEmptyText.Visibility = _templateTotalRows == 0 ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        if (FieldEmptyText != null)
+        {
+            var fieldCount = FieldGrid?.ItemsSource?.Cast<object>().Count() ?? 0;
+            FieldEmptyText.Text = SelectedTemplate == null ? "请选择模板查看字段" : "当前模板暂无字段";
+            FieldEmptyText.Visibility = fieldCount == 0 ? Visibility.Visible : Visibility.Collapsed;
+        }
     }
 
     private int GetSelectedTemplatePageSize()
@@ -547,18 +649,123 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         return templates.FirstOrDefault(x => string.Equals(x.Name.Trim(), name, StringComparison.OrdinalIgnoreCase));
     }
 
-    private static string? GetDuplicateFieldError(IEnumerable<LabelTemplateField> fields, string name, string code)
+    private bool TryReadFieldForm(
+        out string name,
+        out string code,
+        out string type,
+        out bool isRequired,
+        out string remark)
     {
-        if (fields.Any(x => string.Equals(x.FieldName.Trim(), name, StringComparison.OrdinalIgnoreCase)))
+        name = FieldNameBox.Text.Trim();
+        code = FieldCodeBox.Text.Trim();
+        type = ((ComboBoxItem)FieldTypeBox.SelectedItem).Content?.ToString() ?? "string";
+        isRequired = FieldRequiredBox.IsChecked == true;
+        remark = FieldRemarkBox.Text.Trim();
+
+        if (!string.IsNullOrWhiteSpace(name) && !string.IsNullOrWhiteSpace(code))
+            return true;
+
+        System.Windows.MessageBox.Show("字段名和字段编码不能为空。");
+        return false;
+    }
+
+    private void FillFieldForm(LabelTemplateField field)
+    {
+        _editingFieldId = field.Id;
+        FieldNameBox.Text = field.FieldName;
+        FieldCodeBox.Text = field.FieldCode;
+        SelectFieldType(field.FieldType);
+        FieldRequiredBox.IsChecked = field.IsRequired;
+        FieldRemarkBox.Text = field.Remark ?? string.Empty;
+    }
+
+    private void ClearFieldForm()
+    {
+        _editingFieldId = null;
+        FieldNameBox.Text = string.Empty;
+        FieldCodeBox.Text = string.Empty;
+        FieldTypeBox.SelectedIndex = 0;
+        FieldRequiredBox.IsChecked = false;
+        FieldRemarkBox.Text = string.Empty;
+    }
+
+    private void SelectFieldType(string fieldType)
+    {
+        foreach (var item in FieldTypeBox.Items.OfType<ComboBoxItem>())
+        {
+            if (string.Equals(item.Content?.ToString(), fieldType, StringComparison.OrdinalIgnoreCase))
+            {
+                FieldTypeBox.SelectedItem = item;
+                return;
+            }
+        }
+
+        FieldTypeBox.SelectedIndex = 0;
+    }
+
+    private async Task MoveSelectedFieldAsync(int direction)
+    {
+        var template = SelectedTemplate;
+        var field = SelectedField;
+        if (template == null || field == null)
+        {
+            System.Windows.MessageBox.Show("请先选择字段。");
+            return;
+        }
+
+        var fields = await AppDb.Db.Queryable<LabelTemplateField>()
+            .Where(x => x.TemplateId == template.Id)
+            .OrderBy(x => x.Sort)
+            .OrderBy(x => x.Id)
+            .ToListAsync();
+
+        var index = fields.FindIndex(x => x.Id == field.Id);
+        var targetIndex = index + direction;
+        if (index < 0 || targetIndex < 0 || targetIndex >= fields.Count)
+            return;
+
+        (fields[index].Sort, fields[targetIndex].Sort) = (fields[targetIndex].Sort, fields[index].Sort);
+        await AppDb.Db.Updateable(new[] { fields[index], fields[targetIndex] }).ExecuteCommandAsync();
+        await NormalizeFieldSortAsync(template.Id);
+        await LoadFieldsAsync(field.Id);
+    }
+
+    private async Task NormalizeFieldSortAsync(long templateId)
+    {
+        var fields = await AppDb.Db.Queryable<LabelTemplateField>()
+            .Where(x => x.TemplateId == templateId)
+            .OrderBy(x => x.Sort)
+            .OrderBy(x => x.Id)
+            .ToListAsync();
+
+        for (var i = 0; i < fields.Count; i++)
+            fields[i].Sort = (i + 1) * 10;
+
+        if (fields.Count > 0)
+            await AppDb.Db.Updateable(fields).ExecuteCommandAsync();
+    }
+
+    private static string? GetDuplicateFieldError(IEnumerable<LabelTemplateField> fields, string name, string code, long? excludeFieldId)
+    {
+        var candidates = excludeFieldId.HasValue
+            ? fields.Where(x => x.Id != excludeFieldId.Value)
+            : fields;
+
+        if (candidates.Any(x => string.Equals(x.FieldName.Trim(), name, StringComparison.OrdinalIgnoreCase)))
             return "字段名已存在，请勿重复新增。";
 
-        if (fields.Any(x => string.Equals(x.FieldCode.Trim(), code, StringComparison.OrdinalIgnoreCase)))
+        if (candidates.Any(x => string.Equals(x.FieldCode.Trim(), code, StringComparison.OrdinalIgnoreCase)))
             return "字段编码已存在，请勿重复新增。";
 
         return null;
     }
 
     private async Task RunQueuedAsync(object sender, string runningText, Func<CancellationToken, Task> operation)
+    {
+        await RunQueuedAsync(sender, BackgroundTaskKind.Other, runningText, context => operation(context.CancellationToken));
+    }
+
+    private async Task RunQueuedAsync(object sender, BackgroundTaskKind kind, string runningText, Func<BackgroundTaskContext, Task> operation)
     {
         var element = sender as UIElement;
         var modeText = App.Settings.RunMode.ToString();
@@ -569,7 +776,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
 
         try
         {
-            await BackgroundTaskQueue.Shared.EnqueueAsync(operation);
+            await BackgroundTaskQueue.Shared.EnqueueAsync(kind, runningText, operation);
         }
         finally
         {

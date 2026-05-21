@@ -29,9 +29,17 @@
                                        Tag="PrintHistory"
                                        Icon="{ui:SymbolIcon History24}"
                                        Click="NavItem_Click" />
+                <ui:NavigationViewItem Content="任务中心"
+                                       Tag="TaskCenter"
+                                       Icon="{ui:SymbolIcon List24}"
+                                       Click="NavItem_Click" />
                 <ui:NavigationViewItem Content="模板维护"
                                        Tag="TemplateManage"
                                        Icon="{ui:SymbolIcon Document24}"
+                                       Click="NavItem_Click" />
+                <ui:NavigationViewItem Content="系统配置"
+                                       Tag="Settings"
+                                       Icon="{ui:SymbolIcon Options24}"
                                        Click="NavItem_Click" />
             </ui:NavigationView.MenuItems>
             <ui:NavigationView.ContentOverlay>
