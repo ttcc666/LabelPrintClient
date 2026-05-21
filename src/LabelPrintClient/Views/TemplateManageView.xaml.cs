@@ -13,6 +13,13 @@ namespace LabelPrintClient.Views;
 
 public partial class TemplateManageView : System.Windows.Controls.UserControl
 {
+    private const int DefaultTemplatePageSize = 20;
+
+    private int _templateCurrentPage = 1;
+    private int _templatePageSize = DefaultTemplatePageSize;
+    private int _templateTotalRows;
+    private int _templateTotalPages = 1;
+
     public TemplateManageView()
     {
         InitializeComponent();
@@ -28,18 +35,38 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
     private void RefreshAll()
     {
         CategoryGrid.ItemsSource = AppDb.Db.Queryable<LabelCategory>().OrderBy(x => x.Sort).ToList();
-        TemplateGrid.ItemsSource = null;
-        FieldGrid.ItemsSource = null;
+        ClearTemplates();
     }
 
     private void CategoryGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (SelectedCategory == null) return;
-        TemplateGrid.ItemsSource = AppDb.Db.Queryable<LabelTemplate>()
-            .Where(x => x.CategoryId == SelectedCategory.Id)
+        _templateCurrentPage = 1;
+        LoadTemplates();
+    }
+
+    private void LoadTemplates()
+    {
+        if (SelectedCategory == null)
+        {
+            ClearTemplates();
+            return;
+        }
+
+        var templateQuery = AppDb.Db.Queryable<LabelTemplate>()
+            .Where(x => x.CategoryId == SelectedCategory.Id);
+
+        _templateTotalRows = templateQuery.Count();
+        _templateTotalPages = Math.Max(1, (int)Math.Ceiling(_templateTotalRows / (double)_templatePageSize));
+        if (_templateCurrentPage > _templateTotalPages) _templateCurrentPage = _templateTotalPages;
+        if (_templateCurrentPage < 1) _templateCurrentPage = 1;
+
+        TemplateGrid.ItemsSource = templateQuery
             .OrderBy(x => x.Name)
+            .Skip((_templateCurrentPage - 1) * _templatePageSize)
+            .Take(_templatePageSize)
             .ToList();
         FieldGrid.ItemsSource = null;
+        UpdateTemplatePagination();
     }
 
     private void TemplateGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -134,7 +161,8 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
 
         AppDb.Db.Insertable(template).ExecuteCommand();
         TemplateNameBox.Text = string.Empty;
-        CategoryGrid_SelectionChanged(sender, null!);
+        _templateCurrentPage = 1;
+        LoadTemplates();
     }
 
     private void UploadTemplate_Click(object sender, RoutedEventArgs e)
@@ -173,8 +201,46 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
 
         template.UpdateTime = DateTime.Now;
         AppDb.Db.Updateable(template).ExecuteCommand();
-        CategoryGrid_SelectionChanged(sender, null!);
+        LoadTemplates();
         System.Windows.MessageBox.Show("模板已保存。");
+    }
+
+    private void TemplateFirstPage_Click(object sender, RoutedEventArgs e)
+    {
+        if (_templateCurrentPage <= 1) return;
+        _templateCurrentPage = 1;
+        LoadTemplates();
+    }
+
+    private void TemplatePrevPage_Click(object sender, RoutedEventArgs e)
+    {
+        if (_templateCurrentPage <= 1) return;
+        _templateCurrentPage--;
+        LoadTemplates();
+    }
+
+    private void TemplateNextPage_Click(object sender, RoutedEventArgs e)
+    {
+        if (_templateCurrentPage >= _templateTotalPages) return;
+        _templateCurrentPage++;
+        LoadTemplates();
+    }
+
+    private void TemplateLastPage_Click(object sender, RoutedEventArgs e)
+    {
+        if (_templateCurrentPage >= _templateTotalPages) return;
+        _templateCurrentPage = _templateTotalPages;
+        LoadTemplates();
+    }
+
+    private void TemplatePageSizeBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        _templatePageSize = GetSelectedTemplatePageSize();
+        _templateCurrentPage = 1;
+        if (SelectedCategory != null)
+            LoadTemplates();
+        else
+            UpdateTemplatePagination();
     }
 
     private void DesignTemplate_Click(object sender, RoutedEventArgs e)
@@ -344,6 +410,49 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
     private static string BuildLocalTemplatePath(long templateId)
     {
         return Path.Combine(ResolveTemplateFolder(), $"{templateId}.mrt");
+    }
+
+    private void ClearTemplates()
+    {
+        if (TemplateGrid != null)
+            TemplateGrid.ItemsSource = null;
+        if (FieldGrid != null)
+            FieldGrid.ItemsSource = null;
+
+        _templateCurrentPage = 1;
+        _templateTotalRows = 0;
+        _templateTotalPages = 1;
+        UpdateTemplatePagination();
+    }
+
+    private void UpdateTemplatePagination()
+    {
+        if (TemplatePageInfoText == null ||
+            TemplateFirstPageButton == null || TemplatePrevPageButton == null ||
+            TemplateNextPageButton == null || TemplateLastPageButton == null)
+        {
+            return;
+        }
+
+        TemplatePageInfoText.Text = $"{_templateCurrentPage} / {_templateTotalPages}，共 {_templateTotalRows} 个";
+
+        var hasRows = _templateTotalRows > 0;
+        TemplateFirstPageButton.IsEnabled = hasRows && _templateCurrentPage > 1;
+        TemplatePrevPageButton.IsEnabled = hasRows && _templateCurrentPage > 1;
+        TemplateNextPageButton.IsEnabled = hasRows && _templateCurrentPage < _templateTotalPages;
+        TemplateLastPageButton.IsEnabled = hasRows && _templateCurrentPage < _templateTotalPages;
+    }
+
+    private int GetSelectedTemplatePageSize()
+    {
+        if (TemplatePageSizeBox?.SelectedItem is ComboBoxItem item &&
+            int.TryParse(item.Content?.ToString(), out var pageSize) &&
+            pageSize > 0)
+        {
+            return pageSize;
+        }
+
+        return DefaultTemplatePageSize;
     }
 
     private static LabelCategory? FindCategory(string name, long parentId)

@@ -34,13 +34,15 @@
         <!-- 主从三栏：分类 -> 模板 -> 字段 -->
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="230" />
-                <ColumnDefinition Width="300" />
-                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="250" MinWidth="200" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="440" MinWidth="350" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" MinWidth="350" />
             </Grid.ColumnDefinitions>
 
             <!-- 标签分类 -->
-            <Grid Grid.Column="0" Margin="0,0,10,0">
+            <Grid Grid.Column="0" Margin="0,0,6,0">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
@@ -79,20 +81,24 @@
                 </ui:Card>
             </Grid>
 
+            <!-- 拖拽条 1 -->
+            <GridSplitter Grid.Column="1" Width="6" HorizontalAlignment="Center" VerticalAlignment="Stretch" Background="Transparent" Cursor="SizeWE" Margin="2,0" />
+
             <!-- 标签模板 -->
-            <Grid Grid.Column="1" Margin="0,0,10,0">
+            <Grid Grid.Column="2" Margin="6,0,6,0">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
-                <ui:TextBlock Grid.Row="0" Style="{StaticResource SectionTitleStyle}" Text="标签模板" />
+                <ui:TextBlock Grid.Row="0" Style="{StaticResource SectionTitleStyle}" Text="标签模板" Margin="4,0,0,0" />
                 <ui:Card Grid.Row="1" Padding="10" VerticalAlignment="Stretch" VerticalContentAlignment="Stretch">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
                         <Grid Grid.Row="0" Margin="0,0,0,8">
                             <Grid.ColumnDefinitions>
@@ -122,12 +128,32 @@
                                 <DataGridTextColumn Header="文件" Binding="{Binding TemplateFileName}" Width="*" MinWidth="120" />
                             </DataGrid.Columns>
                         </ui:DataGrid>
+
+                        <Border Grid.Row="3" Padding="0,8,0,0" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" Margin="0,8,0,0">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                <TextBlock Text="每页" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                <ComboBox x:Name="TemplatePageSizeBox" Width="68" SelectedIndex="1" SelectionChanged="TemplatePageSizeBox_SelectionChanged" Margin="0,0,16,0" VerticalAlignment="Center">
+                                    <ComboBoxItem Content="10" />
+                                    <ComboBoxItem Content="20" />
+                                    <ComboBoxItem Content="50" />
+                                </ComboBox>
+                                <ui:Button x:Name="TemplateFirstPageButton" Content="&lt;&lt;" Style="{StaticResource PagerButtonStyle}" Click="TemplateFirstPage_Click" />
+                                <ui:Button x:Name="TemplatePrevPageButton" Content="&lt;" Style="{StaticResource PagerButtonStyle}" Click="TemplatePrevPage_Click" />
+                                <ui:TextBlock x:Name="TemplatePageInfoText" VerticalAlignment="Center" MinWidth="70" TextAlignment="Center" FontWeight="SemiBold" />
+                                <ui:Button x:Name="TemplateNextPageButton" Content="&gt;" Style="{StaticResource PagerButtonStyle}" Click="TemplateNextPage_Click" />
+                                <ui:Button x:Name="TemplateLastPageButton" Content="&gt;&gt;" Style="{StaticResource PagerButtonStyle}" Click="TemplateLastPage_Click" />
+                            </StackPanel>
+                        </Border>
+
                     </Grid>
                 </ui:Card>
             </Grid>
 
+            <!-- 拖拽条 2 -->
+            <GridSplitter Grid.Column="3" Width="6" HorizontalAlignment="Center" VerticalAlignment="Stretch" Background="Transparent" Cursor="SizeWE" Margin="2,0" />
+
             <!-- 模板字段 -->
-            <Grid Grid.Column="2">
+            <Grid Grid.Column="4" Margin="6,0,0,0">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />

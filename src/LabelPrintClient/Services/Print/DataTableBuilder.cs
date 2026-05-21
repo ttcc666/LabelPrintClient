@@ -9,8 +9,10 @@ public static class DataTableBuilder
     public static DataTable Build(
         IEnumerable<LabelImportRow> rows,
         IReadOnlyList<LabelTemplateField> fields,
-        string dataSourceName)
+        string dataSourceName,
+        int copyCount = 1)
     {
+        copyCount = Math.Max(1, copyCount);
         var table = new DataTable(dataSourceName);
 
         foreach (var field in fields)
@@ -22,12 +24,15 @@ public static class DataTableBuilder
         foreach (var row in rows)
         {
             var dict = JsonHelper.Deserialize<Dictionary<string, string>>(row.RowDataJson) ?? new Dictionary<string, string>();
-            var dataRow = table.NewRow();
-            foreach (var field in fields)
+            for (var copyIndex = 0; copyIndex < copyCount; copyIndex++)
             {
-                dataRow[field.FieldCode] = dict.TryGetValue(field.FieldCode, out var value) ? value : string.Empty;
+                var dataRow = table.NewRow();
+                foreach (var field in fields)
+                {
+                    dataRow[field.FieldCode] = dict.TryGetValue(field.FieldCode, out var value) ? value : string.Empty;
+                }
+                table.Rows.Add(dataRow);
             }
-            table.Rows.Add(dataRow);
         }
 
         return table;

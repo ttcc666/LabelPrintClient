@@ -7,68 +7,38 @@
         WindowStartupLocation="CenterScreen"
         WindowBackdropType="Mica"
         ExtendsContentIntoTitleBar="True">
-    <ui:FluentWindow.Resources>
-        <Style x:Key="SideNavListStyle" TargetType="ListBox">
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-        </Style>
-
-        <Style x:Key="SideNavItemStyle" TargetType="ListBoxItem">
-            <Setter Property="MinHeight" Value="42" />
-            <Setter Property="Padding" Value="14,10" />
-            <Setter Property="Margin" Value="8,2" />
-            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-        </Style>
-    </ui:FluentWindow.Resources>
-
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         
-        <ui:TitleBar Title="标签打印客户端" Grid.Row="0" />
+        <ui:TitleBar x:Name="TitleBar" Title="标签打印客户端" Grid.Row="0" Margin="0,0,0,0" />
 
-        <Grid Grid.Row="1" Margin="8,4,8,8">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="148" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
+        <ui:NavigationView x:Name="RootNavigation"
+                           Grid.Row="1"
+                           PaneDisplayMode="Left"
+                           OpenPaneLength="180"
+                           IsBackButtonVisible="Collapsed">
+            <ui:NavigationView.MenuItems>
+                <ui:NavigationViewItem Content="标签打印中心"
+                                       Tag="PrintCenter"
+                                       Icon="{ui:SymbolIcon Print24}"
+                                       Click="NavItem_Click" />
+                <ui:NavigationViewItem Content="打印记录"
+                                       Tag="PrintHistory"
+                                       Icon="{ui:SymbolIcon History24}"
+                                       Click="NavItem_Click" />
+                <ui:NavigationViewItem Content="模板维护"
+                                       Tag="TemplateManage"
+                                       Icon="{ui:SymbolIcon Document24}"
+                                       Click="NavItem_Click" />
+            </ui:NavigationView.MenuItems>
+            <ui:NavigationView.ContentOverlay>
+                <ContentControl x:Name="WorkspaceContent" Margin="0,0,0,0" />
+            </ui:NavigationView.ContentOverlay>
+        </ui:NavigationView>
 
-            <Border Grid.Column="0"
-                    Margin="0,0,8,0"
-                    Padding="0,12"
-                    Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
-                    BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
-                    BorderThickness="1"
-                    CornerRadius="8">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-                    </Grid.RowDefinitions>
-
-                    <StackPanel Margin="16,0,16,12">
-                        <ui:TextBlock FontTypography="BodyStrong" Text="工作台" />
-                        <ui:TextBlock Margin="0,4,0,0"
-                                      FontTypography="Caption"
-                                      Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                      Text="选择业务模块" />
-                    </StackPanel>
-
-                    <ListBox x:Name="NavigationList"
-                             Grid.Row="1"
-                             Style="{StaticResource SideNavListStyle}"
-                             ItemContainerStyle="{StaticResource SideNavItemStyle}"
-                             SelectionChanged="NavigationList_SelectionChanged">
-                        <ListBoxItem Tag="PrintCenter" Content="标签打印中心" />
-                        <ListBoxItem Tag="TemplateManage" Content="模板维护" />
-                    </ListBox>
-                </Grid>
-            </Border>
-
-            <ContentControl x:Name="WorkspaceContent" Grid.Column="1" />
-        </Grid>
+        <ui:SnackbarPresenter x:Name="RootSnackbar" Grid.Row="1" />
     </Grid>
 </ui:FluentWindow>
