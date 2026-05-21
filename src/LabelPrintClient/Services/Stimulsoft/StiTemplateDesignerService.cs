@@ -32,7 +32,7 @@ public class StiTemplateDesignerService
         }
 
         RegisterDesignData(report, template.DataSourceName, fields);
-        report.DesignV2WithWpf();
+        report.Design();
         _storage.SaveReport(template, report);
     }
 

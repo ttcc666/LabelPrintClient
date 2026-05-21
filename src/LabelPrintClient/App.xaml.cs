@@ -1,11 +1,15 @@
+using System.IO;
 using System.Windows;
 using LabelPrintClient.Config;
 using LabelPrintClient.Database;
+using Stimulsoft.Report;
 
 namespace LabelPrintClient;
 
 public partial class App : System.Windows.Application
 {
+    private const string StimulsoftLocalizationFileName = "zh-CHS.xml";
+
     public static AppSettings Settings { get; private set; } = new();
 
     protected override void OnStartup(System.Windows.StartupEventArgs e)
@@ -14,6 +18,7 @@ public partial class App : System.Windows.Application
 
         try
         {
+            LoadStimulsoftLocalization();
             Settings = AppConfigService.LoadOrCreateDefault();
             AppDb.Init(Settings);
             DbInitializer.InitTables();
@@ -23,5 +28,17 @@ public partial class App : System.Windows.Application
             System.Windows.MessageBox.Show($"系统初始化失败：{ex.Message}", "启动失败", MessageBoxButton.OK, MessageBoxImage.Error);
             Shutdown();
         }
+    }
+
+    private static void LoadStimulsoftLocalization()
+    {
+        var localizationDirectory = Path.Combine(AppContext.BaseDirectory, "Localization");
+        var localizationFile = Path.Combine(localizationDirectory, StimulsoftLocalizationFileName);
+
+        StiOptions.Configuration.DirectoryLocalization = localizationDirectory;
+        StiOptions.Configuration.Localization = StimulsoftLocalizationFileName;
+
+        if (File.Exists(localizationFile))
+            StiOptions.Localization.Load(localizationFile);
     }
 }

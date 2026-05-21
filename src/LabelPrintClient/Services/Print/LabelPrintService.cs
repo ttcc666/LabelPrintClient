@@ -27,7 +27,7 @@ public class LabelPrintService
         copyCount = ValidateCopyCount(copyCount);
         var context = BuildPrintContext(templateId, batchId, selectedRowIds, copyCount);
         var report = BuildRenderedReport(context.Template, context.DataTable);
-        report.ShowWithWpf();
+        report.Show();
     }
 
     public void PrintSelectedRows(long templateId, long batchId, IReadOnlyCollection<long> selectedRowIds, string? printerName, int copyCount = 1)

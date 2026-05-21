@@ -298,8 +298,8 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
     private DataTemplate BuildRowActionTemplate()
     {
         var panel = new FrameworkElementFactory(typeof(StackPanel));
-        panel.SetValue(StackPanel.OrientationProperty, Orientation.Horizontal);
-        panel.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Center);
+        panel.SetValue(StackPanel.OrientationProperty, System.Windows.Controls.Orientation.Horizontal);
+        panel.SetValue(FrameworkElement.HorizontalAlignmentProperty, System.Windows.HorizontalAlignment.Center);
 
         var previewButton = BuildRowActionButton("预览", PreviewRow_Click, false);
         previewButton.SetValue(FrameworkElement.MarginProperty, new Thickness(0, 0, 6, 0));

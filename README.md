@@ -1,6 +1,6 @@
 # LabelPrintClient - WPF 标签打印客户端
 
-这是一个基于 **WPF + SqlSugarCore + ClosedXML + Stimulsoft Reports.WPF** 的标签打印客户端示例项目。
+这是一个基于 **WPF + SqlSugarCore + ClosedXML + Stimulsoft Reports.NET / WinForms designer-viewer** 的标签打印客户端示例项目。
 
 项目按你的业务逻辑设计：
 
@@ -17,7 +17,7 @@
 - Windows 10/11
 - Visual Studio 2022
 - .NET 8 SDK
-- Stimulsoft Reports.WPF 授权或试用授权
+- Stimulsoft Reports.NET 授权或试用授权
 
 > WPF 是 Windows 桌面技术，所以项目需要在 Windows 上编译运行。
 
@@ -27,7 +27,7 @@
 
 - SqlSugarCore
 - ClosedXML
-- Stimulsoft.Reports.Wpf
+- Stimulsoft.Reports.Net
 - Npgsql
 - System.Data.SQLite.Core
 
@@ -121,4 +121,6 @@ STI 文本组件可以绑定：
 
 ## 说明
 
-由于当前生成环境不是 Windows 且没有 .NET SDK，无法在这里实际编译 WPF 项目。源码已经按 Windows WPF 项目结构生成，并把 Stimulsoft 调用集中在 `Services/Stimulsoft` 目录中；如果你的本地 Stimulsoft 版本 API 有微小差异，只需要调整这一层。
+当前应用主体仍是 WPF，Stimulsoft 预览和设计器使用 WinForms 独立窗口打开。Stimulsoft 调用集中在 `Services/Stimulsoft` 和打印服务中；如果你的本地 Stimulsoft 版本 API 有微小差异，只需要调整这一层。
+
+Stimulsoft 设计器和预览默认加载 `Localization/zh-CHS.xml` 简体中文语言文件；该文件在构建时从 `Stimulsoft.Reports.Engine` NuGet 包复制到输出目录。

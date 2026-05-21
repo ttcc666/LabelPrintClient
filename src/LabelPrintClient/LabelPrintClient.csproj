@@ -5,13 +5,15 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
     <ApplicationIcon>Assets\app-icon.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="SqlSugarCore" Version="5.1.4.214" />
     <PackageReference Include="ClosedXML" Version="0.105.0" />
-    <PackageReference Include="Stimulsoft.Reports.Wpf" Version="2026.2.2" />
+    <PackageReference Include="Stimulsoft.Reports.Engine" Version="2026.2.2" GeneratePathProperty="true" PrivateAssets="all" />
+    <PackageReference Include="Stimulsoft.Reports.Net" Version="2026.2.2" />
     <PackageReference Include="Npgsql" Version="9.0.3" />
     <PackageReference Include="System.Data.SQLite.Core" Version="1.0.119" />
     <PackageReference Include="System.Drawing.Common" Version="8.0.22" />
@@ -25,5 +27,9 @@
     <None Update="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="$(PkgStimulsoft_Reports_Engine)\content\Localization\zh-CHS.xml"
+          Link="Localization\zh-CHS.xml"
+          CopyToOutputDirectory="PreserveNewest"
+          Condition="'$(PkgStimulsoft_Reports_Engine)' != ''" />
   </ItemGroup>
 </Project>
