@@ -12,6 +12,7 @@ public static class DbInitializer
         AppDb.Db.CodeFirst.InitTables<LabelCategory>();
         AppDb.Db.CodeFirst.InitTables<LabelTemplate>();
         AppDb.Db.CodeFirst.InitTables<LabelTemplateField>();
+        AppDb.Db.CodeFirst.InitTables<LabelTemplateFieldHistory>();
         AppDb.Db.CodeFirst.InitTables<LabelImportBatch>();
         AppDb.Db.CodeFirst.InitTables<LabelImportRow>();
         AppDb.Db.CodeFirst.InitTables<LabelPrintJob>();

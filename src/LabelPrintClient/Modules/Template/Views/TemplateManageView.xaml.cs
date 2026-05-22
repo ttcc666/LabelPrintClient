@@ -486,8 +486,9 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
 
     private async void EditField_Click(object sender, RoutedEventArgs e)
     {
+        var template = SelectedTemplate;
         var field = SelectedField;
-        if (field == null)
+        if (template == null || field == null)
         {
             AppMessageBox.Show("请先选择要编辑的字段。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
@@ -505,6 +506,13 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         var fields = await AppDb.Db.Queryable<LabelTemplateField>()
             .Where(x => x.TemplateId == edited.TemplateId && !x.IsDeleted)
             .ToListAsync();
+        var before = fields.FirstOrDefault(x => x.Id == edited.Id);
+        if (before == null)
+        {
+            AppMessageBox.Show("字段不存在或已被删除，请刷新后重试。", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+            await LoadFieldsAsync();
+            return;
+        }
 
         var duplicateFieldError = GetDuplicateFieldError(fields, edited.FieldName, edited.FieldCode, edited.Id);
         if (duplicateFieldError != null)
@@ -513,7 +521,23 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
             return;
         }
 
-        await AppDb.Db.Updateable(edited).ExecuteCommandAsync();
+        var history = NewFieldHistory(
+            template,
+            before,
+            LabelTemplateFieldHistory.OperationUpdate,
+            CreateFieldSnapshotJson(before),
+            CreateFieldSnapshotJson(edited),
+            $"编辑字段：{edited.FieldName}（{edited.FieldCode}）");
+
+        await AppDb.Db.UseTranAsync(async () =>
+        {
+            await AppDb.Db.Insertable(history).ExecuteCommandAsync();
+            await AppDb.Db.Updateable(edited)
+                .UpdateColumns(x => new { x.FieldName, x.FieldCode, x.FieldType, x.IsRequired, x.Remark })
+                .ExecuteCommandAsync();
+            await IncrementTemplateVersionAsync(template.Id);
+        });
+
         await LoadFieldsAsync(edited.Id);
     }
 
@@ -531,10 +555,58 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
             return;
         }
 
-        field.IsDeleted = true;
-        await AppDb.Db.Updateable(field).UpdateColumns(x => x.IsDeleted).ExecuteCommandAsync();
-        await NormalizeFieldSortAsync(field.TemplateId);
+        var template = SelectedTemplate;
+        if (template == null)
+        {
+            AppMessageBox.Show("请先选择模板。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var beforeList = await AppDb.Db.Queryable<LabelTemplateField>()
+            .Where(x => x.Id == field.Id && !x.IsDeleted)
+            .ToListAsync();
+        var before = beforeList.FirstOrDefault();
+        if (before == null)
+        {
+            AppMessageBox.Show("字段不存在或已被删除，请刷新后重试。", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+            await LoadFieldsAsync();
+            return;
+        }
+
+        var history = NewFieldHistory(
+            template,
+            before,
+            LabelTemplateFieldHistory.OperationDelete,
+            CreateFieldSnapshotJson(before),
+            CreateFieldSnapshotJson(before, true),
+            $"删除字段：{before.FieldName}（{before.FieldCode}）");
+
+        await AppDb.Db.UseTranAsync(async () =>
+        {
+            await AppDb.Db.Insertable(history).ExecuteCommandAsync();
+            before.IsDeleted = true;
+            await AppDb.Db.Updateable(before).UpdateColumns(x => x.IsDeleted).ExecuteCommandAsync();
+            await NormalizeFieldSortAsync(before.TemplateId);
+            await IncrementTemplateVersionAsync(template.Id);
+        });
+
         await LoadFieldsAsync();
+    }
+
+    private void FieldHistory_Click(object sender, RoutedEventArgs e)
+    {
+        var template = SelectedTemplate;
+        if (template == null)
+        {
+            AppMessageBox.Show("请先选择模板，再查看字段履历。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var win = new FieldHistoryWindow(template.Id, template.Name)
+        {
+            Owner = Window.GetWindow(this)
+        };
+        win.ShowDialog();
     }
 
     #endregion
@@ -928,6 +1000,61 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
             return "字段编码已存在，请勿重复新增。";
 
         return null;
+    }
+
+    private static LabelTemplateFieldHistory NewFieldHistory(
+        LabelTemplate template,
+        LabelTemplateField field,
+        string operationType,
+        string beforeSnapshotJson,
+        string? afterSnapshotJson,
+        string changeSummary)
+    {
+        return new LabelTemplateFieldHistory
+        {
+            Id = IdHelper.NewId(),
+            TemplateId = template.Id,
+            TemplateName = template.Name,
+            FieldId = field.Id,
+            OperationType = operationType,
+            BeforeSnapshotJson = beforeSnapshotJson,
+            AfterSnapshotJson = afterSnapshotJson,
+            ChangeSummary = changeSummary,
+            OperatorName = App.Settings.OperatorName,
+            CreateTime = DateTime.Now
+        };
+    }
+
+    private static string CreateFieldSnapshotJson(LabelTemplateField field, bool? isDeleted = null)
+    {
+        return JsonHelper.Serialize(new
+        {
+            field.Id,
+            field.TemplateId,
+            field.FieldName,
+            field.FieldCode,
+            field.FieldType,
+            field.IsRequired,
+            field.Sort,
+            field.Remark,
+            IsDeleted = isDeleted ?? field.IsDeleted
+        });
+    }
+
+    private static async Task IncrementTemplateVersionAsync(long templateId)
+    {
+        var templates = await AppDb.Db.Queryable<LabelTemplate>()
+            .Where(x => x.Id == templateId)
+            .Take(1)
+            .ToListAsync();
+        var template = templates.FirstOrDefault()
+            ?? throw new InvalidOperationException("模板不存在，无法更新版本。");
+
+        template.Version += 1;
+        template.UpdateTime = DateTime.Now;
+        await AppDb.Db.Updateable(template)
+            .UpdateColumns(x => new { x.Version, x.UpdateTime })
+            .ExecuteCommandAsync();
     }
 
     private async Task RunQueuedAsync(object sender, string runningText, Func<CancellationToken, Task> operation)

@@ -318,6 +318,12 @@
                                         <TextBlock Text="删除" VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </Button>
+                                <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="FieldHistory_Click" Margin="0,0,8,8">
+                                    <StackPanel Orientation="Horizontal">
+                                        <iconPacks:PackIconMaterial Kind="History" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="字段履历" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
                                 <Button Style="{StaticResource AppGhostButtonStyle}" Click="MoveFieldUp_Click" Margin="0,0,8,8">
                                     <StackPanel Orientation="Horizontal">
                                         <iconPacks:PackIconMaterial Kind="ChevronLeft" Margin="0,0,6,0" VerticalAlignment="Center" RenderTransformOrigin="0.5,0.5">
