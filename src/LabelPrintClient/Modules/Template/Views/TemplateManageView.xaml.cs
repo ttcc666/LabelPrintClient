@@ -8,6 +8,7 @@ using LabelPrintClient.Modules.PrintCenter.Models;
 using LabelPrintClient.Modules.Template.Models;
 using LabelPrintClient.Modules.Template.Services;
 using LabelPrintClient.Services;
+using SqlSugar;
 
 namespace LabelPrintClient.Modules.Template.Views;
 
@@ -147,15 +148,24 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
                     templateQuery = templateQuery.Where(x => x.Name.Contains(keyword) || (x.TemplateFileName != null && x.TemplateFileName.Contains(keyword)));
             }
 
-            var totalRows = await templateQuery.CountAsync();
-            var totalPages = Math.Max(1, (int)Math.Ceiling(totalRows / (double)_templatePageSize));
-            var currentPage = Math.Clamp(_templateCurrentPage, 1, totalPages);
-
+            RefAsync<int> totalRowsRef = 0;
+            var currentPage = Math.Max(1, _templateCurrentPage);
             var templates = await templateQuery
                 .OrderBy(x => x.Name)
-                .Skip((currentPage - 1) * _templatePageSize)
-                .Take(_templatePageSize)
-                .ToListAsync();
+                .ToPageListAsync(currentPage, _templatePageSize, totalRowsRef);
+            var totalRows = totalRowsRef.Value;
+            var totalPages = Math.Max(1, (totalRows + _templatePageSize - 1) / _templatePageSize);
+
+            if (currentPage > totalPages)
+            {
+                currentPage = totalPages;
+                totalRowsRef = 0;
+                templates = await templateQuery
+                    .OrderBy(x => x.Name)
+                    .ToPageListAsync(currentPage, _templatePageSize, totalRowsRef);
+                totalRows = totalRowsRef.Value;
+                totalPages = Math.Max(1, (totalRows + _templatePageSize - 1) / _templatePageSize);
+            }
 
             if (token.IsCancellationRequested ||
                 SelectedCategory?.Id != category.Id ||

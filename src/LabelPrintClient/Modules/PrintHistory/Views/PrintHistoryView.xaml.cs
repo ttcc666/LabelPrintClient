@@ -11,6 +11,7 @@ using LabelPrintClient.Modules.Template.Models;
 using LabelPrintClient.Modules.PrintCenter.Services;
 using LabelPrintClient.Modules.PrintCenter.ViewModels;
 using LabelPrintClient.Services;
+using SqlSugar;
 
 namespace LabelPrintClient.Modules.PrintHistory.Views;
 
@@ -122,16 +123,28 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
                     (x.ErrorMessage != null && x.ErrorMessage.Contains(keyword)));
             }
 
-            var totalRows = await jobQuery.CountAsync();
-            var totalPages = Math.Max(1, (int)Math.Ceiling(totalRows / (double)_jobPageSize));
-            var currentPage = Math.Clamp(_jobCurrentPage, 1, totalPages);
-
-            var pageJobs = (await jobQuery
+            RefAsync<int> totalRowsRef = 0;
+            var currentPage = Math.Max(1, _jobCurrentPage);
+            var dbJobs = await jobQuery
                     .OrderByDescending(x => x.CreateTime)
                     .OrderByDescending(x => x.Id)
-                    .Skip((currentPage - 1) * _jobPageSize)
-                    .Take(_jobPageSize)
-                    .ToListAsync())
+                    .ToPageListAsync(currentPage, _jobPageSize, totalRowsRef);
+            var totalRows = totalRowsRef.Value;
+            var totalPages = Math.Max(1, (totalRows + _jobPageSize - 1) / _jobPageSize);
+
+            if (currentPage > totalPages)
+            {
+                currentPage = totalPages;
+                totalRowsRef = 0;
+                dbJobs = await jobQuery
+                    .OrderByDescending(x => x.CreateTime)
+                    .OrderByDescending(x => x.Id)
+                    .ToPageListAsync(currentPage, _jobPageSize, totalRowsRef);
+                totalRows = totalRowsRef.Value;
+                totalPages = Math.Max(1, (totalRows + _jobPageSize - 1) / _jobPageSize);
+            }
+
+            var pageJobs = dbJobs
                 .Select(PrintJobGridItem.From)
                 .ToList();
 
@@ -222,15 +235,24 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
                     rowQuery = rowQuery.Where(x => x.RowDataJson.Contains(keyword));
             }
 
-            var totalRows = await rowQuery.CountAsync();
-            var totalPages = Math.Max(1, (int)Math.Ceiling(totalRows / (double)_rowPageSize));
-            var currentPage = Math.Clamp(_rowCurrentPage, 1, totalPages);
-
+            RefAsync<int> totalRowsRef = 0;
+            var currentPage = Math.Max(1, _rowCurrentPage);
             var dbRows = await rowQuery
                     .OrderBy(x => x.RowIndex)
-                    .Skip((currentPage - 1) * _rowPageSize)
-                    .Take(_rowPageSize)
-                    .ToListAsync();
+                    .ToPageListAsync(currentPage, _rowPageSize, totalRowsRef);
+            var totalRows = totalRowsRef.Value;
+            var totalPages = Math.Max(1, (totalRows + _rowPageSize - 1) / _rowPageSize);
+
+            if (currentPage > totalPages)
+            {
+                currentPage = totalPages;
+                totalRowsRef = 0;
+                dbRows = await rowQuery
+                    .OrderBy(x => x.RowIndex)
+                    .ToPageListAsync(currentPage, _rowPageSize, totalRowsRef);
+                totalRows = totalRowsRef.Value;
+                totalPages = Math.Max(1, (totalRows + _rowPageSize - 1) / _rowPageSize);
+            }
 
             var rowLoadResult = await Task.Run(() =>
             {

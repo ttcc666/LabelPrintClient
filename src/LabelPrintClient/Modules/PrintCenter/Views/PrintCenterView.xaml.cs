@@ -11,6 +11,7 @@ using LabelPrintClient.Modules.Template.Models;
 using LabelPrintClient.Modules.PrintCenter.Services;
 using LabelPrintClient.Modules.PrintCenter.ViewModels;
 using LabelPrintClient.Services;
+using SqlSugar;
 
 namespace LabelPrintClient.Modules.PrintCenter.Views;
 
@@ -253,16 +254,26 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
             else if (!string.Equals(statusFilter, "All", StringComparison.OrdinalIgnoreCase))
                 batchQuery = batchQuery.Where(x => x.Status == statusFilter);
 
-            var totalRows = await batchQuery.CountAsync();
-            var totalPages = Math.Max(1, (int)Math.Ceiling(totalRows / (double)_batchPageSize));
-            var currentPage = Math.Clamp(_batchCurrentPage, 1, totalPages);
-
+            RefAsync<int> totalRowsRef = 0;
+            var currentPage = Math.Max(1, _batchCurrentPage);
             var batches = await batchQuery
                 .OrderByDescending(x => x.ImportTime)
                 .OrderByDescending(x => x.Id)
-                .Skip((currentPage - 1) * _batchPageSize)
-                .Take(_batchPageSize)
-                .ToListAsync();
+                .ToPageListAsync(currentPage, _batchPageSize, totalRowsRef);
+            var totalRows = totalRowsRef.Value;
+            var totalPages = Math.Max(1, (totalRows + _batchPageSize - 1) / _batchPageSize);
+
+            if (currentPage > totalPages)
+            {
+                currentPage = totalPages;
+                totalRowsRef = 0;
+                batches = await batchQuery
+                    .OrderByDescending(x => x.ImportTime)
+                    .OrderByDescending(x => x.Id)
+                    .ToPageListAsync(currentPage, _batchPageSize, totalRowsRef);
+                totalRows = totalRowsRef.Value;
+                totalPages = Math.Max(1, (totalRows + _batchPageSize - 1) / _batchPageSize);
+            }
 
             if (token.IsCancellationRequested || SelectedTemplate?.Id != template.Id) return;
 
@@ -437,15 +448,24 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
                     rowQuery = rowQuery.Where(x => x.RowDataJson.Contains(rowKeyword) || (x.ErrorMessage != null && x.ErrorMessage.Contains(rowKeyword)));
             }
 
-            var totalRows = await rowQuery.CountAsync();
-            var totalPages = Math.Max(1, (int)Math.Ceiling(totalRows / (double)_rowPageSize));
-            var currentPage = Math.Clamp(_rowCurrentPage, 1, totalPages);
-
+            RefAsync<int> totalRowsRef = 0;
+            var currentPage = Math.Max(1, _rowCurrentPage);
             var dbRows = await rowQuery
                 .OrderBy(x => x.RowIndex)
-                .Skip((currentPage - 1) * _rowPageSize)
-                .Take(_rowPageSize)
-                .ToListAsync();
+                .ToPageListAsync(currentPage, _rowPageSize, totalRowsRef);
+            var totalRows = totalRowsRef.Value;
+            var totalPages = Math.Max(1, (totalRows + _rowPageSize - 1) / _rowPageSize);
+
+            if (currentPage > totalPages)
+            {
+                currentPage = totalPages;
+                totalRowsRef = 0;
+                dbRows = await rowQuery
+                    .OrderBy(x => x.RowIndex)
+                    .ToPageListAsync(currentPage, _rowPageSize, totalRowsRef);
+                totalRows = totalRowsRef.Value;
+                totalPages = Math.Max(1, (totalRows + _rowPageSize - 1) / _rowPageSize);
+            }
 
             if (token.IsCancellationRequested ||
                 SelectedTemplate?.Id != template.Id ||

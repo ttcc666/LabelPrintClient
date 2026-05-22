@@ -3,6 +3,7 @@ using System.Windows.Controls;
 using LabelPrintClient.Database;
 using LabelPrintClient.Modules.Template.Models;
 using LabelPrintClient.Services;
+using SqlSugar;
 
 namespace LabelPrintClient.Modules.Template.Views;
 
@@ -45,16 +46,24 @@ public partial class FieldHistoryWindow : Window
         try
         {
             var historyQuery = AppDb.Db.Queryable<LabelTemplateFieldHistory>()
-                .Where(x => x.TemplateId == _templateId);
-            var totalRows = await historyQuery.CountAsync();
-            var totalPages = Math.Max(1, (int)Math.Ceiling(totalRows / (double)_historyPageSize));
-            var currentPage = Math.Clamp(_historyCurrentPage, 1, totalPages);
-
+                .Where(x => x.TemplateId == _templateId)
+                .OrderByDescending(x => x.CreateTime);
+            RefAsync<int> totalRowsRef = 0;
+            var currentPage = Math.Max(1, _historyCurrentPage);
             var histories = await historyQuery
-                .OrderByDescending(x => x.CreateTime)
-                .Skip((currentPage - 1) * _historyPageSize)
-                .Take(_historyPageSize)
-                .ToListAsync();
+                .ToPageListAsync(currentPage, _historyPageSize, totalRowsRef);
+            var totalRows = totalRowsRef.Value;
+            var totalPages = Math.Max(1, (totalRows + _historyPageSize - 1) / _historyPageSize);
+
+            if (currentPage > totalPages)
+            {
+                currentPage = totalPages;
+                totalRowsRef = 0;
+                histories = await historyQuery
+                    .ToPageListAsync(currentPage, _historyPageSize, totalRowsRef);
+                totalRows = totalRowsRef.Value;
+                totalPages = Math.Max(1, (totalRows + _historyPageSize - 1) / _historyPageSize);
+            }
 
             _historyTotalRows = totalRows;
             _historyTotalPages = totalPages;
