@@ -177,6 +177,14 @@
                                 </Button>
                             </StackPanel>
                         </Border>
+                        <!-- 任务加载遮罩层 -->
+                        <Grid x:Name="JobLoadingOverlay" Grid.Row="0" Grid.RowSpan="2" Visibility="Collapsed">
+                            <Border Background="{DynamicResource RegionBrush}" Opacity="0.75" CornerRadius="6" />
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <hc:LoadingCircle Width="36" Height="36" Foreground="{DynamicResource PrimaryBrush}"/>
+                                <TextBlock Text="正在读取打印任务..." Margin="0,10,0,0" HorizontalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" />
+                            </StackPanel>
+                        </Grid>
                     </Grid>
                 </Border>
             </Grid>
@@ -264,6 +272,14 @@
                                 </Button>
                             </StackPanel>
                         </Border>
+                        <!-- 明细加载遮罩层 -->
+                        <Grid x:Name="RowLoadingOverlay" Grid.Row="0" Grid.RowSpan="2" Visibility="Collapsed">
+                            <Border Background="{DynamicResource RegionBrush}" Opacity="0.75" CornerRadius="6" />
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <hc:LoadingCircle Width="36" Height="36" Foreground="{DynamicResource PrimaryBrush}"/>
+                                <TextBlock Text="正在加载明细..." Margin="0,10,0,0" HorizontalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" />
+                            </StackPanel>
+                        </Grid>
                     </Grid>
                 </Border>
             </Grid>

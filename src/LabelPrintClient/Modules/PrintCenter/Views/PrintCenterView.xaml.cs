@@ -236,6 +236,7 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         var token = ResetCancellation(ref _batchLoadCts);
         try
         {
+            BatchLoadingOverlay.Visibility = Visibility.Visible;
             var keyword = BatchSearchBox?.Text.Trim() ?? string.Empty;
             var statusFilter = GetSelectedBatchStatusFilter();
             var batchQuery = AppDb.Db.Queryable<LabelImportBatch>()
@@ -279,6 +280,10 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         catch (Exception ex)
         {
             AppMessageBox.Show($"加载批次失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            BatchLoadingOverlay.Visibility = Visibility.Collapsed;
         }
     }
 
@@ -412,6 +417,7 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
 
         try
         {
+            RowLoadingOverlay.Visibility = Visibility.Visible;
             var fields = await AppDb.Db.Queryable<LabelTemplateField>()
                 .Where(x => x.TemplateId == template.Id)
                 .OrderBy(x => x.Sort)
@@ -476,6 +482,10 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         catch (Exception ex)
         {
             AppMessageBox.Show($"加载明细失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            RowLoadingOverlay.Visibility = Visibility.Collapsed;
         }
     }
 

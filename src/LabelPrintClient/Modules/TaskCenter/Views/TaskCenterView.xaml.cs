@@ -1,4 +1,4 @@
-﻿using System.Collections.Specialized;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
@@ -113,10 +113,26 @@ public partial class TaskCenterView : System.Windows.Controls.UserControl
                Contains(task.ErrorMessage, keyword);
     }
 
-    private void RefreshFilter()
+    private async void RefreshFilter()
     {
-        _taskView.Refresh();
-        UpdateSummary();
+        if (TaskLoadingOverlay != null)
+        {
+            TaskLoadingOverlay.Visibility = Visibility.Visible;
+        }
+
+        try
+        {
+            await System.Threading.Tasks.Task.Delay(180);
+            _taskView.Refresh();
+            UpdateSummary();
+        }
+        finally
+        {
+            if (TaskLoadingOverlay != null)
+            {
+                TaskLoadingOverlay.Visibility = Visibility.Collapsed;
+            }
+        }
     }
 
     private void UpdateSummary()

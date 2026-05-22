@@ -102,6 +102,11 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
         var keyword = JobSearchBox?.Text.Trim() ?? string.Empty;
         var token = ResetCancellation(ref _jobLoadCts);
 
+        if (JobLoadingOverlay != null)
+        {
+            JobLoadingOverlay.Visibility = Visibility.Visible;
+        }
+
         try
         {
             var jobQuery = AppDb.Db.Queryable<LabelPrintJob>();
@@ -167,6 +172,13 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
         {
             AppMessageBox.Show($"加载打印记录失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
         }
+        finally
+        {
+            if (JobLoadingOverlay != null)
+            {
+                JobLoadingOverlay.Visibility = Visibility.Collapsed;
+            }
+        }
     }
 
     private async void JobGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -186,6 +198,12 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
 
         var keyword = RowSearchBox?.Text.Trim() ?? string.Empty;
         var token = ResetCancellation(ref _rowLoadCts);
+
+        if (RowLoadingOverlay != null)
+        {
+            RowLoadingOverlay.Visibility = Visibility.Visible;
+        }
+
         try
         {
             var fields = await AppDb.Db.Queryable<LabelTemplateField>()
@@ -268,6 +286,13 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
         catch (Exception ex)
         {
             AppMessageBox.Show($"加载打印明细失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            if (RowLoadingOverlay != null)
+            {
+                RowLoadingOverlay.Visibility = Visibility.Collapsed;
+            }
         }
     }
 
