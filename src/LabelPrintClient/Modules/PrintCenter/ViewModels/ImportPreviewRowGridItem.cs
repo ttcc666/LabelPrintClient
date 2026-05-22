@@ -10,4 +10,3 @@ public sealed class ImportPreviewRowGridItem
 
     public Dictionary<string, string> Data { get; set; } = new();
 }
-

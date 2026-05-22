@@ -67,6 +67,9 @@ public class LabelImportService
         if (preview.Rows.Count == 0)
             throw new InvalidOperationException("没有可导入的数据行。");
 
+        if (preview.Rows.Any(x => !x.IsValid))
+            throw new InvalidOperationException("存在错误行，不能确认导入。请修正 Excel 后重新导入。");
+
         cancellationToken.ThrowIfCancellationRequested();
 
         var template = new LabelTemplate
@@ -135,4 +138,3 @@ public class LabelImportService
         }).ToList();
     }
 }
-

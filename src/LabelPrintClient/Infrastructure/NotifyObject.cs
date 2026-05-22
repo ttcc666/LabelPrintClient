@@ -20,4 +20,3 @@ public abstract class NotifyObject : INotifyPropertyChanged
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 }
-

@@ -207,4 +207,3 @@ public sealed class BackgroundTaskItem : NotifyObject
             .Trim();
     }
 }
-

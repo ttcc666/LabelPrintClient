@@ -6,4 +6,3 @@ public enum AppThemeMode
     Light = 1,
     Dark = 2
 }
-

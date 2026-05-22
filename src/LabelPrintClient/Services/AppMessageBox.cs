@@ -59,7 +59,7 @@ public static class AppMessageBox
         if (button == MessageBoxButton.OK)
         {
             var isSuccess = caption.Contains("成功") || messageBoxText.Contains("成功");
-            
+
             if (icon == MessageBoxImage.Error)
             {
                 HandyControl.Controls.Growl.Error(messageBoxText);
@@ -78,7 +78,7 @@ public static class AppMessageBox
                     HandyControl.Controls.Growl.Info(messageBoxText);
                 return MessageBoxResult.OK;
             }
-            
+
             // 默认根据内容推断
             if (isSuccess)
                 HandyControl.Controls.Growl.Success(messageBoxText);
@@ -88,7 +88,7 @@ public static class AppMessageBox
                 HandyControl.Controls.Growl.Warning(messageBoxText);
             else
                 HandyControl.Controls.Growl.Info(messageBoxText);
-                
+
             return MessageBoxResult.OK;
         }
 

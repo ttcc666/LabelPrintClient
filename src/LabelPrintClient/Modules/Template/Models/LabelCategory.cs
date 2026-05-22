@@ -28,4 +28,3 @@ public class LabelCategory
 
     public override string ToString() => Name;
 }
-

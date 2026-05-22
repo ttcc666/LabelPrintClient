@@ -88,10 +88,10 @@
                             BorderThickness="{TemplateBinding BorderThickness}"
                             CornerRadius="6">
                         <Border.RenderTransform>
-                            <TranslateTransform Y="0"/>
+                            <TranslateTransform Y="0" />
                         </Border.RenderTransform>
                         <Border.Effect>
-                            <DropShadowEffect x:Name="Shadow" Color="#000000" BlurRadius="6" ShadowDepth="1.5" Opacity="0.08" Direction="270"/>
+                            <DropShadowEffect x:Name="Shadow" Color="#000000" BlurRadius="6" ShadowDepth="1.5" Opacity="0.08" Direction="270" />
                         </Border.Effect>
                         <ContentPresenter HorizontalAlignment="Center"
                                           VerticalAlignment="Center"
@@ -185,8 +185,8 @@
         <Setter Property="Background">
             <Setter.Value>
                 <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                    <GradientStop Color="#FF3A5CE5" Offset="0"/>
-                    <GradientStop Color="#FF1F40B3" Offset="1"/>
+                    <GradientStop Color="#FF3A5CE5" Offset="0" />
+                    <GradientStop Color="#FF1F40B3" Offset="1" />
                 </LinearGradientBrush>
             </Setter.Value>
         </Setter>
@@ -199,8 +199,8 @@
         <Setter Property="Background">
             <Setter.Value>
                 <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                    <GradientStop Color="#FFE24C4C" Offset="0"/>
-                    <GradientStop Color="#FFC12D2D" Offset="1"/>
+                    <GradientStop Color="#FFE24C4C" Offset="0" />
+                    <GradientStop Color="#FFC12D2D" Offset="1" />
                 </LinearGradientBrush>
             </Setter.Value>
         </Setter>
@@ -213,8 +213,8 @@
         <Setter Property="Background">
             <Setter.Value>
                 <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                    <GradientStop Color="#FF2CB572" Offset="0"/>
-                    <GradientStop Color="#FF1B824F" Offset="1"/>
+                    <GradientStop Color="#FF2CB572" Offset="0" />
+                    <GradientStop Color="#FF1B824F" Offset="1" />
                 </LinearGradientBrush>
             </Setter.Value>
         </Setter>
@@ -705,5 +705,4 @@
             </Trigger>
         </Style.Triggers>
     </Style>
-
 </ResourceDictionary>

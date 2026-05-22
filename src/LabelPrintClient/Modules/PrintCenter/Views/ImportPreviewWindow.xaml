@@ -8,6 +8,27 @@
         Height="620"
         WindowStartupLocation="CenterOwner"
         Background="{DynamicResource SecondaryRegionBrush}" Foreground="{DynamicResource PrimaryTextBrush}">
+    <Window.Resources>
+        <Style x:Key="ImportPreviewRowStyle" TargetType="DataGridRow">
+            <Setter Property="MinHeight" Value="46" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsValid}" Value="False">
+                    <Setter Property="Background" Value="{StaticResource AppDangerSubtleBrush}" />
+                    <Setter Property="ToolTip" Value="{Binding ErrorMessage}" />
+                </DataTrigger>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{StaticResource AppDataGridHoverBrush}" />
+                </Trigger>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="{StaticResource AppDataGridSelectedBrush}" />
+                    <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
     <Grid Margin="12">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -43,14 +64,14 @@
                              KeyDown="PreviewSearchBox_KeyDown" />
                     <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="ApplyFilter_Click" Margin="0,0,8,0">
                         <StackPanel Orientation="Horizontal">
-                            <iconPacks:PackIconMaterial Kind="Magnify" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                            <TextBlock Text="查询" VerticalAlignment="Center"/>
+                            <iconPacks:PackIconMaterial Kind="Magnify" Margin="0,0,6,0" VerticalAlignment="Center" />
+                            <TextBlock Text="查询" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
                     <Button Style="{StaticResource AppGhostButtonStyle}" Click="ClearFilter_Click" Margin="0,0,12,0">
                         <StackPanel Orientation="Horizontal">
-                            <iconPacks:PackIconMaterial Kind="FilterRemoveOutline" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                            <TextBlock Text="清空" VerticalAlignment="Center"/>
+                            <iconPacks:PackIconMaterial Kind="FilterRemoveOutline" Margin="0,0,6,0" VerticalAlignment="Center" />
+                            <TextBlock Text="清空" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
                     <CheckBox x:Name="OnlyErrorRowsBox"
@@ -67,6 +88,7 @@
                 <DataGrid x:Name="PreviewGrid"
                              AutoGenerateColumns="False"
                              IsReadOnly="True"
+                             RowStyle="{StaticResource ImportPreviewRowStyle}"
                              Margin="0"
                              BorderThickness="0"
                              HorizontalScrollBarVisibility="Auto"
@@ -88,21 +110,25 @@
 
         <Border Grid.Row="2" Style="{StaticResource AppFooterCardStyle}">
             <DockPanel LastChildFill="False">
-                <TextBlock DockPanel.Dock="Left"
+                <TextBlock x:Name="ImportHintText"
+                           DockPanel.Dock="Left"
                            Text="确认后才会写入导入批次和明细数据。"
                            VerticalAlignment="Center"
                            Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                 <WrapPanel DockPanel.Dock="Right">
                     <Button Style="{StaticResource AppDialogCancelButtonStyle}" Click="Cancel_Click" Margin="0,0,8,0">
                         <StackPanel Orientation="Horizontal">
-                            <iconPacks:PackIconMaterial Kind="Close" Width="14" Height="14" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                            <TextBlock Text="取消" VerticalAlignment="Center"/>
+                            <iconPacks:PackIconMaterial Kind="Close" Width="14" Height="14" Margin="0,0,6,0" VerticalAlignment="Center" />
+                            <TextBlock Text="取消" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
-                    <Button Style="{StaticResource AppDialogPrimaryButtonStyle}" Width="108" Click="Confirm_Click">
+                    <Button x:Name="ConfirmButton"
+                            Style="{StaticResource AppDialogPrimaryButtonStyle}"
+                            Width="108"
+                            Click="Confirm_Click">
                         <StackPanel Orientation="Horizontal">
-                            <iconPacks:PackIconMaterial Kind="Check" Width="14" Height="14" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                            <TextBlock Text="确认导入" VerticalAlignment="Center"/>
+                            <iconPacks:PackIconMaterial Kind="Check" Width="14" Height="14" Margin="0,0,6,0" VerticalAlignment="Center" />
+                            <TextBlock Text="确认导入" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
                 </WrapPanel>

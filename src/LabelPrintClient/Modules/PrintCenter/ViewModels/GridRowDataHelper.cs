@@ -79,4 +79,3 @@ public static class GridRowDataHelper
             data[key] = string.Empty;
     }
 }
-

@@ -1236,5 +1236,3 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         cts = null;
     }
 }
-
-

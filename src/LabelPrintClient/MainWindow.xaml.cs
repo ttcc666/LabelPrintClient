@@ -1,13 +1,12 @@
-using System.Windows;
-using System.Windows.Controls;
-using HandyControl.Controls;
 using LabelPrintClient.Config;
 using LabelPrintClient.Modules.PrintCenter.Views;
-using LabelPrintClient.Modules.Template.Views;
 using LabelPrintClient.Modules.PrintHistory.Views;
-using LabelPrintClient.Modules.TaskCenter.Views;
 using LabelPrintClient.Modules.Settings.Views;
+using LabelPrintClient.Modules.TaskCenter.Views;
+using LabelPrintClient.Modules.Template.Views;
 using LabelPrintClient.Services;
+using System.Windows;
+using System.Windows.Controls;
 
 namespace LabelPrintClient;
 
@@ -45,15 +44,19 @@ public partial class MainWindow : HandyControl.Controls.Window
                 WorkspaceContent.Content = _printHistoryView;
                 await _printHistoryView.RefreshHistoryAsync();
                 break;
+
             case "TaskCenter":
                 WorkspaceContent.Content = _taskCenterView;
                 break;
+
             case "TemplateManage":
                 WorkspaceContent.Content = _templateManageView;
                 break;
+
             case "Settings":
                 WorkspaceContent.Content = _settingsView;
                 break;
+
             default:
                 WorkspaceContent.Content = _printCenterView;
                 break;
@@ -110,5 +113,3 @@ public partial class MainWindow : HandyControl.Controls.Window
         DarkThemeButton.Foreground = themeMode == AppThemeMode.Dark ? whiteText : primaryText;
     }
 }
-
-

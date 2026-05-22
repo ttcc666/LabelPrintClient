@@ -30,4 +30,3 @@ public sealed class BackgroundTaskContext
         Report(new BackgroundTaskProgress(current, total, message));
     }
 }
-

@@ -1,4 +1,5 @@
 using System.IO;
+using System.Diagnostics;
 using System.Drawing.Printing;
 using System.Windows;
 using System.Windows.Controls;
@@ -42,6 +43,55 @@ public partial class SettingsView : System.Windows.Controls.UserControl
         {
             LocalTemplateFolderBox.Text = dialog.SelectedPath;
         }
+    }
+
+    private async void BackupData_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new Microsoft.Win32.SaveFileDialog
+        {
+            Filter = "备份文件|*.zip",
+            FileName = SqliteBackupService.GetDefaultBackupFileName()
+        };
+        if (dialog.ShowDialog() != true)
+            return;
+
+        var success = await RunBackupOperationAsync(
+            sender,
+            "正在备份数据...",
+            async token => await SqliteBackupService.CreateBackupAsync(dialog.FileName, App.Settings, token));
+        if (!success)
+            return;
+
+        StatusText.Text = $"备份完成：{dialog.FileName}";
+        AppMessageBox.Show($"备份完成：\n{dialog.FileName}", "数据备份", MessageBoxButton.OK, MessageBoxImage.Information);
+    }
+
+    private async void RestoreData_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Filter = "备份文件|*.zip|所有文件|*.*"
+        };
+        if (dialog.ShowDialog() != true)
+            return;
+
+        if (AppMessageBox.Show("恢复备份会覆盖当前 SQLite 数据库、配置文件和本地模板目录。恢复前会自动生成一份 pre-restore 备份。\n确定继续？",
+                "确认恢复",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning) != MessageBoxResult.Yes)
+        {
+            return;
+        }
+
+        var result = await RunBackupOperationAsync(
+            sender,
+            "正在恢复数据...",
+            async token => await SqliteBackupService.RestoreAsync(dialog.FileName, App.Settings, token));
+        if (result == null)
+            return;
+
+        AppMessageBox.Show($"恢复完成，应用将重启。\n恢复前备份：\n{result.PreRestoreBackupPath}", "数据恢复", MessageBoxButton.OK, MessageBoxImage.Information);
+        RestartApplication();
     }
 
     private void Save_Click(object sender, RoutedEventArgs e)
@@ -89,6 +139,7 @@ public partial class SettingsView : System.Windows.Controls.UserControl
         {
             ConfigPathText.Text = AppConfigService.GetConfigPath();
             FillForm(AppConfigService.LoadOrCreateDefault());
+            UpdateBackupState();
             StatusText.Text = $"配置已加载：{DateTime.Now:HH:mm:ss}";
         }
         catch (Exception ex)
@@ -274,6 +325,16 @@ public partial class SettingsView : System.Windows.Controls.UserControl
         App.Settings.ThemeMode = settings.ThemeMode;
     }
 
+    private void UpdateBackupState()
+    {
+        var isLocalSqlite = App.Settings.RunMode == AppRunMode.LocalSqlite;
+        BackupDataButton.IsEnabled = isLocalSqlite;
+        RestoreDataButton.IsEnabled = isLocalSqlite;
+        BackupModeText.Text = isLocalSqlite
+            ? "当前运行模式支持备份恢复。备份包包含 SQLite 数据库、appsettings.json 和本地模板目录。"
+            : "一键备份恢复仅支持 LocalSqlite 模式。";
+    }
+
     private async Task TestConnectionAsync(object sender, AppRunMode runMode, string connectionString, string displayName)
     {
         var testButton = sender as UIElement;
@@ -300,6 +361,52 @@ public partial class SettingsView : System.Windows.Controls.UserControl
         }
     }
 
+    private async Task<bool> RunBackupOperationAsync(object sender, string runningText, Func<CancellationToken, Task> operation)
+    {
+        var result = await RunBackupOperationAsync<object>(sender, runningText, async token =>
+        {
+            await operation(token);
+            return new object();
+        });
+        return result != null;
+    }
+
+    private async Task<T?> RunBackupOperationAsync<T>(object sender, string runningText, Func<CancellationToken, Task<T>> operation)
+        where T : class
+    {
+        var element = sender as UIElement;
+        if (element != null)
+            element.IsEnabled = false;
+
+        StatusText.Text = runningText;
+
+        try
+        {
+            return await operation(CancellationToken.None);
+        }
+        catch (Exception ex)
+        {
+            StatusText.Text = $"操作失败：{ex.Message}";
+            AppMessageBox.Show(ex.Message, "数据备份 / 恢复", MessageBoxButton.OK, MessageBoxImage.Error);
+            return null;
+        }
+        finally
+        {
+            if (element != null)
+                element.IsEnabled = true;
+            UpdateBackupState();
+        }
+    }
+
+    private static void RestartApplication()
+    {
+        var exePath = Environment.ProcessPath;
+        if (!string.IsNullOrWhiteSpace(exePath))
+            Process.Start(new ProcessStartInfo(exePath) { UseShellExecute = true });
+
+        System.Windows.Application.Current.Shutdown();
+    }
+
     private static string ResolveInitialFolder(string folder)
     {
         if (string.IsNullOrWhiteSpace(folder))
@@ -312,5 +419,3 @@ public partial class SettingsView : System.Windows.Controls.UserControl
         return Directory.Exists(path) ? path : AppContext.BaseDirectory;
     }
 }
-
-

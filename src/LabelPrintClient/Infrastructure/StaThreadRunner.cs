@@ -46,4 +46,3 @@ public static class StaThreadRunner
         return await completion.Task.ConfigureAwait(false);
     }
 }
-

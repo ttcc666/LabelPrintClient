@@ -16,4 +16,3 @@ public static class JsonHelper
 
     public static T? Deserialize<T>(string json) => JsonSerializer.Deserialize<T>(json, Options);
 }
-

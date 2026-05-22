@@ -4,11 +4,20 @@
         xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
         xmlns:hc="https://handyorg.github.io/handycontrol"
         Title="字段变更履历"
-        Width="980"
+        Width="1080"
         Height="640"
-        MinWidth="860"
+        MinWidth="980"
         MinHeight="520"
         WindowStartupLocation="CenterOwner">
+    <Window.Resources>
+        <Style x:Key="HistoryActionButtonStyle" TargetType="Button" BasedOn="{StaticResource AppSecondaryButtonStyle}">
+            <Setter Property="Width" Value="34" />
+            <Setter Property="MinWidth" Value="34" />
+            <Setter Property="Height" Value="28" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="0,0,6,0" />
+        </Style>
+    </Window.Resources>
     <Grid Margin="12">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -51,6 +60,27 @@
                     <DataGridTextColumn Header="字段编码" Binding="{Binding FieldCode}" Width="130" />
                     <DataGridTextColumn Header="变更内容" Binding="{Binding ChangeSummary}" Width="*" MinWidth="260" />
                     <DataGridTextColumn Header="操作人" Binding="{Binding OperatorName}" Width="100" />
+                    <DataGridTemplateColumn Header="操作" Width="92" MinWidth="92">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                    <Button Style="{StaticResource HistoryActionButtonStyle}"
+                                            ToolTip="恢复字段"
+                                            IsEnabled="{Binding CanRestoreField}"
+                                            Click="RestoreHistoryField_Click">
+                                        <iconPacks:PackIconMaterial Kind="BackupRestore" Width="15" Height="15" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                                    </Button>
+                                    <Button Style="{StaticResource HistoryActionButtonStyle}"
+                                            Margin="0"
+                                            ToolTip="复制为新字段"
+                                            IsEnabled="{Binding CanCopyAsField}"
+                                            Click="CopyHistoryField_Click">
+                                        <iconPacks:PackIconMaterial Kind="ContentCopy" Width="15" Height="15" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                                    </Button>
+                                </StackPanel>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
                 </DataGrid.Columns>
             </DataGrid>
             <Grid x:Name="HistoryLoadingOverlay" Visibility="Collapsed">

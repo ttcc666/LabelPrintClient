@@ -17,4 +17,3 @@ public class LabelPrintJobRow
     [SugarColumn(ColumnDataType = "TEXT")]
     public string RowDataJson { get; set; } = "{}";
 }
-

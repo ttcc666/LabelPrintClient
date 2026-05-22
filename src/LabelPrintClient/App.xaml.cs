@@ -44,5 +44,3 @@ public partial class App : System.Windows.Application
             StiOptions.Localization.Load(localizationFile);
     }
 }
-
-

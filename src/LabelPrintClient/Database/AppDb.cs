@@ -36,12 +36,12 @@ public static class AppDb
                 {
                     // 利用 SqlSugar 工具类将参数拼接进 SQL 语句中，生成完整的可执行 SQL 字符串
                     var fullSql = UtilMethods.GetSqlString(dbType, sql, pars);
-                    
+
                     var logText = $"\r\n==================== [SQL LOG EXECUTING] ====================\r\n" +
                                   $"[Time] : {DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}\r\n" +
                                   $"[SQL]  :\r\n{fullSql}\r\n" +
                                   $"============================================================\r\n";
-                    
+
                     System.Diagnostics.Debug.WriteLine(logText);
                 }
                 catch
@@ -57,6 +57,17 @@ public static class AppDb
                 System.Diagnostics.Debug.WriteLine(logText);
             };
         });
+    }
+
+    public static void Close()
+    {
+        try
+        {
+            Db?.Ado.Close();
+        }
+        catch
+        {
+        }
     }
 
     private static string NormalizeSqliteConnection(string connectionString)
@@ -85,4 +96,3 @@ public static class AppDb
         return string.Join(';', parts);
     }
 }
-

@@ -41,14 +41,14 @@
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
             <Button Style="{StaticResource AppDialogPrimaryButtonStyle}" Click="Ok_Click" Margin="0,0,10,0">
                 <StackPanel Orientation="Horizontal">
-                    <iconPacks:PackIconMaterial Kind="Check" Width="14" Height="14" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                    <TextBlock Text="确定" VerticalAlignment="Center"/>
+                    <iconPacks:PackIconMaterial Kind="Check" Width="14" Height="14" Margin="0,0,6,0" VerticalAlignment="Center" />
+                    <TextBlock Text="确定" VerticalAlignment="Center" />
                 </StackPanel>
             </Button>
             <Button Style="{StaticResource AppDialogCancelButtonStyle}" Click="Cancel_Click">
                 <StackPanel Orientation="Horizontal">
-                    <iconPacks:PackIconMaterial Kind="Close" Width="14" Height="14" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                    <TextBlock Text="取消" VerticalAlignment="Center"/>
+                    <iconPacks:PackIconMaterial Kind="Close" Width="14" Height="14" Margin="0,0,6,0" VerticalAlignment="Center" />
+                    <TextBlock Text="取消" VerticalAlignment="Center" />
                 </StackPanel>
             </Button>
         </StackPanel>

@@ -8,6 +8,7 @@ public class LabelTemplateFieldHistory
 {
     public const string OperationUpdate = "Update";
     public const string OperationDelete = "Delete";
+    public const string OperationRestore = "Restore";
 
     [SugarColumn(IsPrimaryKey = true)]
     public long Id { get; set; }
@@ -41,8 +42,15 @@ public class LabelTemplateFieldHistory
     {
         OperationUpdate => "变更",
         OperationDelete => "删除",
+        OperationRestore => "恢复",
         _ => OperationType
     };
+
+    [SugarColumn(IsIgnore = true)]
+    public bool CanCopyAsField => OperationType == OperationDelete;
+
+    [SugarColumn(IsIgnore = true)]
+    public bool CanRestoreField => OperationType == OperationDelete;
 
     [SugarColumn(IsIgnore = true)]
     public string FieldName => ReadSnapshotValue(nameof(LabelTemplateField.FieldName));

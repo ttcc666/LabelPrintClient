@@ -176,5 +176,3 @@ public partial class TaskCenterView : System.Windows.Controls.UserControl
                value.Contains(keyword, StringComparison.OrdinalIgnoreCase);
     }
 }
-
-

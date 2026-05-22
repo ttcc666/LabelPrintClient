@@ -8,7 +8,6 @@
         <Style x:Key="SectionTitleStyle" TargetType="TextBlock" BasedOn="{StaticResource AppSectionTitleStyle}" />
 
         <Style x:Key="FormLabelStyle" TargetType="TextBlock" BasedOn="{StaticResource AppFormLabelStyle}" />
-
     </UserControl.Resources>
 
     <Grid Margin="12">
@@ -61,8 +60,8 @@
 
                     <Button Grid.Column="4" Style="{StaticResource AppSecondaryButtonStyle}" Click="Refresh_Click" Margin="8,0,0,0">
                         <StackPanel Orientation="Horizontal">
-                            <iconPacks:PackIconMaterial Kind="Refresh" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                            <TextBlock Text="刷新" VerticalAlignment="Center"/>
+                            <iconPacks:PackIconMaterial Kind="Refresh" Margin="0,0,6,0" VerticalAlignment="Center" />
+                            <TextBlock Text="刷新" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
                 </Grid>
@@ -70,14 +69,14 @@
                 <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,8,0,0">
                     <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="DownloadExcel_Click" Margin="0,0,8,0">
                         <StackPanel Orientation="Horizontal">
-                            <iconPacks:PackIconMaterial Kind="Download" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                            <TextBlock Text="下载 Excel 模板" VerticalAlignment="Center"/>
+                            <iconPacks:PackIconMaterial Kind="Download" Margin="0,0,6,0" VerticalAlignment="Center" />
+                            <TextBlock Text="下载 Excel 模板" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
                     <Button Style="{StaticResource ButtonPrimary}" Click="ImportExcel_Click" Margin="0,0,20,0">
                         <StackPanel Orientation="Horizontal">
-                            <iconPacks:PackIconMaterial Kind="MicrosoftExcel" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                            <TextBlock Text="导入 Excel" VerticalAlignment="Center"/>
+                            <iconPacks:PackIconMaterial Kind="MicrosoftExcel" Margin="0,0,6,0" VerticalAlignment="Center" />
+                            <TextBlock Text="导入 Excel" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
                     <CheckBox x:Name="OnlyInvalidBox" Content="只看错误" VerticalAlignment="Center" Margin="0,0,16,0"
@@ -126,16 +125,16 @@
                                 <ComboBoxItem Content="已作废" Tag="Voided" />
                             </ComboBox>
                         </StackPanel>
-                        <Button  Style="{StaticResource AppSecondaryButtonStyle}" Click="BatchFilter_Click" Margin="0,0,8,0" >
+                        <Button  Style="{StaticResource AppSecondaryButtonStyle}" Click="BatchFilter_Click" Margin="0,0,8,0">
         <StackPanel Orientation="Horizontal">
-            <iconPacks:PackIconMaterial Kind="Magnify" Margin="0,0,6,0" VerticalAlignment="Center"/>
-            <TextBlock Text="查询" VerticalAlignment="Center"/>
+            <iconPacks:PackIconMaterial Kind="Magnify" Margin="0,0,6,0" VerticalAlignment="Center" />
+            <TextBlock Text="查询" VerticalAlignment="Center" />
         </StackPanel>
     </Button>
-                        <Button  Style="{StaticResource AppSecondaryButtonStyle}" Click="LoadBatches_Click" >
+                        <Button  Style="{StaticResource AppSecondaryButtonStyle}" Click="LoadBatches_Click">
         <StackPanel Orientation="Horizontal">
-            <iconPacks:PackIconMaterial Kind="Refresh" Margin="0,0,6,0" VerticalAlignment="Center"/>
-            <TextBlock Text="刷新批次" VerticalAlignment="Center"/>
+            <iconPacks:PackIconMaterial Kind="Refresh" Margin="0,0,6,0" VerticalAlignment="Center" />
+            <TextBlock Text="刷新批次" VerticalAlignment="Center" />
         </StackPanel>
     </Button>
                     </WrapPanel>
@@ -157,11 +156,11 @@
                                         <DataTemplate>
                                             <Button  Style="{StaticResource ButtonDanger}"
                                                        Height="28"
-                                                      
-                                                       Click="VoidBatch_Click" >
+
+                                                       Click="VoidBatch_Click">
         <StackPanel Orientation="Horizontal">
-            <iconPacks:PackIconMaterial Kind="Cancel" Margin="0,0,6,0" VerticalAlignment="Center"/>
-            <TextBlock Text="作废" VerticalAlignment="Center"/>
+            <iconPacks:PackIconMaterial Kind="Cancel" Margin="0,0,6,0" VerticalAlignment="Center" />
+            <TextBlock Text="作废" VerticalAlignment="Center" />
         </StackPanel>
     </Button>
                                         </DataTemplate>
@@ -221,7 +220,7 @@
                         <Grid x:Name="BatchLoadingOverlay" Grid.Row="0" Grid.RowSpan="2" Visibility="Collapsed">
                             <Border Background="{DynamicResource RegionBrush}" Opacity="0.75" CornerRadius="6" />
                             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <hc:LoadingCircle Width="36" Height="36" Foreground="{DynamicResource PrimaryBrush}"/>
+                                <hc:LoadingCircle Width="36" Height="36" Foreground="{DynamicResource PrimaryBrush}" />
                                 <TextBlock Text="正在读取批次记录..." Margin="0,10,0,0" HorizontalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" />
                             </StackPanel>
                         </Grid>
@@ -248,16 +247,16 @@
                                      VerticalAlignment="Center"
                                      KeyDown="RowSearchBox_KeyDown" />
                         </StackPanel>
-                        <Button  Style="{StaticResource AppSecondaryButtonStyle}" Click="RowFilter_Click" Margin="0,0,8,0" >
+                        <Button  Style="{StaticResource AppSecondaryButtonStyle}" Click="RowFilter_Click" Margin="0,0,8,0">
         <StackPanel Orientation="Horizontal">
-            <iconPacks:PackIconMaterial Kind="Magnify" Margin="0,0,6,0" VerticalAlignment="Center"/>
-            <TextBlock Text="查询" VerticalAlignment="Center"/>
+            <iconPacks:PackIconMaterial Kind="Magnify" Margin="0,0,6,0" VerticalAlignment="Center" />
+            <TextBlock Text="查询" VerticalAlignment="Center" />
         </StackPanel>
     </Button>
-                        <Button  Style="{StaticResource AppGhostButtonStyle}" Click="ClearRowFilter_Click" >
+                        <Button  Style="{StaticResource AppGhostButtonStyle}" Click="ClearRowFilter_Click">
         <StackPanel Orientation="Horizontal">
-            <iconPacks:PackIconMaterial Kind="FilterRemoveOutline" Margin="0,0,6,0" VerticalAlignment="Center"/>
-            <TextBlock Text="清空" VerticalAlignment="Center"/>
+            <iconPacks:PackIconMaterial Kind="FilterRemoveOutline" Margin="0,0,6,0" VerticalAlignment="Center" />
+            <TextBlock Text="清空" VerticalAlignment="Center" />
         </StackPanel>
     </Button>
                     </WrapPanel>
@@ -317,7 +316,7 @@
                         <Grid x:Name="RowLoadingOverlay" Grid.Row="0" Grid.RowSpan="2" Visibility="Collapsed">
                             <Border Background="{DynamicResource RegionBrush}" Opacity="0.75" CornerRadius="6" />
                             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <hc:LoadingCircle Width="36" Height="36" Foreground="{DynamicResource PrimaryBrush}"/>
+                                <hc:LoadingCircle Width="36" Height="36" Foreground="{DynamicResource PrimaryBrush}" />
                                 <TextBlock Text="正在加载明细数据..." Margin="0,10,0,0" HorizontalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" />
                             </StackPanel>
                         </Grid>
@@ -337,7 +336,7 @@
                 <TextBlock x:Name="SummaryText"
                               Grid.Row="0"
                               VerticalAlignment="Center"
-                             
+
                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
 
                 <WrapPanel Grid.Row="1" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,8,0,0">
@@ -345,40 +344,40 @@
                         <TextBlock Style="{StaticResource FormLabelStyle}" Text="份数" />
                         <TextBox x:Name="PrintCopiesBox" Width="72" Text="1" VerticalAlignment="Center" />
                     </StackPanel>
-                    <Button  Style="{StaticResource AppSecondaryButtonStyle}" Click="SelectValidUnprinted_Click" Margin="0,0,8,0" >
+                    <Button  Style="{StaticResource AppSecondaryButtonStyle}" Click="SelectValidUnprinted_Click" Margin="0,0,8,0">
         <StackPanel Orientation="Horizontal">
-            <iconPacks:PackIconMaterial Kind="CheckboxMarked" Margin="0,0,6,0" VerticalAlignment="Center"/>
-            <TextBlock Text="全选有效未打印" VerticalAlignment="Center"/>
+            <iconPacks:PackIconMaterial Kind="CheckboxMarked" Margin="0,0,6,0" VerticalAlignment="Center" />
+            <TextBlock Text="全选有效未打印" VerticalAlignment="Center" />
         </StackPanel>
     </Button>
-                    <Button  Style="{StaticResource AppSecondaryButtonStyle}" Click="SelectValid_Click" Margin="0,0,8,0" >
+                    <Button  Style="{StaticResource AppSecondaryButtonStyle}" Click="SelectValid_Click" Margin="0,0,8,0">
         <StackPanel Orientation="Horizontal">
-            <iconPacks:PackIconMaterial Kind="CheckboxMultipleMarked" Margin="0,0,6,0" VerticalAlignment="Center"/>
-            <TextBlock Text="全选有效行" VerticalAlignment="Center"/>
+            <iconPacks:PackIconMaterial Kind="CheckboxMultipleMarked" Margin="0,0,6,0" VerticalAlignment="Center" />
+            <TextBlock Text="全选有效行" VerticalAlignment="Center" />
         </StackPanel>
     </Button>
-                    <Button  Style="{StaticResource AppGhostButtonStyle}" Click="ReverseSelect_Click" Margin="0,0,8,0" >
+                    <Button  Style="{StaticResource AppGhostButtonStyle}" Click="ReverseSelect_Click" Margin="0,0,8,0">
         <StackPanel Orientation="Horizontal">
-            <iconPacks:PackIconMaterial Kind="MinusBoxOutline" Margin="0,0,6,0" VerticalAlignment="Center"/>
-            <TextBlock Text="反选" VerticalAlignment="Center"/>
+            <iconPacks:PackIconMaterial Kind="MinusBoxOutline" Margin="0,0,6,0" VerticalAlignment="Center" />
+            <TextBlock Text="反选" VerticalAlignment="Center" />
         </StackPanel>
     </Button>
-                    <Button  Style="{StaticResource AppGhostButtonStyle}" Click="ClearSelect_Click" Margin="0,0,16,0" >
+                    <Button  Style="{StaticResource AppGhostButtonStyle}" Click="ClearSelect_Click" Margin="0,0,16,0">
         <StackPanel Orientation="Horizontal">
-            <iconPacks:PackIconMaterial Kind="FilterRemoveOutline" Margin="0,0,6,0" VerticalAlignment="Center"/>
-            <TextBlock Text="清空" VerticalAlignment="Center"/>
+            <iconPacks:PackIconMaterial Kind="FilterRemoveOutline" Margin="0,0,6,0" VerticalAlignment="Center" />
+            <TextBlock Text="清空" VerticalAlignment="Center" />
         </StackPanel>
     </Button>
-                    <Button  Style="{StaticResource AppSecondaryButtonStyle}" Click="PreviewSelected_Click" Margin="0,0,8,0" >
+                    <Button  Style="{StaticResource AppSecondaryButtonStyle}" Click="PreviewSelected_Click" Margin="0,0,8,0">
         <StackPanel Orientation="Horizontal">
-            <iconPacks:PackIconMaterial Kind="Eye" Margin="0,0,6,0" VerticalAlignment="Center"/>
-            <TextBlock Text="批量预览" VerticalAlignment="Center"/>
+            <iconPacks:PackIconMaterial Kind="Eye" Margin="0,0,6,0" VerticalAlignment="Center" />
+            <TextBlock Text="批量预览" VerticalAlignment="Center" />
         </StackPanel>
     </Button>
-                    <Button  Style="{StaticResource ButtonPrimary}" Click="PrintSelected_Click" >
+                    <Button  Style="{StaticResource ButtonPrimary}" Click="PrintSelected_Click">
         <StackPanel Orientation="Horizontal">
-            <iconPacks:PackIconMaterial Kind="Printer" Margin="0,0,6,0" VerticalAlignment="Center"/>
-            <TextBlock Text="批量打印" VerticalAlignment="Center"/>
+            <iconPacks:PackIconMaterial Kind="Printer" Margin="0,0,6,0" VerticalAlignment="Center" />
+            <TextBlock Text="批量打印" VerticalAlignment="Center" />
         </StackPanel>
     </Button>
                 </WrapPanel>
@@ -386,8 +385,3 @@
         </Border>
     </Grid>
 </UserControl>
-
-
-
-
-

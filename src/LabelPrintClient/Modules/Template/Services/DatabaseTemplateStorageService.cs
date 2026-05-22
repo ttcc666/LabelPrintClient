@@ -42,4 +42,3 @@ public class DatabaseTemplateStorageService : ILabelTemplateStorageService
         await AppDb.Db.Updateable(template).ExecuteCommandAsync().ConfigureAwait(false);
     }
 }
-

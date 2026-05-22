@@ -10,4 +10,3 @@ public class PrintJobRowGridItem
 
     public Dictionary<string, string> Data { get; set; } = new();
 }
-

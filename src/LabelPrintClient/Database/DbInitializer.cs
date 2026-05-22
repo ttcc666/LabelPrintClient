@@ -19,4 +19,3 @@ public static class DbInitializer
         AppDb.Db.CodeFirst.InitTables<LabelPrintJobRow>();
     }
 }
-

@@ -46,6 +46,52 @@ public class LabelTemplateField
     [SugarColumn(Length = 200, IsNullable = true)]
     public string? Remark { get; set; }
 
-    public bool IsDeleted { get; set; }
-}
+    [SugarColumn(IsNullable = true)]
+    public int? MinLength { get; set; }
 
+    [SugarColumn(IsNullable = true)]
+    public int? MaxLength { get; set; }
+
+    [SugarColumn(Length = 500, IsNullable = true)]
+    public string? RegexPattern { get; set; }
+
+    [SugarColumn(Length = 200, IsNullable = true)]
+    public string? RegexErrorMessage { get; set; }
+
+    [SugarColumn(ColumnDataType = "TEXT", IsNullable = true)]
+    public string? EnumOptions { get; set; }
+
+    [SugarColumn(IsNullable = true)]
+    public decimal? MinValue { get; set; }
+
+    [SugarColumn(IsNullable = true)]
+    public decimal? MaxValue { get; set; }
+
+    public bool IsDeleted { get; set; }
+
+    [SugarColumn(IsIgnore = true)]
+    public string ValidationRuleSummary
+    {
+        get
+        {
+            var rules = new List<string>();
+
+            if (IsRequired)
+                rules.Add("必填");
+
+            if (MinLength.HasValue || MaxLength.HasValue)
+                rules.Add($"{MinLength?.ToString() ?? "0"}-{MaxLength?.ToString() ?? "∞"}字符");
+
+            if (!string.IsNullOrWhiteSpace(EnumOptions))
+                rules.Add("枚举");
+
+            if (MinValue.HasValue || MaxValue.HasValue)
+                rules.Add($"{MinValue?.ToString() ?? "-∞"}-{MaxValue?.ToString() ?? "∞"}");
+
+            if (!string.IsNullOrWhiteSpace(RegexPattern))
+                rules.Add("正则");
+
+            return rules.Count == 0 ? string.Empty : string.Join("；", rules);
+        }
+    }
+}

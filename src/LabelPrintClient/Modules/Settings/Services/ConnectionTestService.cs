@@ -58,4 +58,3 @@ public static class ConnectionTestService
         return string.Join(';', parts);
     }
 }
-

@@ -1,11 +1,9 @@
-using System.Data;
 using LabelPrintClient.Infrastructure;
-using LabelPrintClient.Modules.PrintCenter.Models;
 using LabelPrintClient.Modules.Template.Models;
-using LabelPrintClient.Modules.Template.Services;
+using LabelPrintClient.Services;
 using Stimulsoft.Report;
 using Stimulsoft.Report.Components;
-using LabelPrintClient.Services;
+using System.Data;
 
 namespace LabelPrintClient.Modules.Template.Services;
 
@@ -40,7 +38,7 @@ public class StiTemplateDesignerService
                         context.Storage.SaveReportAsync(context.Template, report, CancellationToken.None)
                             .GetAwaiter()
                             .GetResult();
-                        
+
                         // 声明已成功自定义处理保存，阻止弹出“另存为”对话框
                         e.Processed = true;
                     }
@@ -48,9 +46,9 @@ public class StiTemplateDesignerService
                 catch (Exception ex)
                 {
                     AppMessageBox.Show(
-                        $"保存模板失败：{ex.Message}", 
-                        "错误", 
-                        System.Windows.MessageBoxButton.OK, 
+                        $"保存模板失败：{ex.Message}",
+                        "错误",
+                        System.Windows.MessageBoxButton.OK,
                         System.Windows.MessageBoxImage.Error);
                 }
             };
@@ -113,6 +111,8 @@ public class StiTemplateDesignerService
         table.Rows.Add(row);
 
         report.Dictionary.Databases.Clear();
+        report.Dictionary.DataSources.Clear();
+        report.Dictionary.Relations.Clear();
         report.RegData(dataSourceName, table);
         report.Dictionary.Synchronize();
 
@@ -146,4 +146,3 @@ public class StiTemplateDesignerService
         }
     }
 }
-

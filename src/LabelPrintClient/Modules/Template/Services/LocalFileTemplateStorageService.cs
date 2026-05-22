@@ -51,4 +51,3 @@ public class LocalFileTemplateStorageService : ILabelTemplateStorageService
         await AppDb.Db.Updateable(template).ExecuteCommandAsync().ConfigureAwait(false);
     }
 }
-

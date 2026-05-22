@@ -8,4 +8,3 @@ public enum BackgroundTaskStatus
     Failed,
     Canceled
 }
-

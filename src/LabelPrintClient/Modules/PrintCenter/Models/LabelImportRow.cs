@@ -31,4 +31,3 @@ public class LabelImportRow
 
     public DateTime CreateTime { get; set; } = DateTime.Now;
 }
-

@@ -217,6 +217,8 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
                     x.FieldName.Contains(keyword) ||
                     x.FieldCode.Contains(keyword) ||
                     x.FieldType.Contains(keyword) ||
+                    (x.RegexPattern != null && x.RegexPattern.Contains(keyword)) ||
+                    (x.EnumOptions != null && x.EnumOptions.Contains(keyword)) ||
                     (x.Remark != null && x.Remark.Contains(keyword)));
             }
 
@@ -333,7 +335,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         await RefreshAllAsync();
     }
 
-    #endregion
+    #endregion 分类维护 (Dialog 方式)
 
     #region 模板维护 (Dialog 方式)
 
@@ -451,7 +453,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         await LoadTemplatesAsync();
     }
 
-    #endregion
+    #endregion 模板维护 (Dialog 方式)
 
     #region 字段维护 (Dialog 方式)
 
@@ -489,8 +491,12 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         field.TemplateId = template.Id;
         field.Sort = maxSort + 10;
 
-        await AppDb.Db.Insertable(field).ExecuteCommandAsync();
-        await NormalizeFieldSortAsync(template.Id);
+        await AppDb.Db.UseTranAsync(async () =>
+        {
+            await AppDb.Db.Insertable(field).ExecuteCommandAsync();
+            await NormalizeFieldSortAsync(template.Id);
+            await IncrementTemplateVersionAsync(template.Id);
+        });
         await LoadFieldsAsync(field.Id);
     }
 
@@ -531,6 +537,18 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
             return;
         }
 
+        if (!HasFieldMaintenanceChanges(before, edited))
+        {
+            AppMessageBox.Show("字段内容未变化。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        if (!string.Equals(before.FieldCode, edited.FieldCode, StringComparison.OrdinalIgnoreCase) &&
+            !await ConfirmHistoricalFieldCodeUsageAsync(template.Id, before.FieldCode, "修改字段编码"))
+        {
+            return;
+        }
+
         var history = NewFieldHistory(
             template,
             before,
@@ -543,7 +561,21 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         {
             await AppDb.Db.Insertable(history).ExecuteCommandAsync();
             await AppDb.Db.Updateable(edited)
-                .UpdateColumns(x => new { x.FieldName, x.FieldCode, x.FieldType, x.IsRequired, x.Remark })
+                .UpdateColumns(x => new
+                {
+                    x.FieldName,
+                    x.FieldCode,
+                    x.FieldType,
+                    x.IsRequired,
+                    x.Remark,
+                    x.MinLength,
+                    x.MaxLength,
+                    x.RegexPattern,
+                    x.RegexErrorMessage,
+                    x.EnumOptions,
+                    x.MinValue,
+                    x.MaxValue
+                })
                 .ExecuteCommandAsync();
             await IncrementTemplateVersionAsync(template.Id);
         });
@@ -583,6 +615,9 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
             return;
         }
 
+        if (!await ConfirmHistoricalFieldCodeUsageAsync(template.Id, before.FieldCode, "删除字段"))
+            return;
+
         var history = NewFieldHistory(
             template,
             before,
@@ -603,7 +638,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         await LoadFieldsAsync();
     }
 
-    private void FieldHistory_Click(object sender, RoutedEventArgs e)
+    private async void FieldHistory_Click(object sender, RoutedEventArgs e)
     {
         var template = SelectedTemplate;
         if (template == null)
@@ -616,10 +651,12 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         {
             Owner = Window.GetWindow(this)
         };
-        win.ShowDialog();
+        var result = win.ShowDialog();
+        if (result == true && win.CopiedFieldId.HasValue)
+            await LoadFieldsAsync(win.CopiedFieldId.Value);
     }
 
-    #endregion
+    #endregion 字段维护 (Dialog 方式)
 
     private async void UploadTemplate_Click(object sender, RoutedEventArgs e)
     {
@@ -1012,6 +1049,60 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         return null;
     }
 
+    private static bool HasFieldMaintenanceChanges(LabelTemplateField before, LabelTemplateField after)
+    {
+        return !string.Equals(before.FieldName, after.FieldName, StringComparison.Ordinal) ||
+               !string.Equals(before.FieldCode, after.FieldCode, StringComparison.Ordinal) ||
+               !string.Equals(before.FieldType, after.FieldType, StringComparison.Ordinal) ||
+               before.IsRequired != after.IsRequired ||
+               !string.Equals(before.Remark ?? string.Empty, after.Remark ?? string.Empty, StringComparison.Ordinal) ||
+               before.MinLength != after.MinLength ||
+               before.MaxLength != after.MaxLength ||
+               !string.Equals(before.RegexPattern ?? string.Empty, after.RegexPattern ?? string.Empty, StringComparison.Ordinal) ||
+               !string.Equals(before.RegexErrorMessage ?? string.Empty, after.RegexErrorMessage ?? string.Empty, StringComparison.Ordinal) ||
+               !string.Equals(before.EnumOptions ?? string.Empty, after.EnumOptions ?? string.Empty, StringComparison.Ordinal) ||
+               before.MinValue != after.MinValue ||
+               before.MaxValue != after.MaxValue;
+    }
+
+    private async Task<bool> ConfirmHistoricalFieldCodeUsageAsync(long templateId, string fieldCode, string actionText)
+    {
+        if (!await HasHistoricalFieldCodeUsageAsync(templateId, fieldCode))
+            return true;
+
+        var result = AppMessageBox.Show(
+            $"字段编码“{fieldCode}”已被历史导入或打印数据使用。\n继续{actionText}后，历史数据可能会以废弃字段显示，或影响追溯查看。\n是否继续？",
+            "字段编码已被历史数据使用",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning);
+
+        return result == MessageBoxResult.Yes;
+    }
+
+    private static async Task<bool> HasHistoricalFieldCodeUsageAsync(long templateId, string fieldCode)
+    {
+        if (string.IsNullOrWhiteSpace(fieldCode))
+            return false;
+
+        var keyPattern = $"\"{fieldCode}\"";
+        var hasImportRows = await AppDb.Db.Queryable<LabelImportRow>()
+            .Where(x => x.TemplateId == templateId && x.RowDataJson.Contains(keyPattern))
+            .AnyAsync();
+        if (hasImportRows)
+            return true;
+
+        var jobIds = await AppDb.Db.Queryable<LabelPrintJob>()
+            .Where(x => x.TemplateId == templateId)
+            .Select(x => x.Id)
+            .ToListAsync();
+        if (jobIds.Count == 0)
+            return false;
+
+        return await AppDb.Db.Queryable<LabelPrintJobRow>()
+            .Where(x => jobIds.Contains(x.PrintJobId) && x.RowDataJson.Contains(keyPattern))
+            .AnyAsync();
+    }
+
     private static LabelTemplateFieldHistory NewFieldHistory(
         LabelTemplate template,
         LabelTemplateField field,
@@ -1047,6 +1138,13 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
             field.IsRequired,
             field.Sort,
             field.Remark,
+            field.MinLength,
+            field.MaxLength,
+            field.RegexPattern,
+            field.RegexErrorMessage,
+            field.EnumOptions,
+            field.MinValue,
+            field.MaxValue,
             IsDeleted = isDeleted ?? field.IsDeleted
         });
     }
@@ -1115,5 +1213,3 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         cts = null;
     }
 }
-
-

@@ -370,10 +370,10 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
         foreach (var key in extraKeys)
         {
             var matchingField = fields.FirstOrDefault(x => string.Equals(x.FieldCode, key, StringComparison.OrdinalIgnoreCase));
-            
+
             string headerText;
             string toolTipText;
-            
+
             if (matchingField != null)
             {
                 headerText = $"{matchingField.FieldName} (已废弃)";

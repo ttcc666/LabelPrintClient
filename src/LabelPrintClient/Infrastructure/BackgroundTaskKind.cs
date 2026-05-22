@@ -10,4 +10,3 @@ public enum BackgroundTaskKind
     Print,
     Upload
 }
-

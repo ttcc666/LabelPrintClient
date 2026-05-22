@@ -1,9 +1,9 @@
-﻿using System.Windows;
-using System.Windows.Controls;
-using LabelPrintClient.Modules.PrintCenter.Models;
-using LabelPrintClient.Modules.Template.Models;
-using LabelPrintClient.Modules.PrintCenter.Services;
+﻿using LabelPrintClient.Modules.PrintCenter.Services;
 using LabelPrintClient.Modules.PrintCenter.ViewModels;
+using LabelPrintClient.Modules.Template.Models;
+using LabelPrintClient.Services;
+using System.Windows;
+using System.Windows.Controls;
 
 namespace LabelPrintClient.Modules.PrintCenter.Views;
 
@@ -27,7 +27,12 @@ public partial class ImportPreviewWindow : Window
             .ToList();
 
         InitializeComponent();
+        PreviewGrid.RowHeight = double.NaN;
         SummaryText.Text = $"{preview.ExcelFileName} · 共 {preview.TotalRows} 行，有效 {preview.ValidRows} 行，错误 {preview.InvalidRows} 行";
+        ConfirmButton.IsEnabled = preview.InvalidRows == 0;
+        ImportHintText.Text = preview.InvalidRows == 0
+            ? "确认后才会写入导入批次和明细数据。"
+            : "存在错误行，修正 Excel 后才能确认导入。";
         BuildColumns(preview.Fields);
         _ = ApplyFilterAsync();
     }
@@ -57,6 +62,12 @@ public partial class ImportPreviewWindow : Window
 
     private void Confirm_Click(object sender, RoutedEventArgs e)
     {
+        if (_preview.InvalidRows > 0)
+        {
+            AppMessageBox.Show("存在错误行，不能确认导入。请修正 Excel 后重新导入。", "导入校验", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
         DialogResult = true;
     }
 
@@ -103,13 +114,23 @@ public partial class ImportPreviewWindow : Window
             Header = "错误信息",
             Binding = new System.Windows.Data.Binding(nameof(ImportPreviewRowGridItem.ErrorMessage)),
             Width = new DataGridLength(1, DataGridLengthUnitType.Star),
-            MinWidth = 180
+            MinWidth = 220,
+            ElementStyle = BuildWrappingTextStyle()
         });
     }
 
     private static Style FindAppStyle(string resourceKey)
     {
         return (Style)System.Windows.Application.Current.FindResource(resourceKey);
+    }
+
+    private static Style BuildWrappingTextStyle()
+    {
+        var style = new Style(typeof(TextBlock));
+        style.Setters.Add(new Setter(TextBlock.TextWrappingProperty, TextWrapping.Wrap));
+        style.Setters.Add(new Setter(TextBlock.VerticalAlignmentProperty, VerticalAlignment.Center));
+        style.Setters.Add(new Setter(FrameworkElement.MarginProperty, new Thickness(0, 4, 0, 4)));
+        return style;
     }
 
     private async Task ApplyFilterAsync()
@@ -185,5 +206,3 @@ public partial class ImportPreviewWindow : Window
         cts = null;
     }
 }
-
-

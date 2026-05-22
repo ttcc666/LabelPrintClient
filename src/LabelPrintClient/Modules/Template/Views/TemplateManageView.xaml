@@ -23,16 +23,16 @@
                 </StackPanel>
 
                 <WrapPanel DockPanel.Dock="Right" HorizontalAlignment="Right" VerticalAlignment="Center">
-                    <Button  Style="{StaticResource AppSecondaryButtonStyle}" Click="Refresh_Click" Margin="0,0,8,0" >
+                    <Button  Style="{StaticResource AppSecondaryButtonStyle}" Click="Refresh_Click" Margin="0,0,8,0">
         <StackPanel Orientation="Horizontal">
-            <iconPacks:PackIconMaterial Kind="Refresh" Margin="0,0,6,0" VerticalAlignment="Center"/>
-            <TextBlock Text="刷新" VerticalAlignment="Center"/>
+            <iconPacks:PackIconMaterial Kind="Refresh" Margin="0,0,6,0" VerticalAlignment="Center" />
+            <TextBlock Text="刷新" VerticalAlignment="Center" />
         </StackPanel>
     </Button>
                     <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="SeedDemo_Click">
                         <StackPanel Orientation="Horizontal">
-                            <iconPacks:PackIconMaterial Kind="DatabasePlusOutline" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                            <TextBlock Text="初始化示例数据" VerticalAlignment="Center"/>
+                            <iconPacks:PackIconMaterial Kind="DatabasePlusOutline" Margin="0,0,6,0" VerticalAlignment="Center" />
+                            <TextBlock Text="初始化示例数据" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
                 </WrapPanel>
@@ -60,29 +60,29 @@
                 <Border Grid.Row="1" Style="{StaticResource AppCardStyle}" VerticalAlignment="Stretch">
                     <Grid>
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
-                        
+
                         <!-- 分类操作按钮栏 -->
                         <WrapPanel Grid.Row="0" Margin="0,0,0,4">
                             <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="AddCategory_Click" Margin="0,0,8,8">
                                 <StackPanel Orientation="Horizontal">
-                                    <iconPacks:PackIconMaterial Kind="PlusCircleOutline" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                                    <TextBlock Text="新增分类" VerticalAlignment="Center"/>
+                                    <iconPacks:PackIconMaterial Kind="PlusCircleOutline" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                    <TextBlock Text="新增分类" VerticalAlignment="Center" />
                                 </StackPanel>
                             </Button>
                             <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="EditCategory_Click" Margin="0,0,8,8">
                                 <StackPanel Orientation="Horizontal">
-                                    <iconPacks:PackIconMaterial Kind="PencilOutline" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                                    <TextBlock Text="编辑" VerticalAlignment="Center"/>
+                                    <iconPacks:PackIconMaterial Kind="PencilOutline" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                    <TextBlock Text="编辑" VerticalAlignment="Center" />
                                 </StackPanel>
                             </Button>
                             <Button Style="{StaticResource AppDangerButtonStyle}" Click="DeleteCategory_Click" Margin="0,0,8,8">
                                 <StackPanel Orientation="Horizontal">
-                                    <iconPacks:PackIconMaterial Kind="TrashCanOutline" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                                    <TextBlock Text="删除" VerticalAlignment="Center"/>
+                                    <iconPacks:PackIconMaterial Kind="TrashCanOutline" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                    <TextBlock Text="删除" VerticalAlignment="Center" />
                                 </StackPanel>
                             </Button>
                         </WrapPanel>
@@ -96,16 +96,16 @@
                                         VerticalAlignment="Center"
                                         KeyDown="CategorySearchBox_KeyDown" />
                             </StackPanel>
-                            <Button  Style="{StaticResource AppSecondaryButtonStyle}" Click="CategoryFilter_Click" Margin="0,0,8,8" >
+                            <Button  Style="{StaticResource AppSecondaryButtonStyle}" Click="CategoryFilter_Click" Margin="0,0,8,8">
         <StackPanel Orientation="Horizontal">
-            <iconPacks:PackIconMaterial Kind="Magnify" Margin="0,0,6,0" VerticalAlignment="Center"/>
-            <TextBlock Text="查询" VerticalAlignment="Center"/>
+            <iconPacks:PackIconMaterial Kind="Magnify" Margin="0,0,6,0" VerticalAlignment="Center" />
+            <TextBlock Text="查询" VerticalAlignment="Center" />
         </StackPanel>
     </Button>
-                            <Button  Style="{StaticResource AppGhostButtonStyle}" Click="ClearCategoryFilter_Click" Margin="0,0,8,8" >
+                            <Button  Style="{StaticResource AppGhostButtonStyle}" Click="ClearCategoryFilter_Click" Margin="0,0,8,8">
         <StackPanel Orientation="Horizontal">
-            <iconPacks:PackIconMaterial Kind="FilterRemoveOutline" Margin="0,0,6,0" VerticalAlignment="Center"/>
-            <TextBlock Text="清空" VerticalAlignment="Center"/>
+            <iconPacks:PackIconMaterial Kind="FilterRemoveOutline" Margin="0,0,6,0" VerticalAlignment="Center" />
+            <TextBlock Text="清空" VerticalAlignment="Center" />
         </StackPanel>
     </Button>
                         </WrapPanel>
@@ -159,30 +159,30 @@
                 <Border Grid.Row="1" Style="{StaticResource AppCardStyle}" VerticalAlignment="Stretch">
                     <Grid>
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
-                        
+
                         <!-- 模板操作按钮栏 -->
                         <WrapPanel Grid.Row="0" Margin="0,0,0,2">
                             <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="AddTemplate_Click" Margin="0,0,8,8">
                                 <StackPanel Orientation="Horizontal">
-                                    <iconPacks:PackIconMaterial Kind="PlusCircleOutline" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                                    <TextBlock Text="新增模板" VerticalAlignment="Center"/>
+                                    <iconPacks:PackIconMaterial Kind="PlusCircleOutline" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                    <TextBlock Text="新增模板" VerticalAlignment="Center" />
                                 </StackPanel>
                             </Button>
                             <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="EditTemplate_Click" Margin="0,0,8,8">
                                 <StackPanel Orientation="Horizontal">
-                                    <iconPacks:PackIconMaterial Kind="PencilOutline" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                                    <TextBlock Text="编辑" VerticalAlignment="Center"/>
+                                    <iconPacks:PackIconMaterial Kind="PencilOutline" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                    <TextBlock Text="编辑" VerticalAlignment="Center" />
                                 </StackPanel>
                             </Button>
                             <Button Style="{StaticResource AppDangerButtonStyle}" Click="DeleteTemplate_Click" Margin="0,0,8,8">
                                 <StackPanel Orientation="Horizontal">
-                                    <iconPacks:PackIconMaterial Kind="TrashCanOutline" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                                    <TextBlock Text="删除" VerticalAlignment="Center"/>
+                                    <iconPacks:PackIconMaterial Kind="TrashCanOutline" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                    <TextBlock Text="删除" VerticalAlignment="Center" />
                                 </StackPanel>
                             </Button>
                         </WrapPanel>
@@ -196,28 +196,28 @@
                                         VerticalAlignment="Center"
                                         KeyDown="TemplateSearchBox_KeyDown" />
                             </StackPanel>
-                            <Button  Style="{StaticResource AppSecondaryButtonStyle}" Click="TemplateFilter_Click" Margin="0,0,8,8" >
+                            <Button  Style="{StaticResource AppSecondaryButtonStyle}" Click="TemplateFilter_Click" Margin="0,0,8,8">
         <StackPanel Orientation="Horizontal">
-            <iconPacks:PackIconMaterial Kind="Magnify" Margin="0,0,6,0" VerticalAlignment="Center"/>
-            <TextBlock Text="查询" VerticalAlignment="Center"/>
+            <iconPacks:PackIconMaterial Kind="Magnify" Margin="0,0,6,0" VerticalAlignment="Center" />
+            <TextBlock Text="查询" VerticalAlignment="Center" />
         </StackPanel>
     </Button>
-                            <Button  Style="{StaticResource AppGhostButtonStyle}" Click="ClearTemplateFilter_Click" Margin="0,0,8,8" >
+                            <Button  Style="{StaticResource AppGhostButtonStyle}" Click="ClearTemplateFilter_Click" Margin="0,0,8,8">
         <StackPanel Orientation="Horizontal">
-            <iconPacks:PackIconMaterial Kind="FilterRemoveOutline" Margin="0,0,6,0" VerticalAlignment="Center"/>
-            <TextBlock Text="清空" VerticalAlignment="Center"/>
+            <iconPacks:PackIconMaterial Kind="FilterRemoveOutline" Margin="0,0,6,0" VerticalAlignment="Center" />
+            <TextBlock Text="清空" VerticalAlignment="Center" />
         </StackPanel>
     </Button>
                             <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="UploadTemplate_Click" Margin="0,0,8,8">
                                 <StackPanel Orientation="Horizontal">
-                                    <iconPacks:PackIconMaterial Kind="CloudUploadOutline" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                                    <TextBlock Text="上传 .mrt" VerticalAlignment="Center"/>
+                                    <iconPacks:PackIconMaterial Kind="CloudUploadOutline" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                    <TextBlock Text="上传 .mrt" VerticalAlignment="Center" />
                                 </StackPanel>
                             </Button>
                             <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="DesignTemplate_Click" Margin="0,0,8,8">
                                 <StackPanel Orientation="Horizontal">
-                                    <iconPacks:PackIconMaterial Kind="PaletteOutline" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                                    <TextBlock Text="设计器" VerticalAlignment="Center"/>
+                                    <iconPacks:PackIconMaterial Kind="PaletteOutline" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                    <TextBlock Text="设计器" VerticalAlignment="Center" />
                                 </StackPanel>
                             </Button>
                         </WrapPanel>
@@ -273,7 +273,6 @@
                                 </Button>
                             </StackPanel>
                         </Border>
-
                     </Grid>
                 </Border>
             </Grid>
@@ -292,8 +291,8 @@
                 <Border Grid.Row="1" Style="{StaticResource AppCardStyle}" VerticalAlignment="Stretch">
                     <Grid>
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
 
                         <!-- 字段操作与搜索面板 -->
@@ -302,46 +301,46 @@
                             <WrapPanel Margin="0,0,0,2">
                                 <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="AddField_Click" Margin="0,0,8,8">
                                     <StackPanel Orientation="Horizontal">
-                                        <iconPacks:PackIconMaterial Kind="PlusCircleOutline" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                                        <TextBlock Text="新增字段" VerticalAlignment="Center"/>
+                                        <iconPacks:PackIconMaterial Kind="PlusCircleOutline" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                        <TextBlock Text="新增字段" VerticalAlignment="Center" />
                                     </StackPanel>
                                 </Button>
                                 <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="EditField_Click" Margin="0,0,8,8">
                                     <StackPanel Orientation="Horizontal">
-                                        <iconPacks:PackIconMaterial Kind="PencilOutline" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                                        <TextBlock Text="编辑" VerticalAlignment="Center"/>
+                                        <iconPacks:PackIconMaterial Kind="PencilOutline" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                        <TextBlock Text="编辑" VerticalAlignment="Center" />
                                     </StackPanel>
                                 </Button>
                                 <Button Style="{StaticResource AppDangerButtonStyle}" Click="DeleteField_Click" Margin="0,0,8,8">
                                     <StackPanel Orientation="Horizontal">
-                                        <iconPacks:PackIconMaterial Kind="TrashCanOutline" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                                        <TextBlock Text="删除" VerticalAlignment="Center"/>
+                                        <iconPacks:PackIconMaterial Kind="TrashCanOutline" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                        <TextBlock Text="删除" VerticalAlignment="Center" />
                                     </StackPanel>
                                 </Button>
                                 <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="FieldHistory_Click" Margin="0,0,8,8">
                                     <StackPanel Orientation="Horizontal">
-                                        <iconPacks:PackIconMaterial Kind="History" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                                        <TextBlock Text="字段履历" VerticalAlignment="Center"/>
+                                        <iconPacks:PackIconMaterial Kind="History" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                        <TextBlock Text="字段履历" VerticalAlignment="Center" />
                                     </StackPanel>
                                 </Button>
                                 <Button Style="{StaticResource AppGhostButtonStyle}" Click="MoveFieldUp_Click" Margin="0,0,8,8">
                                     <StackPanel Orientation="Horizontal">
                                         <iconPacks:PackIconMaterial Kind="ChevronLeft" Margin="0,0,6,0" VerticalAlignment="Center" RenderTransformOrigin="0.5,0.5">
                                             <iconPacks:PackIconMaterial.RenderTransform>
-                                                <RotateTransform Angle="90"/>
+                                                <RotateTransform Angle="90" />
                                             </iconPacks:PackIconMaterial.RenderTransform>
                                         </iconPacks:PackIconMaterial>
-                                        <TextBlock Text="上移" VerticalAlignment="Center"/>
+                                        <TextBlock Text="上移" VerticalAlignment="Center" />
                                     </StackPanel>
                                 </Button>
                                 <Button Style="{StaticResource AppGhostButtonStyle}" Click="MoveFieldDown_Click" Margin="0,0,8,8">
                                     <StackPanel Orientation="Horizontal">
                                         <iconPacks:PackIconMaterial Kind="ChevronLeft" Margin="0,0,6,0" VerticalAlignment="Center" RenderTransformOrigin="0.5,0.5">
                                             <iconPacks:PackIconMaterial.RenderTransform>
-                                                <RotateTransform Angle="-90"/>
+                                                <RotateTransform Angle="-90" />
                                             </iconPacks:PackIconMaterial.RenderTransform>
                                         </iconPacks:PackIconMaterial>
-                                        <TextBlock Text="下移" VerticalAlignment="Center"/>
+                                        <TextBlock Text="下移" VerticalAlignment="Center" />
                                     </StackPanel>
                                 </Button>
                             </WrapPanel>
@@ -355,16 +354,16 @@
                                             VerticalAlignment="Center"
                                             KeyDown="FieldSearchBox_KeyDown" />
                                 </StackPanel>
-                                <Button  Style="{StaticResource AppSecondaryButtonStyle}" Click="FieldFilter_Click" Margin="0,0,8,8" >
+                                <Button  Style="{StaticResource AppSecondaryButtonStyle}" Click="FieldFilter_Click" Margin="0,0,8,8">
         <StackPanel Orientation="Horizontal">
-            <iconPacks:PackIconMaterial Kind="Magnify" Margin="0,0,6,0" VerticalAlignment="Center"/>
-            <TextBlock Text="查询" VerticalAlignment="Center"/>
+            <iconPacks:PackIconMaterial Kind="Magnify" Margin="0,0,6,0" VerticalAlignment="Center" />
+            <TextBlock Text="查询" VerticalAlignment="Center" />
         </StackPanel>
     </Button>
-                                <Button  Style="{StaticResource AppGhostButtonStyle}" Click="ClearFieldFilter_Click" Margin="0,0,8,8" >
+                                <Button  Style="{StaticResource AppGhostButtonStyle}" Click="ClearFieldFilter_Click" Margin="0,0,8,8">
         <StackPanel Orientation="Horizontal">
-            <iconPacks:PackIconMaterial Kind="FilterRemoveOutline" Margin="0,0,6,0" VerticalAlignment="Center"/>
-            <TextBlock Text="清空" VerticalAlignment="Center"/>
+            <iconPacks:PackIconMaterial Kind="FilterRemoveOutline" Margin="0,0,6,0" VerticalAlignment="Center" />
+            <TextBlock Text="清空" VerticalAlignment="Center" />
         </StackPanel>
     </Button>
                             </WrapPanel>
@@ -389,6 +388,7 @@
                                                         CellStyle="{StaticResource AppDataGridCenterCellStyle}"
                                                         HeaderStyle="{StaticResource AppDataGridCenterColumnHeaderStyle}"
                                                         ElementStyle="{StaticResource AppDataGridReadOnlyCheckBoxStyle}" />
+                                <DataGridTextColumn Header="校验规则" Binding="{Binding ValidationRuleSummary}" Width="160" />
                                 <DataGridTextColumn Header="备注" Binding="{Binding Remark}" Width="*" MinWidth="140" />
                             </DataGrid.Columns>
                         </DataGrid>
@@ -411,8 +411,3 @@
         </Grid>
     </Grid>
 </UserControl>
-
-
-
-
-

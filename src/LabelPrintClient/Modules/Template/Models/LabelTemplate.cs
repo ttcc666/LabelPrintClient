@@ -41,4 +41,3 @@ public class LabelTemplate
 
     public override string ToString() => Name;
 }
-

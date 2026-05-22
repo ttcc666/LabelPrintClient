@@ -26,4 +26,3 @@ public class ImportRowGridItem : NotifyObject
 
     public Dictionary<string, string> Data { get; set; } = new();
 }
-

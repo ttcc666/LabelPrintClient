@@ -37,4 +37,3 @@ public class LabelImportBatch
 
     public override string ToString() => $"{ImportTime:yyyy-MM-dd HH:mm} {TemplateName} - {TotalRows}行";
 }
-

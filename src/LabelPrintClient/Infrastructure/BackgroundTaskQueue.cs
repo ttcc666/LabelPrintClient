@@ -144,4 +144,3 @@ public sealed class BackgroundTaskQueue
         dispatcher.Invoke(action);
     }
 }
-

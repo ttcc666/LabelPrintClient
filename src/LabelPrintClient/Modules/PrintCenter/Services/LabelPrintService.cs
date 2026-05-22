@@ -1,5 +1,3 @@
-using System.Data;
-using System.Drawing.Printing;
 using LabelPrintClient.Config;
 using LabelPrintClient.Database;
 using LabelPrintClient.Infrastructure;
@@ -8,6 +6,8 @@ using LabelPrintClient.Modules.Template.Models;
 using LabelPrintClient.Modules.Template.Services;
 using Stimulsoft.Report;
 using Stimulsoft.Report.Components;
+using System.Data;
+using System.Drawing.Printing;
 
 namespace LabelPrintClient.Modules.PrintCenter.Services;
 
@@ -370,4 +370,3 @@ public class LabelPrintService
         }
     }
 }
-

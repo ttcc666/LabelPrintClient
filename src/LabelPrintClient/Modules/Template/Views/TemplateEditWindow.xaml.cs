@@ -13,7 +13,7 @@ public partial class TemplateEditWindow : Window
     public TemplateEditWindow(LabelTemplate? template = null)
     {
         InitializeComponent();
-        
+
         if (template != null)
         {
             // 编辑模式，深拷贝
@@ -36,7 +36,7 @@ public partial class TemplateEditWindow : Window
             TitleText.Text = "编辑模板";
             NameBox.Text = Template.Name;
             IsEnabledBox.IsChecked = Template.IsEnabled;
-            
+
             // 选中存储介质
             if (Template.StorageType == TemplateStorageType.Database)
             {
@@ -54,7 +54,7 @@ public partial class TemplateEditWindow : Window
                 IsEnabled = true
             };
             TitleText.Text = "新增模板";
-            
+
             // 根据 App.Settings.RunMode 自动决定默认存储介质
             if (App.Settings.RunMode == AppRunMode.LocalSqlite)
             {
@@ -107,13 +107,13 @@ public partial class TemplateEditWindow : Window
 
         Template.Name = name;
         Template.IsEnabled = IsEnabledBox.IsChecked == true;
-        
+
         // 读取存储介质
         if (StorageTypeBox.SelectedItem is ComboBoxItem selectedItem)
         {
             var tag = selectedItem.Tag?.ToString();
-            Template.StorageType = tag == "Database" 
-                ? TemplateStorageType.Database 
+            Template.StorageType = tag == "Database"
+                ? TemplateStorageType.Database
                 : TemplateStorageType.LocalFile;
         }
 
@@ -127,5 +127,3 @@ public partial class TemplateEditWindow : Window
         Close();
     }
 }
-
-

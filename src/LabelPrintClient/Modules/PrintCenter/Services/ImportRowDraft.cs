@@ -10,6 +10,5 @@ public class ImportRowDraft
 
     public List<string> Errors { get; set; } = new();
 
-    public string ErrorMessage => string.Join("；", Errors);
+    public string ErrorMessage => string.Join(Environment.NewLine, Errors);
 }
-

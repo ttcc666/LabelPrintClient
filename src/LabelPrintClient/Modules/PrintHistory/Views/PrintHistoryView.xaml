@@ -66,20 +66,20 @@
                 <StackPanel Grid.Column="5" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right">
                     <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="JobFilter_Click" Margin="0,0,8,0">
                         <StackPanel Orientation="Horizontal">
-                            <iconPacks:PackIconMaterial Kind="Magnify" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                            <TextBlock Text="查询" VerticalAlignment="Center"/>
+                            <iconPacks:PackIconMaterial Kind="Magnify" Margin="0,0,6,0" VerticalAlignment="Center" />
+                            <TextBlock Text="查询" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
                     <Button Style="{StaticResource AppGhostButtonStyle}" Click="ClearJobFilter_Click" Margin="0,0,8,0">
                         <StackPanel Orientation="Horizontal">
-                            <iconPacks:PackIconMaterial Kind="FilterRemoveOutline" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                            <TextBlock Text="清空" VerticalAlignment="Center"/>
+                            <iconPacks:PackIconMaterial Kind="FilterRemoveOutline" Margin="0,0,6,0" VerticalAlignment="Center" />
+                            <TextBlock Text="清空" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
                     <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="Refresh_Click" Margin="0">
                         <StackPanel Orientation="Horizontal">
-                            <iconPacks:PackIconMaterial Kind="Refresh" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                            <TextBlock Text="刷新" VerticalAlignment="Center"/>
+                            <iconPacks:PackIconMaterial Kind="Refresh" Margin="0,0,6,0" VerticalAlignment="Center" />
+                            <TextBlock Text="刷新" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
                 </StackPanel>
@@ -124,14 +124,14 @@
                                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                                 <Button Style="{StaticResource AppPrimaryButtonStyle}" Height="28" Margin="0,0,6,0" Click="ReprintJob_Click">
                                                     <StackPanel Orientation="Horizontal">
-                                                        <iconPacks:PackIconMaterial Kind="Printer" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                                                        <TextBlock Text="重打" VerticalAlignment="Center"/>
+                                                        <iconPacks:PackIconMaterial Kind="Printer" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                                        <TextBlock Text="重打" VerticalAlignment="Center" />
                                                     </StackPanel>
                                                 </Button>
                                                 <Button Style="{StaticResource AppSecondaryButtonStyle}" Height="28" Click="RetryJob_Click">
                                                     <StackPanel Orientation="Horizontal">
-                                                        <iconPacks:PackIconMaterial Kind="Reload" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                                                        <TextBlock Text="重试" VerticalAlignment="Center"/>
+                                                        <iconPacks:PackIconMaterial Kind="Reload" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                                        <TextBlock Text="重试" VerticalAlignment="Center" />
                                                     </StackPanel>
                                                 </Button>
                                             </StackPanel>
@@ -181,7 +181,7 @@
                         <Grid x:Name="JobLoadingOverlay" Grid.Row="0" Grid.RowSpan="2" Visibility="Collapsed">
                             <Border Background="{DynamicResource RegionBrush}" Opacity="0.75" CornerRadius="6" />
                             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <hc:LoadingCircle Width="36" Height="36" Foreground="{DynamicResource PrimaryBrush}"/>
+                                <hc:LoadingCircle Width="36" Height="36" Foreground="{DynamicResource PrimaryBrush}" />
                                 <TextBlock Text="正在读取打印任务..." Margin="0,10,0,0" HorizontalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" />
                             </StackPanel>
                         </Grid>
@@ -207,16 +207,16 @@
                                      VerticalAlignment="Center"
                                      KeyDown="RowSearchBox_KeyDown" />
                         </StackPanel>
-                        <Button  Style="{StaticResource AppSecondaryButtonStyle}" Click="RowFilter_Click" Margin="0,0,8,0" >
+                        <Button  Style="{StaticResource AppSecondaryButtonStyle}" Click="RowFilter_Click" Margin="0,0,8,0">
         <StackPanel Orientation="Horizontal">
-            <iconPacks:PackIconMaterial Kind="Magnify" Margin="0,0,6,0" VerticalAlignment="Center"/>
-            <TextBlock Text="查询" VerticalAlignment="Center"/>
+            <iconPacks:PackIconMaterial Kind="Magnify" Margin="0,0,6,0" VerticalAlignment="Center" />
+            <TextBlock Text="查询" VerticalAlignment="Center" />
         </StackPanel>
     </Button>
-                        <Button  Style="{StaticResource AppGhostButtonStyle}" Click="ClearRowFilter_Click" >
+                        <Button  Style="{StaticResource AppGhostButtonStyle}" Click="ClearRowFilter_Click">
         <StackPanel Orientation="Horizontal">
-            <iconPacks:PackIconMaterial Kind="FilterRemoveOutline" Margin="0,0,6,0" VerticalAlignment="Center"/>
-            <TextBlock Text="清空" VerticalAlignment="Center"/>
+            <iconPacks:PackIconMaterial Kind="FilterRemoveOutline" Margin="0,0,6,0" VerticalAlignment="Center" />
+            <TextBlock Text="清空" VerticalAlignment="Center" />
         </StackPanel>
     </Button>
                     </WrapPanel>
@@ -276,7 +276,7 @@
                         <Grid x:Name="RowLoadingOverlay" Grid.Row="0" Grid.RowSpan="2" Visibility="Collapsed">
                             <Border Background="{DynamicResource RegionBrush}" Opacity="0.75" CornerRadius="6" />
                             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <hc:LoadingCircle Width="36" Height="36" Foreground="{DynamicResource PrimaryBrush}"/>
+                                <hc:LoadingCircle Width="36" Height="36" Foreground="{DynamicResource PrimaryBrush}" />
                                 <TextBlock Text="正在加载明细..." Margin="0,10,0,0" HorizontalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" />
                             </StackPanel>
                         </Grid>
@@ -302,13 +302,8 @@
         <Border Grid.Row="2" Style="{StaticResource AppFooterCardStyle}">
             <TextBlock x:Name="HistorySummaryText"
                           VerticalAlignment="Center"
-                         
+
                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
         </Border>
     </Grid>
 </UserControl>
-
-
-
-
-

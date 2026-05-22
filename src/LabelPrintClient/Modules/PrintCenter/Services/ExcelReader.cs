@@ -1,7 +1,6 @@
 ﻿using ClosedXML.Excel;
-using LabelPrintClient.Modules.PrintCenter.Models;
+using System.Text.RegularExpressions;
 using LabelPrintClient.Modules.Template.Models;
-using LabelPrintClient.Modules.PrintCenter.Services;
 
 namespace LabelPrintClient.Modules.PrintCenter.Services;
 
@@ -59,6 +58,7 @@ public static class ExcelReader
                     else
                     {
                         normalizedValue = validatedValue ?? value;
+                        ValidateFieldRules(field, normalizedValue, draft.Errors);
                     }
                 }
 
@@ -153,5 +153,67 @@ public static class ExcelReader
                 return true;
         }
     }
-}
 
+    private static void ValidateFieldRules(LabelTemplateField field, string value, ICollection<string> errors)
+    {
+        if (field.MinLength.HasValue && value.Length < field.MinLength.Value)
+            errors.Add($"字段【{field.FieldName}】长度不能小于 {field.MinLength.Value}");
+
+        if (field.MaxLength.HasValue && value.Length > field.MaxLength.Value)
+            errors.Add($"字段【{field.FieldName}】长度不能大于 {field.MaxLength.Value}");
+
+        var enumValues = ParseEnumOptions(field.EnumOptions);
+        if (enumValues.Count > 0 && !enumValues.Contains(value))
+            errors.Add($"字段【{field.FieldName}】不在允许值范围内");
+
+        if ((field.MinValue.HasValue || field.MaxValue.HasValue) &&
+            IsNumericField(field.FieldType) &&
+            decimal.TryParse(value, out var numericValue))
+        {
+            if (field.MinValue.HasValue && numericValue < field.MinValue.Value)
+                errors.Add($"字段【{field.FieldName}】不能小于 {field.MinValue.Value}");
+
+            if (field.MaxValue.HasValue && numericValue > field.MaxValue.Value)
+                errors.Add($"字段【{field.FieldName}】不能大于 {field.MaxValue.Value}");
+        }
+
+        if (string.IsNullOrWhiteSpace(field.RegexPattern))
+            return;
+
+        try
+        {
+            if (!Regex.IsMatch(value, field.RegexPattern, RegexOptions.None, TimeSpan.FromSeconds(2)))
+            {
+                var message = string.IsNullOrWhiteSpace(field.RegexErrorMessage)
+                    ? "格式不符合要求"
+                    : field.RegexErrorMessage;
+                errors.Add($"字段【{field.FieldName}】{message}");
+            }
+        }
+        catch (ArgumentException)
+        {
+            errors.Add($"字段【{field.FieldName}】正则规则无效");
+        }
+        catch (RegexMatchTimeoutException)
+        {
+            errors.Add($"字段【{field.FieldName}】正则校验超时");
+        }
+    }
+
+    private static HashSet<string> ParseEnumOptions(string? enumOptions)
+    {
+        if (string.IsNullOrWhiteSpace(enumOptions))
+            return new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        return enumOptions
+            .Split(new[] { "\r\n", "\n", ",", "，", ";", "；" }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static bool IsNumericField(string fieldType)
+    {
+        return fieldType.Trim().Equals("int", StringComparison.OrdinalIgnoreCase) ||
+               fieldType.Trim().Equals("decimal", StringComparison.OrdinalIgnoreCase);
+    }
+}
