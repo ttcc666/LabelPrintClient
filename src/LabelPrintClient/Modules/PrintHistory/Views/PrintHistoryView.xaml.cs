@@ -3,6 +3,7 @@ using System.Drawing.Printing;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows.Media;
 using LabelPrintClient.Database;
 using LabelPrintClient.Infrastructure;
 using LabelPrintClient.Modules.PrintCenter.Models;
@@ -342,12 +343,26 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
 
         foreach (var key in extraKeys)
         {
+            var headerBlock = new TextBlock
+            {
+                Text = $"{key} (已废弃)",
+                ToolTip = $"字段“{key}”在当前最新模板中已被移除，此处仅用于追溯历史打印数据。",
+                FontStyle = FontStyles.Italic,
+                Foreground = System.Windows.Media.Brushes.Gray
+            };
+
+            var cellStyle = new Style(typeof(TextBlock));
+            cellStyle.Setters.Add(new Setter(TextBlock.FontStyleProperty, FontStyles.Italic));
+            cellStyle.Setters.Add(new Setter(TextBlock.ForegroundProperty, System.Windows.Media.Brushes.Gray));
+            cellStyle.Setters.Add(new Setter(FrameworkElement.ToolTipProperty, $"字段“{key}”在当前最新模板中已被移除，此处仅用于追溯历史打印数据。"));
+
             RowGrid.Columns.Add(new DataGridTextColumn
             {
-                Header = key,
+                Header = headerBlock,
                 Binding = new System.Windows.Data.Binding($"Data[{key}]"),
-                Width = 150,
-                IsReadOnly = true
+                Width = 170,
+                IsReadOnly = true,
+                ElementStyle = cellStyle
             });
         }
     }
