@@ -1,4 +1,4 @@
-﻿using SqlSugar;
+using SqlSugar;
 
 namespace LabelPrintClient.Modules.Template.Models;
 
@@ -45,5 +45,7 @@ public class LabelTemplateField
 
     [SugarColumn(Length = 200, IsNullable = true)]
     public string? Remark { get; set; }
+
+    public bool IsDeleted { get; set; }
 }
 

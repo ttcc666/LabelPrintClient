@@ -419,7 +419,7 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         {
             RowLoadingOverlay.Visibility = Visibility.Visible;
             var fields = await AppDb.Db.Queryable<LabelTemplateField>()
-                .Where(x => x.TemplateId == template.Id)
+                .Where(x => x.TemplateId == template.Id && !x.IsDeleted)
                 .OrderBy(x => x.Sort)
                 .ToListAsync();
 

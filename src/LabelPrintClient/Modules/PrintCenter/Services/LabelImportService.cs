@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using LabelPrintClient.Database;
 using LabelPrintClient.Infrastructure;
 using LabelPrintClient.Modules.PrintCenter.Models;
@@ -33,7 +33,7 @@ public class LabelImportService
             ?? throw new InvalidOperationException("模板不存在。");
 
         var fields = await AppDb.Db.Queryable<LabelTemplateField>()
-            .Where(x => x.TemplateId == templateId)
+            .Where(x => x.TemplateId == templateId && !x.IsDeleted)
             .OrderBy(x => x.Sort)
             .ToListAsync()
             .ConfigureAwait(false);

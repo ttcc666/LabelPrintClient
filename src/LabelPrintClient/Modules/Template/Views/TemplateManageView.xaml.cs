@@ -200,7 +200,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         {
             var keyword = FieldSearchBox?.Text.Trim() ?? string.Empty;
             var fieldQuery = AppDb.Db.Queryable<LabelTemplateField>()
-                .Where(x => x.TemplateId == template.Id);
+                .Where(x => x.TemplateId == template.Id && !x.IsDeleted);
             if (!string.IsNullOrWhiteSpace(keyword))
             {
                 fieldQuery = fieldQuery.Where(x =>
@@ -464,7 +464,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
 
         var field = win.Field;
         var fields = await AppDb.Db.Queryable<LabelTemplateField>()
-            .Where(x => x.TemplateId == template.Id)
+            .Where(x => x.TemplateId == template.Id && !x.IsDeleted)
             .ToListAsync();
 
         var duplicateFieldError = GetDuplicateFieldError(fields, field.FieldName, field.FieldCode, null);
@@ -503,7 +503,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
 
         var edited = win.Field;
         var fields = await AppDb.Db.Queryable<LabelTemplateField>()
-            .Where(x => x.TemplateId == edited.TemplateId)
+            .Where(x => x.TemplateId == edited.TemplateId && !x.IsDeleted)
             .ToListAsync();
 
         var duplicateFieldError = GetDuplicateFieldError(fields, edited.FieldName, edited.FieldCode, edited.Id);
@@ -531,7 +531,8 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
             return;
         }
 
-        await AppDb.Db.Deleteable<LabelTemplateField>().Where(x => x.Id == field.Id).ExecuteCommandAsync();
+        field.IsDeleted = true;
+        await AppDb.Db.Updateable(field).UpdateColumns(x => x.IsDeleted).ExecuteCommandAsync();
         await NormalizeFieldSortAsync(field.TemplateId);
         await LoadFieldsAsync();
     }
@@ -639,7 +640,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         }
 
         var fields = await AppDb.Db.Queryable<LabelTemplateField>()
-            .Where(x => x.TemplateId == template.Id)
+            .Where(x => x.TemplateId == template.Id && !x.IsDeleted)
             .OrderBy(x => x.Sort)
             .ToListAsync();
 
@@ -883,7 +884,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         }
 
         var fields = await AppDb.Db.Queryable<LabelTemplateField>()
-            .Where(x => x.TemplateId == template.Id)
+            .Where(x => x.TemplateId == template.Id && !x.IsDeleted)
             .OrderBy(x => x.Sort)
             .OrderBy(x => x.Id)
             .ToListAsync();
@@ -902,7 +903,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
     private async Task NormalizeFieldSortAsync(long templateId)
     {
         var fields = await AppDb.Db.Queryable<LabelTemplateField>()
-            .Where(x => x.TemplateId == templateId)
+            .Where(x => x.TemplateId == templateId && !x.IsDeleted)
             .OrderBy(x => x.Sort)
             .OrderBy(x => x.Id)
             .ToListAsync();

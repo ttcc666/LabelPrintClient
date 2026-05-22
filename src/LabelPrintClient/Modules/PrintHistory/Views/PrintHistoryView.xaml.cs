@@ -243,14 +243,16 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
                 })
                 .ToList();
 
-                GridRowDataHelper.EnsureFieldKeys(rows.Select(x => x.Data), fields);
-                var knownCodes = fields
+                var activeFields = fields.Where(f => !f.IsDeleted).ToList();
+
+                GridRowDataHelper.EnsureFieldKeys(rows.Select(x => x.Data), activeFields);
+                var activeCodes = activeFields
                     .Select(x => x.FieldCode)
                     .Where(x => !string.IsNullOrWhiteSpace(x))
                     .ToHashSet(StringComparer.OrdinalIgnoreCase);
                 var extraKeys = rows
                     .SelectMany(x => x.Data.Keys)
-                    .Where(x => !knownCodes.Contains(x))
+                    .Where(x => !activeCodes.Contains(x))
                     .Distinct(StringComparer.OrdinalIgnoreCase)
                     .OrderBy(x => x)
                     .ToList();
@@ -330,7 +332,9 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
             IsReadOnly = true
         });
 
-        foreach (var field in fields)
+        var activeFields = fields.Where(x => !x.IsDeleted).ToList();
+
+        foreach (var field in activeFields)
         {
             RowGrid.Columns.Add(new DataGridTextColumn
             {
@@ -343,10 +347,26 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
 
         foreach (var key in extraKeys)
         {
+            var matchingField = fields.FirstOrDefault(x => string.Equals(x.FieldCode, key, StringComparison.OrdinalIgnoreCase));
+            
+            string headerText;
+            string toolTipText;
+            
+            if (matchingField != null)
+            {
+                headerText = $"{matchingField.FieldName} (已废弃)";
+                toolTipText = $"字段“{matchingField.FieldName} ({key})”在当前最新模板中已被废弃/删除，此处仅用于追溯历史打印数据。";
+            }
+            else
+            {
+                headerText = $"{key} (已废弃)";
+                toolTipText = $"字段“{key}”在当前最新模板中已被废弃/删除，此处仅用于追溯历史打印数据。";
+            }
+
             var headerBlock = new TextBlock
             {
-                Text = $"{key} (已废弃)",
-                ToolTip = $"字段“{key}”在当前最新模板中已被移除，此处仅用于追溯历史打印数据。",
+                Text = headerText,
+                ToolTip = toolTipText,
                 FontStyle = FontStyles.Italic,
                 Foreground = System.Windows.Media.Brushes.Gray
             };
@@ -354,7 +374,7 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
             var cellStyle = new Style(typeof(TextBlock));
             cellStyle.Setters.Add(new Setter(TextBlock.FontStyleProperty, FontStyles.Italic));
             cellStyle.Setters.Add(new Setter(TextBlock.ForegroundProperty, System.Windows.Media.Brushes.Gray));
-            cellStyle.Setters.Add(new Setter(FrameworkElement.ToolTipProperty, $"字段“{key}”在当前最新模板中已被移除，此处仅用于追溯历史打印数据。"));
+            cellStyle.Setters.Add(new Setter(FrameworkElement.ToolTipProperty, toolTipText));
 
             RowGrid.Columns.Add(new DataGridTextColumn
             {

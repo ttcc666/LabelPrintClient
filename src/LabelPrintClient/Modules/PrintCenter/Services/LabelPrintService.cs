@@ -1,4 +1,4 @@
-﻿using System.Data;
+using System.Data;
 using System.Drawing.Printing;
 using LabelPrintClient.Config;
 using LabelPrintClient.Database;
@@ -189,7 +189,7 @@ public class LabelPrintService
             ?? throw new InvalidOperationException("模板不存在。");
 
         var fields = await AppDb.Db.Queryable<LabelTemplateField>()
-            .Where(x => x.TemplateId == templateId)
+            .Where(x => x.TemplateId == templateId && !x.IsDeleted)
             .OrderBy(x => x.Sort)
             .ToListAsync()
             .ConfigureAwait(false);

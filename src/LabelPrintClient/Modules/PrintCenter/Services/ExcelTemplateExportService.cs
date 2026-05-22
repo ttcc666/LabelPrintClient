@@ -1,4 +1,4 @@
-﻿using ClosedXML.Excel;
+using ClosedXML.Excel;
 using LabelPrintClient.Database;
 using LabelPrintClient.Modules.PrintCenter.Models;
 using LabelPrintClient.Modules.Template.Models;
@@ -10,7 +10,7 @@ public class ExcelTemplateExportService
     public async Task ExportAsync(long templateId, string savePath, CancellationToken cancellationToken = default)
     {
         var fields = await AppDb.Db.Queryable<LabelTemplateField>()
-            .Where(x => x.TemplateId == templateId)
+            .Where(x => x.TemplateId == templateId && !x.IsDeleted)
             .OrderBy(x => x.Sort)
             .ToListAsync()
             .ConfigureAwait(false);
