@@ -15,7 +15,7 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <Border Background="{DynamicResource RegionBrush}" CornerRadius="4" Grid.Row="0" Padding="10" Margin="0,0,0,8">
+        <Border Grid.Row="0" Style="{StaticResource AppToolbarCardStyle}">
             <Grid VerticalAlignment="Center">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" MinWidth="240" />
@@ -27,7 +27,7 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
-                    <TextBlock Grid.Row="0" Text="导入前预览" />
+                    <TextBlock Grid.Row="0" Style="{StaticResource AppPageTitleStyle}" Text="导入前预览" />
                     <TextBlock x:Name="SummaryText"
                                Grid.Row="1"
                                Margin="0,4,0,0"
@@ -36,17 +36,18 @@
                 </Grid>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right">
+                    <TextBlock Style="{StaticResource AppFormLabelStyle}" Text="关键词" Margin="0,0,6,0" VerticalAlignment="Center" />
                     <TextBox x:Name="PreviewSearchBox"
                              Width="160"
                              Margin="0,0,8,0"
                              KeyDown="PreviewSearchBox_KeyDown" />
-                    <Button Style="{StaticResource ButtonPrimary}" Click="ApplyFilter_Click" Margin="0,0,8,0">
+                    <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="ApplyFilter_Click" Margin="0,0,8,0">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="Magnify" Margin="0,0,6,0" VerticalAlignment="Center"/>
                             <TextBlock Text="查询" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
-                    <Button Style="{StaticResource ButtonDanger}" Click="ClearFilter_Click" Margin="0,0,12,0">
+                    <Button Style="{StaticResource AppGhostButtonStyle}" Click="ClearFilter_Click" Margin="0,0,12,0">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="FilterRemoveOutline" Margin="0,0,6,0" VerticalAlignment="Center"/>
                             <TextBlock Text="清空" VerticalAlignment="Center"/>
@@ -61,7 +62,7 @@
             </Grid>
         </Border>
 
-        <Border Background="{DynamicResource RegionBrush}" CornerRadius="4" Grid.Row="1" Padding="0" VerticalAlignment="Stretch">
+        <Border Grid.Row="1" Style="{StaticResource AppDataCardStyle}" VerticalAlignment="Stretch">
             <Grid>
                 <DataGrid x:Name="PreviewGrid"
                              AutoGenerateColumns="False"
@@ -70,29 +71,35 @@
                              BorderThickness="0"
                              HorizontalScrollBarVisibility="Auto"
                              VerticalScrollBarVisibility="Auto" />
-                <TextBlock x:Name="EmptyText"
-                           Text="没有可预览的数据"
-                           HorizontalAlignment="Center"
-                           VerticalAlignment="Center"
-                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                           Visibility="Collapsed" />
+                <StackPanel Style="{StaticResource AppDataGridEmptyStatePanelStyle}"
+                            Visibility="{Binding Visibility, ElementName=EmptyText}">
+                    <Border Style="{StaticResource AppEmptyStateIconFrameStyle}">
+                        <iconPacks:PackIconMaterial Kind="MicrosoftExcel" Style="{StaticResource AppEmptyStateIconStyle}" />
+                    </Border>
+                    <TextBlock x:Name="EmptyText"
+                               Text="没有可预览的数据"
+                               Style="{StaticResource AppEmptyStateTitleStyle}"
+                               Visibility="Collapsed" />
+                    <TextBlock Text="调整筛选条件，或重新选择包含有效行的 Excel 文件。"
+                               Style="{StaticResource AppEmptyStateHintStyle}" />
+                </StackPanel>
             </Grid>
         </Border>
 
-        <Border Background="{DynamicResource RegionBrush}" CornerRadius="4" Grid.Row="2" Padding="10" Margin="0,8,0,0">
+        <Border Grid.Row="2" Style="{StaticResource AppFooterCardStyle}">
             <DockPanel LastChildFill="False">
                 <TextBlock DockPanel.Dock="Left"
                            Text="确认后才会写入导入批次和明细数据。"
                            VerticalAlignment="Center"
                            Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                 <WrapPanel DockPanel.Dock="Right">
-                    <Button  Style="{StaticResource ButtonDanger}" Click="Cancel_Click" Margin="0,0,8,0" >
+                    <Button  Style="{StaticResource AppDialogCancelButtonStyle}" Click="Cancel_Click" Margin="0,0,8,0" >
         <StackPanel Orientation="Horizontal">
             <iconPacks:PackIconMaterial Kind="Close" Margin="0,0,6,0" VerticalAlignment="Center"/>
             <TextBlock Text="取消" VerticalAlignment="Center"/>
         </StackPanel>
     </Button>
-                    <Button  Style="{StaticResource ButtonPrimary}" Click="Confirm_Click" >
+                    <Button  Style="{StaticResource AppDialogPrimaryButtonStyle}" Click="Confirm_Click" >
         <StackPanel Orientation="Horizontal">
             <iconPacks:PackIconMaterial Kind="Check" Margin="0,0,6,0" VerticalAlignment="Center"/>
             <TextBlock Text="确认导入" VerticalAlignment="Center"/>

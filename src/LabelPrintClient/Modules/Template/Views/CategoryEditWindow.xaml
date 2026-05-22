@@ -17,7 +17,7 @@
         </Grid.RowDefinitions>
 
         <!-- 标题 -->
-        <TextBlock x:Name="TitleText" Grid.Row="0" Text="新增分类" Margin="0,0,0,16" />
+        <TextBlock x:Name="TitleText" Grid.Row="0" Style="{StaticResource AppPageTitleStyle}" Text="新增分类" Margin="0,0,0,16" />
 
         <!-- 表单 -->
         <StackPanel Grid.Row="1">
@@ -31,8 +31,13 @@
 
         <!-- 底部按钮 -->
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
-            <Button Content="确定" Click="Ok_Click" Width="80" Margin="0,0,10,0" />
-            <Button  Style="{StaticResource ButtonDanger}" Click="Cancel_Click" Width="80" >
+            <Button Style="{StaticResource AppDialogPrimaryButtonStyle}" Click="Ok_Click" Margin="0,0,10,0">
+                <StackPanel Orientation="Horizontal">
+                    <iconPacks:PackIconMaterial Kind="Check" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                    <TextBlock Text="确定" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+            <Button  Style="{StaticResource AppDialogCancelButtonStyle}" Click="Cancel_Click" >
         <StackPanel Orientation="Horizontal">
             <iconPacks:PackIconMaterial Kind="Close" Margin="0,0,6,0" VerticalAlignment="Center"/>
             <TextBlock Text="取消" VerticalAlignment="Center"/>

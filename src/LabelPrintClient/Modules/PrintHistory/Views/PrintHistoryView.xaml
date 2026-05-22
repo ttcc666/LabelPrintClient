@@ -5,16 +5,9 @@
              xmlns:infra="clr-namespace:LabelPrintClient.Infrastructure"
              xmlns:hc="https://handyorg.github.io/handycontrol">
     <UserControl.Resources>
-        <Style x:Key="SectionTitleStyle" TargetType="TextBlock">
+        <Style x:Key="SectionTitleStyle" TargetType="TextBlock" BasedOn="{StaticResource AppSectionTitleStyle}" />
 
-            <Setter Property="Margin" Value="4,0,0,8" />
-        </Style>
-
-        <Style x:Key="FormLabelStyle" TargetType="TextBlock">
-            <Setter Property="VerticalAlignment" Value="Center" />
-            <Setter Property="Margin" Value="0,0,8,0" />
-            <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
-        </Style>
+        <Style x:Key="FormLabelStyle" TargetType="TextBlock" BasedOn="{StaticResource AppFormLabelStyle}" />
     </UserControl.Resources>
 
     <Grid Margin="12">
@@ -24,7 +17,7 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <Border Background="{DynamicResource RegionBrush}" CornerRadius="4" Grid.Row="0" Margin="0,0,0,8" Padding="10">
+        <Border Grid.Row="0" Style="{StaticResource AppToolbarCardStyle}">
             <Grid VerticalAlignment="Center">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
@@ -35,7 +28,7 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <TextBlock Grid.Column="0" Text="打印记录" VerticalAlignment="Center" Margin="0,0,12,0" />
+                <TextBlock Grid.Column="0" Style="{StaticResource AppPageTitleStyle}" Text="打印记录" Margin="0,0,12,0" />
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,0">
                     <TextBlock Style="{StaticResource FormLabelStyle}" Text="状态" />
@@ -60,28 +53,30 @@
                     <TextBox x:Name="PrintCopiesBox" Width="56" Text="1" Margin="0" />
                 </StackPanel>
 
-                <TextBox x:Name="JobSearchBox"
-                         Grid.Column="4"
-                         MinWidth="80"
-                         MaxWidth="130"
-                         HorizontalAlignment="Stretch"
-                         Margin="0,0,8,0"
-                         KeyDown="JobSearchBox_KeyDown" />
+                <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,8,0">
+                    <TextBlock Style="{StaticResource FormLabelStyle}" Text="关键词" />
+                    <TextBox x:Name="JobSearchBox"
+                             MinWidth="80"
+                             MaxWidth="130"
+                             Width="130"
+                             VerticalAlignment="Center"
+                             KeyDown="JobSearchBox_KeyDown" />
+                </StackPanel>
 
                 <StackPanel Grid.Column="5" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right">
-                    <Button Style="{StaticResource ButtonPrimary}" Click="JobFilter_Click" Margin="0,0,8,0">
+                    <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="JobFilter_Click" Margin="0,0,8,0">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="Magnify" Margin="0,0,6,0" VerticalAlignment="Center"/>
                             <TextBlock Text="查询" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
-                    <Button Style="{StaticResource ButtonDanger}" Click="ClearJobFilter_Click" Margin="0,0,8,0">
+                    <Button Style="{StaticResource AppGhostButtonStyle}" Click="ClearJobFilter_Click" Margin="0,0,8,0">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="FilterRemoveOutline" Margin="0,0,6,0" VerticalAlignment="Center"/>
                             <TextBlock Text="清空" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
-                    <Button Click="Refresh_Click" Margin="0">
+                    <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="Refresh_Click" Margin="0">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="Refresh" Margin="0,0,6,0" VerticalAlignment="Center"/>
                             <TextBlock Text="刷新" VerticalAlignment="Center"/>
@@ -108,7 +103,7 @@
                     <TextBlock Style="{StaticResource SectionTitleStyle}" Text="打印任务" Margin="4,0,0,0" />
                 </Grid>
 
-                <Border Background="{DynamicResource RegionBrush}" CornerRadius="4" Grid.Row="1" Padding="0" VerticalAlignment="Stretch">
+                <Border Grid.Row="1" Style="{StaticResource AppDataCardStyle}" VerticalAlignment="Stretch">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="*" />
@@ -127,23 +122,29 @@
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                                <Button  Style="{StaticResource ButtonPrimary}" Height="28" Margin="0,0,6,0" Click="ReprintJob_Click" >
-        <StackPanel Orientation="Horizontal">
-            <iconPacks:PackIconMaterial Kind="PrinterAlert" Margin="0,0,6,0" VerticalAlignment="Center"/>
-            <TextBlock Text="重打" VerticalAlignment="Center"/>
-        </StackPanel>
-    </Button>
-                                                <Button  Height="28" Click="RetryJob_Click" >
-        <StackPanel Orientation="Horizontal">
-            <iconPacks:PackIconMaterial Kind="Reload" Margin="0,0,6,0" VerticalAlignment="Center"/>
-            <TextBlock Text="重试" VerticalAlignment="Center"/>
-        </StackPanel>
-    </Button>
+                                                <Button Style="{StaticResource AppPrimaryButtonStyle}" Height="28" Margin="0,0,6,0" Click="ReprintJob_Click">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <iconPacks:PackIconMaterial Kind="Printer" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                                        <TextBlock Text="重打" VerticalAlignment="Center"/>
+                                                    </StackPanel>
+                                                </Button>
+                                                <Button Style="{StaticResource AppSecondaryButtonStyle}" Height="28" Click="RetryJob_Click">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <iconPacks:PackIconMaterial Kind="Reload" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                                        <TextBlock Text="重试" VerticalAlignment="Center"/>
+                                                    </StackPanel>
+                                                </Button>
                                             </StackPanel>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTextColumn Header="状态" Binding="{Binding StatusText}" Width="90" />
+                                <DataGridTemplateColumn Header="状态" Width="96" SortMemberPath="Status">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <ContentControl Content="{Binding StatusText}" ContentTemplate="{StaticResource AppStatusBadgeTemplate}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
                                 <DataGridTextColumn Header="创建时间" Binding="{Binding CreateTime, StringFormat=\{0:yyyy-MM-dd HH:mm:ss\}}" Width="170" />
                                 <DataGridTextColumn Header="打印时间" Binding="{Binding PrintTime, StringFormat=\{0:yyyy-MM-dd HH:mm:ss\}}" Width="170" />
                                 <DataGridTextColumn Header="模板名称" Binding="{Binding TemplateName}" Width="160" />
@@ -161,18 +162,26 @@
                                     <ComboBoxItem Content="20" />
                                     <ComboBoxItem Content="50" />
                                 </ComboBox>
-                                <Button x:Name="JobFirstPageButton" Content="&lt;&lt;" Style="{StaticResource PagerButtonStyle}" Click="JobFirstPage_Click" />
-                                <Button x:Name="JobPrevPageButton" Content="&lt;" Style="{StaticResource PagerButtonStyle}" Click="JobPrevPage_Click" />
+                                <Button x:Name="JobFirstPageButton" Style="{StaticResource PagerButtonStyle}" Click="JobFirstPage_Click">
+                                    <iconPacks:PackIconMaterial Kind="PageFirst" Width="16" Height="16" />
+                                </Button>
+                                <Button x:Name="JobPrevPageButton" Style="{StaticResource PagerButtonStyle}" Click="JobPrevPage_Click">
+                                    <iconPacks:PackIconMaterial Kind="ChevronLeft" Width="16" Height="16" />
+                                </Button>
                                 <TextBlock x:Name="JobPageInfoText" VerticalAlignment="Center" MinWidth="70" TextAlignment="Center" FontWeight="SemiBold" />
-                                <Button x:Name="JobNextPageButton" Content="&gt;" Style="{StaticResource PagerButtonStyle}" Click="JobNextPage_Click" />
-                                <Button x:Name="JobLastPageButton" Content="&gt;&gt;" Style="{StaticResource PagerButtonStyle}" Click="JobLastPage_Click" />
+                                <Button x:Name="JobNextPageButton" Style="{StaticResource PagerButtonStyle}" Click="JobNextPage_Click">
+                                    <iconPacks:PackIconMaterial Kind="ChevronRight" Width="16" Height="16" />
+                                </Button>
+                                <Button x:Name="JobLastPageButton" Style="{StaticResource PagerButtonStyle}" Click="JobLastPage_Click">
+                                    <iconPacks:PackIconMaterial Kind="PageLast" Width="16" Height="16" />
+                                </Button>
                             </StackPanel>
                         </Border>
                     </Grid>
                 </Border>
             </Grid>
 
-            <GridSplitter Grid.Row="1" Height="6" HorizontalAlignment="Stretch" VerticalAlignment="Center" Background="Transparent" Cursor="SizeNS" Margin="0,2" />
+            <GridSplitter Grid.Row="1" Style="{StaticResource AppRowResizeSplitterStyle}" Margin="0,2" />
 
             <Grid Grid.Row="2" Margin="0,4,0,0">
                 <Grid.RowDefinitions>
@@ -183,18 +192,20 @@
                 <DockPanel Grid.Row="0" Margin="0,0,0,8" LastChildFill="False">
                     <TextBlock DockPanel.Dock="Left" Style="{StaticResource SectionTitleStyle}" Text="打印明细" Margin="4,0,16,0" />
                     <WrapPanel DockPanel.Dock="Right" HorizontalAlignment="Right">
-                        <TextBox x:Name="RowSearchBox"
-                                    Width="180"
-                                   
-                                    Margin="0,0,8,0"
-                                    KeyDown="RowSearchBox_KeyDown" />
-                        <Button  Style="{StaticResource ButtonPrimary}" Click="RowFilter_Click" Margin="0,0,8,0" >
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,8,0">
+                            <TextBlock Style="{StaticResource FormLabelStyle}" Text="关键词" />
+                            <TextBox x:Name="RowSearchBox"
+                                     Width="180"
+                                     VerticalAlignment="Center"
+                                     KeyDown="RowSearchBox_KeyDown" />
+                        </StackPanel>
+                        <Button  Style="{StaticResource AppSecondaryButtonStyle}" Click="RowFilter_Click" Margin="0,0,8,0" >
         <StackPanel Orientation="Horizontal">
             <iconPacks:PackIconMaterial Kind="Magnify" Margin="0,0,6,0" VerticalAlignment="Center"/>
             <TextBlock Text="查询" VerticalAlignment="Center"/>
         </StackPanel>
     </Button>
-                        <Button  Style="{StaticResource ButtonDanger}" Click="ClearRowFilter_Click" >
+                        <Button  Style="{StaticResource AppGhostButtonStyle}" Click="ClearRowFilter_Click" >
         <StackPanel Orientation="Horizontal">
             <iconPacks:PackIconMaterial Kind="FilterRemoveOutline" Margin="0,0,6,0" VerticalAlignment="Center"/>
             <TextBlock Text="清空" VerticalAlignment="Center"/>
@@ -203,7 +214,7 @@
                     </WrapPanel>
                 </DockPanel>
 
-                <Border Background="{DynamicResource RegionBrush}" CornerRadius="4" Grid.Row="1" Padding="0" VerticalAlignment="Stretch">
+                <Border Grid.Row="1" Style="{StaticResource AppDataCardStyle}" VerticalAlignment="Stretch">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="*" />
@@ -216,13 +227,19 @@
                                      BorderThickness="0"
                                      HorizontalScrollBarVisibility="Auto"
                                      VerticalScrollBarVisibility="Auto" />
-                        <TextBlock x:Name="RowEmptyText"
-                                   Grid.Row="0"
-                                   Text="请选择打印任务查看明细"
-                                   HorizontalAlignment="Center"
-                                   VerticalAlignment="Center"
-                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                   Visibility="Collapsed" />
+                        <StackPanel Grid.Row="0"
+                                    Style="{StaticResource AppDataGridEmptyStatePanelStyle}"
+                                    Visibility="{Binding Visibility, ElementName=RowEmptyText}">
+                            <Border Style="{StaticResource AppEmptyStateIconFrameStyle}">
+                                <iconPacks:PackIconMaterial Kind="FormatListText" Style="{StaticResource AppEmptyStateIconStyle}" />
+                            </Border>
+                            <TextBlock x:Name="RowEmptyText"
+                                       Text="请选择打印任务查看明细"
+                                       Style="{StaticResource AppEmptyStateTitleStyle}"
+                                       Visibility="Collapsed" />
+                            <TextBlock Text="选择打印任务后，可查看本次任务包含的历史打印行。"
+                                       Style="{StaticResource AppEmptyStateHintStyle}" />
+                        </StackPanel>
                         <Border Grid.Row="1" Padding="0,8,0,0" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" Margin="8,8,8,8">
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                                 <TextBlock Text="每页" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
@@ -232,11 +249,19 @@
                                     <ComboBoxItem Content="100" />
                                     <ComboBoxItem Content="200" />
                                 </ComboBox>
-                                <Button x:Name="RowFirstPageButton" Content="&lt;&lt;" Style="{StaticResource PagerButtonStyle}" Click="RowFirstPage_Click" />
-                                <Button x:Name="RowPrevPageButton" Content="&lt;" Style="{StaticResource PagerButtonStyle}" Click="RowPrevPage_Click" />
+                                <Button x:Name="RowFirstPageButton" Style="{StaticResource PagerButtonStyle}" Click="RowFirstPage_Click">
+                                    <iconPacks:PackIconMaterial Kind="PageFirst" Width="16" Height="16" />
+                                </Button>
+                                <Button x:Name="RowPrevPageButton" Style="{StaticResource PagerButtonStyle}" Click="RowPrevPage_Click">
+                                    <iconPacks:PackIconMaterial Kind="ChevronLeft" Width="16" Height="16" />
+                                </Button>
                                 <TextBlock x:Name="RowPageInfoText" VerticalAlignment="Center" MinWidth="70" TextAlignment="Center" FontWeight="SemiBold" />
-                                <Button x:Name="RowNextPageButton" Content="&gt;" Style="{StaticResource PagerButtonStyle}" Click="RowNextPage_Click" />
-                                <Button x:Name="RowLastPageButton" Content="&gt;&gt;" Style="{StaticResource PagerButtonStyle}" Click="RowLastPage_Click" />
+                                <Button x:Name="RowNextPageButton" Style="{StaticResource PagerButtonStyle}" Click="RowNextPage_Click">
+                                    <iconPacks:PackIconMaterial Kind="ChevronRight" Width="16" Height="16" />
+                                </Button>
+                                <Button x:Name="RowLastPageButton" Style="{StaticResource PagerButtonStyle}" Click="RowLastPage_Click">
+                                    <iconPacks:PackIconMaterial Kind="PageLast" Width="16" Height="16" />
+                                </Button>
                             </StackPanel>
                         </Border>
                     </Grid>
@@ -244,16 +269,21 @@
             </Grid>
         </Grid>
 
-        <TextBlock x:Name="JobEmptyText"
-                   Grid.Row="1"
-                   Text="暂无打印任务"
-                   HorizontalAlignment="Center"
-                   VerticalAlignment="Center"
-                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                   Visibility="Collapsed"
-                   IsHitTestVisible="False" />
+        <StackPanel Grid.Row="1"
+                    Style="{StaticResource AppEmptyStatePanelStyle}"
+                    Visibility="{Binding Visibility, ElementName=JobEmptyText}">
+            <Border Style="{StaticResource AppEmptyStateIconFrameStyle}">
+                <iconPacks:PackIconMaterial Kind="History" Style="{StaticResource AppEmptyStateIconStyle}" />
+            </Border>
+            <TextBlock x:Name="JobEmptyText"
+                       Text="暂无打印任务"
+                       Style="{StaticResource AppEmptyStateTitleStyle}"
+                       Visibility="Collapsed" />
+            <TextBlock Text="完成预览、打印或重试后，任务记录会出现在这里。"
+                       Style="{StaticResource AppEmptyStateHintStyle}" />
+        </StackPanel>
 
-        <Border Background="{DynamicResource RegionBrush}" CornerRadius="4" Grid.Row="2" Padding="10" Margin="0,8,0,0">
+        <Border Grid.Row="2" Style="{StaticResource AppFooterCardStyle}">
             <TextBlock x:Name="HistorySummaryText"
                           VerticalAlignment="Center"
                          

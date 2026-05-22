@@ -344,15 +344,34 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
     private DataTemplate BuildRowActionTemplate()
     {
         var button = new FrameworkElementFactory(typeof(System.Windows.Controls.Button));
-        button.SetValue(System.Windows.Controls.ContentControl.ContentProperty, "重打");
         button.SetValue(System.Windows.FrameworkElement.HeightProperty, 28.0);
         button.SetValue(System.Windows.FrameworkElement.StyleProperty, System.Windows.Application.Current.FindResource("ButtonPrimary"));
         button.AddHandler(System.Windows.Controls.Primitives.ButtonBase.ClickEvent, new System.Windows.RoutedEventHandler(ReprintJobRow_Click));
+        button.AppendChild(BuildButtonContent("重打", MahApps.Metro.IconPacks.PackIconMaterialKind.PrinterAlert));
 
         return new System.Windows.DataTemplate
         {
             VisualTree = button
         };
+    }
+
+    private static FrameworkElementFactory BuildButtonContent(string content, MahApps.Metro.IconPacks.PackIconMaterialKind iconKind)
+    {
+        var panel = new FrameworkElementFactory(typeof(StackPanel));
+        panel.SetValue(StackPanel.OrientationProperty, System.Windows.Controls.Orientation.Horizontal);
+
+        var icon = new FrameworkElementFactory(typeof(MahApps.Metro.IconPacks.PackIconMaterial));
+        icon.SetValue(MahApps.Metro.IconPacks.PackIconMaterial.KindProperty, iconKind);
+        icon.SetValue(FrameworkElement.MarginProperty, new Thickness(0, 0, 6, 0));
+        icon.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
+        panel.AppendChild(icon);
+
+        var text = new FrameworkElementFactory(typeof(TextBlock));
+        text.SetValue(TextBlock.TextProperty, content);
+        text.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
+        panel.AppendChild(text);
+
+        return panel;
     }
 
     private async void ReprintJob_Click(object sender, RoutedEventArgs e)

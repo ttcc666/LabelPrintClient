@@ -68,6 +68,10 @@ public partial class ImportPreviewWindow : Window
     private void BuildColumns(IReadOnlyList<LabelTemplateField> fields)
     {
         PreviewGrid.Columns.Clear();
+        var centerCellStyle = FindAppStyle("AppDataGridCenterCellStyle");
+        var centerHeaderStyle = FindAppStyle("AppDataGridCenterColumnHeaderStyle");
+        var readOnlyCheckBoxStyle = FindAppStyle("AppDataGridReadOnlyCheckBoxStyle");
+
         PreviewGrid.Columns.Add(new DataGridTextColumn
         {
             Header = "Excel行号",
@@ -78,6 +82,9 @@ public partial class ImportPreviewWindow : Window
         {
             Header = "是否有效",
             Binding = new System.Windows.Data.Binding(nameof(ImportPreviewRowGridItem.IsValid)),
+            CellStyle = centerCellStyle,
+            HeaderStyle = centerHeaderStyle,
+            ElementStyle = readOnlyCheckBoxStyle,
             Width = 90
         });
 
@@ -98,6 +105,11 @@ public partial class ImportPreviewWindow : Window
             Width = new DataGridLength(1, DataGridLengthUnitType.Star),
             MinWidth = 180
         });
+    }
+
+    private static Style FindAppStyle(string resourceKey)
+    {
+        return (Style)System.Windows.Application.Current.FindResource(resourceKey);
     }
 
     private async Task ApplyFilterAsync()

@@ -482,6 +482,8 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
     private void BuildRowGridColumns(IReadOnlyList<LabelTemplateField> fields)
     {
         RowGrid.Columns.Clear();
+        var centerCellStyle = FindAppStyle("AppDataGridCenterCellStyle");
+        var centerHeaderStyle = FindAppStyle("AppDataGridCenterColumnHeaderStyle");
 
         RowGrid.Columns.Add(new DataGridTemplateColumn
         {
@@ -489,15 +491,33 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
             Width = DataGridLength.Auto,
             CellTemplate = BuildRowActionTemplate()
         });
-        RowGrid.Columns.Add(new DataGridCheckBoxColumn
+        RowGrid.Columns.Add(new DataGridTemplateColumn
         {
             Header = "选择",
-            Binding = new System.Windows.Data.Binding(nameof(ImportRowGridItem.IsSelected)) { Mode = BindingMode.TwoWay, UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged },
+            CellTemplate = BuildBooleanCheckBoxTemplate(nameof(ImportRowGridItem.IsSelected), true),
+            CellStyle = centerCellStyle,
+            HeaderStyle = centerHeaderStyle,
             Width = 70
         });
         RowGrid.Columns.Add(new DataGridTextColumn { Header = "Excel行号", Binding = new System.Windows.Data.Binding(nameof(ImportRowGridItem.RowIndex)), Width = 100, IsReadOnly = true });
-        RowGrid.Columns.Add(new DataGridCheckBoxColumn { Header = "是否有效", Binding = new System.Windows.Data.Binding(nameof(ImportRowGridItem.IsValid)), Width = 90, IsReadOnly = true });
-        RowGrid.Columns.Add(new DataGridCheckBoxColumn { Header = "已打印", Binding = new System.Windows.Data.Binding(nameof(ImportRowGridItem.IsPrinted)), Width = 90, IsReadOnly = true });
+        RowGrid.Columns.Add(new DataGridTemplateColumn
+        {
+            Header = "是否有效",
+            CellTemplate = BuildBooleanCheckBoxTemplate(nameof(ImportRowGridItem.IsValid), false),
+            CellStyle = centerCellStyle,
+            HeaderStyle = centerHeaderStyle,
+            Width = 90,
+            IsReadOnly = true
+        });
+        RowGrid.Columns.Add(new DataGridTemplateColumn
+        {
+            Header = "已打印",
+            CellTemplate = BuildBooleanCheckBoxTemplate(nameof(ImportRowGridItem.IsPrinted), false),
+            CellStyle = centerCellStyle,
+            HeaderStyle = centerHeaderStyle,
+            Width = 90,
+            IsReadOnly = true
+        });
         RowGrid.Columns.Add(new DataGridTextColumn { Header = "打印次数", Binding = new System.Windows.Data.Binding(nameof(ImportRowGridItem.PrintCount)), Width = 90, IsReadOnly = true });
 
         foreach (var field in fields)
@@ -518,6 +538,40 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
             Width = new DataGridLength(1, DataGridLengthUnitType.Star),
             IsReadOnly = true
         });
+    }
+
+    private static DataTemplate BuildBooleanCheckBoxTemplate(string bindingPath, bool isInteractive)
+    {
+        var container = new FrameworkElementFactory(typeof(System.Windows.Controls.Grid));
+        container.SetValue(FrameworkElement.HorizontalAlignmentProperty, System.Windows.HorizontalAlignment.Stretch);
+        container.SetValue(FrameworkElement.VerticalAlignmentProperty, System.Windows.VerticalAlignment.Stretch);
+
+        var checkBox = new FrameworkElementFactory(typeof(System.Windows.Controls.CheckBox));
+        checkBox.SetValue(FrameworkElement.HorizontalAlignmentProperty, System.Windows.HorizontalAlignment.Center);
+        checkBox.SetValue(FrameworkElement.VerticalAlignmentProperty, System.Windows.VerticalAlignment.Center);
+        checkBox.SetBinding(System.Windows.Controls.Primitives.ToggleButton.IsCheckedProperty, new System.Windows.Data.Binding(bindingPath)
+        {
+            Mode = isInteractive ? BindingMode.TwoWay : BindingMode.OneWay,
+            UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged
+        });
+
+        if (!isInteractive)
+        {
+            checkBox.SetValue(UIElement.FocusableProperty, false);
+            checkBox.SetValue(UIElement.IsHitTestVisibleProperty, false);
+        }
+
+        container.AppendChild(checkBox);
+
+        return new DataTemplate
+        {
+            VisualTree = container
+        };
+    }
+
+    private static Style FindAppStyle(string resourceKey)
+    {
+        return (Style)System.Windows.Application.Current.FindResource(resourceKey);
     }
 
     private void BuildRowGridColumnsIfNeeded(IReadOnlyList<LabelTemplateField> fields)
@@ -541,11 +595,11 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         panel.SetValue(StackPanel.OrientationProperty, System.Windows.Controls.Orientation.Horizontal);
         panel.SetValue(FrameworkElement.HorizontalAlignmentProperty, System.Windows.HorizontalAlignment.Center);
 
-        var previewButton = BuildRowActionButton("预览", PreviewRow_Click, false);
+        var previewButton = BuildRowActionButton("预览", MahApps.Metro.IconPacks.PackIconMaterialKind.Eye, PreviewRow_Click, false);
         previewButton.SetValue(FrameworkElement.MarginProperty, new Thickness(0, 0, 6, 0));
         panel.AppendChild(previewButton);
 
-        panel.AppendChild(BuildRowActionButton("打印", PrintRow_Click, true));
+        panel.AppendChild(BuildRowActionButton("打印", MahApps.Metro.IconPacks.PackIconMaterialKind.Printer, PrintRow_Click, true));
 
         return new DataTemplate
         {
@@ -553,15 +607,36 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         };
     }
 
-    private static FrameworkElementFactory BuildRowActionButton(string content, System.Windows.RoutedEventHandler clickHandler, bool isPrimary)
+    private static FrameworkElementFactory BuildRowActionButton(string content, MahApps.Metro.IconPacks.PackIconMaterialKind iconKind, System.Windows.RoutedEventHandler clickHandler, bool isPrimary)
     {
         var button = new FrameworkElementFactory(typeof(System.Windows.Controls.Button));
-        button.SetValue(System.Windows.Controls.ContentControl.ContentProperty, content);
         button.SetValue(System.Windows.FrameworkElement.HeightProperty, 28.0);
-        button.SetValue(System.Windows.FrameworkElement.StyleProperty, System.Windows.Application.Current.FindResource(isPrimary ? "ButtonPrimary" : "ButtonDanger"));
+        button.SetValue(System.Windows.FrameworkElement.StyleProperty, System.Windows.Application.Current.FindResource(isPrimary ? "ButtonPrimary" : "AppSecondaryButtonStyle"));
         button.SetBinding(System.Windows.UIElement.IsEnabledProperty, new System.Windows.Data.Binding(nameof(ImportRowGridItem.IsValid)));
         button.AddHandler(System.Windows.Controls.Primitives.ButtonBase.ClickEvent, clickHandler);
+
+        var panel = BuildButtonContent(content, iconKind);
+        button.AppendChild(panel);
         return button;
+    }
+
+    private static FrameworkElementFactory BuildButtonContent(string content, MahApps.Metro.IconPacks.PackIconMaterialKind iconKind)
+    {
+        var panel = new FrameworkElementFactory(typeof(StackPanel));
+        panel.SetValue(StackPanel.OrientationProperty, System.Windows.Controls.Orientation.Horizontal);
+
+        var icon = new FrameworkElementFactory(typeof(MahApps.Metro.IconPacks.PackIconMaterial));
+        icon.SetValue(MahApps.Metro.IconPacks.PackIconMaterial.KindProperty, iconKind);
+        icon.SetValue(FrameworkElement.MarginProperty, new Thickness(0, 0, 6, 0));
+        icon.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
+        panel.AppendChild(icon);
+
+        var text = new FrameworkElementFactory(typeof(TextBlock));
+        text.SetValue(TextBlock.TextProperty, content);
+        text.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
+        panel.AppendChild(text);
+
+        return panel;
     }
 
     private void ClearRows()

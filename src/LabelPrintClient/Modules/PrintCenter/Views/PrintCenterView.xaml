@@ -5,16 +5,9 @@
              xmlns:infra="clr-namespace:LabelPrintClient.Infrastructure"
              xmlns:hc="https://handyorg.github.io/handycontrol">
     <UserControl.Resources>
-        <Style x:Key="SectionTitleStyle" TargetType="TextBlock">
+        <Style x:Key="SectionTitleStyle" TargetType="TextBlock" BasedOn="{StaticResource AppSectionTitleStyle}" />
 
-            <Setter Property="Margin" Value="4,0,0,8" />
-        </Style>
-
-        <Style x:Key="FormLabelStyle" TargetType="TextBlock">
-            <Setter Property="VerticalAlignment" Value="Center" />
-            <Setter Property="Margin" Value="0,0,8,0" />
-            <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
-        </Style>
+        <Style x:Key="FormLabelStyle" TargetType="TextBlock" BasedOn="{StaticResource AppFormLabelStyle}" />
 
     </UserControl.Resources>
 
@@ -26,7 +19,7 @@
         </Grid.RowDefinitions>
 
         <!-- 顶部：模板选择、Excel 操作、筛选条件 -->
-        <Border Background="{DynamicResource RegionBrush}" CornerRadius="4" Grid.Row="0" Margin="0,0,0,8" Padding="10">
+        <Border Grid.Row="0" Style="{StaticResource AppToolbarCardStyle}">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -42,7 +35,7 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
-                    <TextBlock Grid.Column="0" Text="标签打印中心" VerticalAlignment="Center" Margin="0,0,16,0" />
+                    <TextBlock Grid.Column="0" Style="{StaticResource AppPageTitleStyle}" Text="标签打印中心" Margin="0,0,16,0" />
 
                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,0">
                         <TextBlock Style="{StaticResource FormLabelStyle}" Text="分类" />
@@ -66,7 +59,7 @@
                                   infra:SearchableComboBoxBehavior.IsEnabled="True" />
                     </StackPanel>
 
-                    <Button Grid.Column="4" Click="Refresh_Click" Margin="8,0,0,0">
+                    <Button Grid.Column="4" Style="{StaticResource AppSecondaryButtonStyle}" Click="Refresh_Click" Margin="8,0,0,0">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="Refresh" Margin="0,0,6,0" VerticalAlignment="Center"/>
                             <TextBlock Text="刷新" VerticalAlignment="Center"/>
@@ -75,7 +68,7 @@
                 </Grid>
 
                 <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,8,0,0">
-                    <Button Click="DownloadExcel_Click" Margin="0,0,8,0">
+                    <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="DownloadExcel_Click" Margin="0,0,8,0">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="Download" Margin="0,0,6,0" VerticalAlignment="Center"/>
                             <TextBlock Text="下载 Excel 模板" VerticalAlignment="Center"/>
@@ -98,7 +91,7 @@
         <!-- 中部：批次列表 + 数据明细 -->
         <Grid Grid.Row="1">
             <Grid.RowDefinitions>
-                <RowDefinition Height="1*" MinHeight="150" />
+                <RowDefinition Height="1*" MinHeight="220" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="2*" MinHeight="200" />
             </Grid.RowDefinitions>
@@ -112,29 +105,34 @@
                 <DockPanel Grid.Row="0" Margin="0,0,0,8" LastChildFill="False">
                     <TextBlock DockPanel.Dock="Left" Style="{StaticResource SectionTitleStyle}" Text="导入批次记录" Margin="4,0,16,0" />
                     <WrapPanel DockPanel.Dock="Right" HorizontalAlignment="Right">
-                        <TextBox x:Name="BatchSearchBox"
-                                    Width="180"
-                                   
-                                    Margin="0,0,8,0"
-                                    KeyDown="BatchSearchBox_KeyDown" />
-                        <ComboBox x:Name="BatchStatusFilterBox"
-                                  Width="110"
-                                  SelectedIndex="0"
-                                  SelectionChanged="BatchStatusFilterBox_SelectionChanged"
-                                  Margin="0,0,8,0">
-                            <ComboBoxItem Content="正常批次" Tag="Active" />
-                            <ComboBoxItem Content="全部" Tag="All" />
-                            <ComboBoxItem Content="已导入" Tag="Imported" />
-                            <ComboBoxItem Content="部分错误" Tag="PartError" />
-                            <ComboBoxItem Content="已作废" Tag="Voided" />
-                        </ComboBox>
-                        <Button  Style="{StaticResource ButtonPrimary}" Click="BatchFilter_Click" Margin="0,0,8,0" >
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,8,0">
+                            <TextBlock Style="{StaticResource FormLabelStyle}" Text="关键词" />
+                            <TextBox x:Name="BatchSearchBox"
+                                     Width="180"
+                                     VerticalAlignment="Center"
+                                     KeyDown="BatchSearchBox_KeyDown" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,8,0">
+                            <TextBlock Style="{StaticResource FormLabelStyle}" Text="状态" />
+                            <ComboBox x:Name="BatchStatusFilterBox"
+                                      Width="110"
+                                      SelectedIndex="0"
+                                      SelectionChanged="BatchStatusFilterBox_SelectionChanged"
+                                      VerticalAlignment="Center">
+                                <ComboBoxItem Content="正常批次" Tag="Active" />
+                                <ComboBoxItem Content="全部" Tag="All" />
+                                <ComboBoxItem Content="已导入" Tag="Imported" />
+                                <ComboBoxItem Content="部分错误" Tag="PartError" />
+                                <ComboBoxItem Content="已作废" Tag="Voided" />
+                            </ComboBox>
+                        </StackPanel>
+                        <Button  Style="{StaticResource AppSecondaryButtonStyle}" Click="BatchFilter_Click" Margin="0,0,8,0" >
         <StackPanel Orientation="Horizontal">
             <iconPacks:PackIconMaterial Kind="Magnify" Margin="0,0,6,0" VerticalAlignment="Center"/>
             <TextBlock Text="查询" VerticalAlignment="Center"/>
         </StackPanel>
     </Button>
-                        <Button  Click="LoadBatches_Click" >
+                        <Button  Style="{StaticResource AppSecondaryButtonStyle}" Click="LoadBatches_Click" >
         <StackPanel Orientation="Horizontal">
             <iconPacks:PackIconMaterial Kind="Refresh" Margin="0,0,6,0" VerticalAlignment="Center"/>
             <TextBlock Text="刷新批次" VerticalAlignment="Center"/>
@@ -142,7 +140,7 @@
     </Button>
                     </WrapPanel>
                 </DockPanel>
-                <Border Background="{DynamicResource RegionBrush}" CornerRadius="4" Grid.Row="1" Padding="0" VerticalAlignment="Stretch">
+                <Border Grid.Row="1" Style="{StaticResource AppDataCardStyle}" VerticalAlignment="Stretch">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="*" />
@@ -171,19 +169,31 @@
                                 </DataGridTemplateColumn>
                                 <DataGridTextColumn Header="导入时间" Binding="{Binding ImportTime, StringFormat=\{0:yyyy-MM-dd HH:mm:ss\}}" Width="170" />
                                 <DataGridTextColumn Header="Excel" Binding="{Binding ExcelFileName}" Width="*" MinWidth="130" />
-                                <DataGridTextColumn Header="状态" Binding="{Binding Status}" Width="90" />
+                                <DataGridTemplateColumn Header="状态" Width="96" SortMemberPath="Status">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <ContentControl Content="{Binding Status}" ContentTemplate="{StaticResource AppStatusBadgeTemplate}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
                                 <DataGridTextColumn Header="总行数" Binding="{Binding TotalRows}" Width="80" />
                                 <DataGridTextColumn Header="错误行数" Binding="{Binding InvalidRows}" Width="80" />
                                 <DataGridTextColumn Header="操作人" Binding="{Binding OperatorName}" Width="100" />
                             </DataGrid.Columns>
                         </DataGrid>
-                        <TextBlock x:Name="BatchEmptyText"
-                                   Grid.Row="0"
-                                   Text="暂无导入批次"
-                                   HorizontalAlignment="Center"
-                                   VerticalAlignment="Center"
-                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                   Visibility="Collapsed" />
+                        <StackPanel Grid.Row="0"
+                                    Style="{StaticResource AppDataGridEmptyStatePanelStyle}"
+                                    Visibility="{Binding Visibility, ElementName=BatchEmptyText}">
+                            <Border Style="{StaticResource AppEmptyStateIconFrameStyle}">
+                                <iconPacks:PackIconMaterial Kind="FormatListText" Style="{StaticResource AppEmptyStateIconStyle}" />
+                            </Border>
+                            <TextBlock x:Name="BatchEmptyText"
+                                       Text="暂无导入批次"
+                                       Style="{StaticResource AppEmptyStateTitleStyle}"
+                                       Visibility="Collapsed" />
+                            <TextBlock Text="选择模板后可导入 Excel，生成的批次会显示在这里。"
+                                       Style="{StaticResource AppEmptyStateHintStyle}" />
+                        </StackPanel>
                         <Border Grid.Row="1" Padding="0,8,0,0" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" Margin="8,8,8,8">
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                                 <TextBlock Text="每页" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
@@ -192,11 +202,19 @@
                                     <ComboBoxItem Content="50" />
                                     <ComboBoxItem Content="100" />
                                 </ComboBox>
-                                <Button x:Name="BatchFirstPageButton" Content="&lt;&lt;" Style="{StaticResource PagerButtonStyle}" Click="BatchFirstPage_Click" />
-                                <Button x:Name="BatchPrevPageButton" Content="&lt;" Style="{StaticResource PagerButtonStyle}" Click="BatchPrevPage_Click" />
+                                <Button x:Name="BatchFirstPageButton" Style="{StaticResource PagerButtonStyle}" Click="BatchFirstPage_Click">
+                                    <iconPacks:PackIconMaterial Kind="PageFirst" Width="16" Height="16" />
+                                </Button>
+                                <Button x:Name="BatchPrevPageButton" Style="{StaticResource PagerButtonStyle}" Click="BatchPrevPage_Click">
+                                    <iconPacks:PackIconMaterial Kind="ChevronLeft" Width="16" Height="16" />
+                                </Button>
                                 <TextBlock x:Name="BatchPageInfoText" VerticalAlignment="Center" MinWidth="70" TextAlignment="Center" FontWeight="SemiBold" />
-                                <Button x:Name="BatchNextPageButton" Content="&gt;" Style="{StaticResource PagerButtonStyle}" Click="BatchNextPage_Click" />
-                                <Button x:Name="BatchLastPageButton" Content="&gt;&gt;" Style="{StaticResource PagerButtonStyle}" Click="BatchLastPage_Click" />
+                                <Button x:Name="BatchNextPageButton" Style="{StaticResource PagerButtonStyle}" Click="BatchNextPage_Click">
+                                    <iconPacks:PackIconMaterial Kind="ChevronRight" Width="16" Height="16" />
+                                </Button>
+                                <Button x:Name="BatchLastPageButton" Style="{StaticResource PagerButtonStyle}" Click="BatchLastPage_Click">
+                                    <iconPacks:PackIconMaterial Kind="PageLast" Width="16" Height="16" />
+                                </Button>
                             </StackPanel>
                         </Border>
                     </Grid>
@@ -204,7 +222,7 @@
             </Grid>
 
             <!-- 拖拽条 -->
-            <GridSplitter Grid.Row="1" Height="6" HorizontalAlignment="Stretch" VerticalAlignment="Center" Background="Transparent" Cursor="SizeNS" Margin="0,2" />
+            <GridSplitter Grid.Row="1" Style="{StaticResource AppRowResizeSplitterStyle}" Margin="0,2" />
 
             <Grid Grid.Row="2" Margin="0,4,0,0">
                 <Grid.RowDefinitions>
@@ -215,18 +233,20 @@
                 <DockPanel Grid.Row="0" Margin="0,0,0,8" LastChildFill="False">
                     <TextBlock DockPanel.Dock="Left" Style="{StaticResource SectionTitleStyle}" Text="批次明细数据" Margin="4,0,16,0" />
                     <WrapPanel DockPanel.Dock="Right" HorizontalAlignment="Right">
-                        <TextBox x:Name="RowSearchBox"
-                                    Width="180"
-                                   
-                                    Margin="0,0,8,0"
-                                    KeyDown="RowSearchBox_KeyDown" />
-                        <Button  Style="{StaticResource ButtonPrimary}" Click="RowFilter_Click" Margin="0,0,8,0" >
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,8,0">
+                            <TextBlock Style="{StaticResource FormLabelStyle}" Text="关键词" />
+                            <TextBox x:Name="RowSearchBox"
+                                     Width="180"
+                                     VerticalAlignment="Center"
+                                     KeyDown="RowSearchBox_KeyDown" />
+                        </StackPanel>
+                        <Button  Style="{StaticResource AppSecondaryButtonStyle}" Click="RowFilter_Click" Margin="0,0,8,0" >
         <StackPanel Orientation="Horizontal">
             <iconPacks:PackIconMaterial Kind="Magnify" Margin="0,0,6,0" VerticalAlignment="Center"/>
             <TextBlock Text="查询" VerticalAlignment="Center"/>
         </StackPanel>
     </Button>
-                        <Button  Style="{StaticResource ButtonDanger}" Click="ClearRowFilter_Click" >
+                        <Button  Style="{StaticResource AppGhostButtonStyle}" Click="ClearRowFilter_Click" >
         <StackPanel Orientation="Horizontal">
             <iconPacks:PackIconMaterial Kind="FilterRemoveOutline" Margin="0,0,6,0" VerticalAlignment="Center"/>
             <TextBlock Text="清空" VerticalAlignment="Center"/>
@@ -234,7 +254,7 @@
     </Button>
                     </WrapPanel>
                 </DockPanel>
-                <Border Background="{DynamicResource RegionBrush}" CornerRadius="4" Grid.Row="1" Padding="0" VerticalAlignment="Stretch">
+                <Border Grid.Row="1" Style="{StaticResource AppDataCardStyle}" VerticalAlignment="Stretch">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="*" />
@@ -248,13 +268,19 @@
                                      BorderThickness="0"
                                      HorizontalScrollBarVisibility="Auto"
                                      VerticalScrollBarVisibility="Auto" />
-                        <TextBlock x:Name="RowEmptyText"
-                                   Grid.Row="0"
-                                   Text="请选择批次查看明细"
-                                   HorizontalAlignment="Center"
-                                   VerticalAlignment="Center"
-                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                   Visibility="Collapsed" />
+                        <StackPanel Grid.Row="0"
+                                    Style="{StaticResource AppDataGridEmptyStatePanelStyle}"
+                                    Visibility="{Binding Visibility, ElementName=RowEmptyText}">
+                            <Border Style="{StaticResource AppEmptyStateIconFrameStyle}">
+                                <iconPacks:PackIconMaterial Kind="MicrosoftExcel" Style="{StaticResource AppEmptyStateIconStyle}" />
+                            </Border>
+                            <TextBlock x:Name="RowEmptyText"
+                                       Text="请选择批次查看明细"
+                                       Style="{StaticResource AppEmptyStateTitleStyle}"
+                                       Visibility="Collapsed" />
+                            <TextBlock Text="选择导入批次后，可查看明细并勾选需要预览或打印的数据。"
+                                       Style="{StaticResource AppEmptyStateHintStyle}" />
+                        </StackPanel>
                         <Border Grid.Row="1" Padding="0,8,0,0" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" Margin="8,8,8,8">
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                                 <TextBlock Text="每页" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
@@ -264,11 +290,19 @@
                                     <ComboBoxItem Content="100" />
                                     <ComboBoxItem Content="200" />
                                 </ComboBox>
-                                <Button x:Name="FirstPageButton" Content="&lt;&lt;" Style="{StaticResource PagerButtonStyle}" Click="FirstPage_Click" />
-                                <Button x:Name="PrevPageButton" Content="&lt;" Style="{StaticResource PagerButtonStyle}" Click="PrevPage_Click" />
+                                <Button x:Name="FirstPageButton" Style="{StaticResource PagerButtonStyle}" Click="FirstPage_Click">
+                                    <iconPacks:PackIconMaterial Kind="PageFirst" Width="16" Height="16" />
+                                </Button>
+                                <Button x:Name="PrevPageButton" Style="{StaticResource PagerButtonStyle}" Click="PrevPage_Click">
+                                    <iconPacks:PackIconMaterial Kind="ChevronLeft" Width="16" Height="16" />
+                                </Button>
                                 <TextBlock x:Name="PageInfoText" VerticalAlignment="Center" MinWidth="70" TextAlignment="Center" FontWeight="SemiBold" />
-                                <Button x:Name="NextPageButton" Content="&gt;" Style="{StaticResource PagerButtonStyle}" Click="NextPage_Click" />
-                                <Button x:Name="LastPageButton" Content="&gt;&gt;" Style="{StaticResource PagerButtonStyle}" Click="LastPage_Click" />
+                                <Button x:Name="NextPageButton" Style="{StaticResource PagerButtonStyle}" Click="NextPage_Click">
+                                    <iconPacks:PackIconMaterial Kind="ChevronRight" Width="16" Height="16" />
+                                </Button>
+                                <Button x:Name="LastPageButton" Style="{StaticResource PagerButtonStyle}" Click="LastPage_Click">
+                                    <iconPacks:PackIconMaterial Kind="PageLast" Width="16" Height="16" />
+                                </Button>
                             </StackPanel>
                         </Border>
                     </Grid>
@@ -277,7 +311,7 @@
         </Grid>
 
         <!-- 底部：批量打印操作 -->
-        <Border Background="{DynamicResource RegionBrush}" CornerRadius="4" Grid.Row="2" Padding="10" Margin="0,8,0,0">
+        <Border Grid.Row="2" Style="{StaticResource AppFooterCardStyle}">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -295,31 +329,31 @@
                         <TextBlock Style="{StaticResource FormLabelStyle}" Text="份数" />
                         <TextBox x:Name="PrintCopiesBox" Width="72" Text="1" VerticalAlignment="Center" />
                     </StackPanel>
-                    <Button  Click="SelectValidUnprinted_Click" Margin="0,0,8,0" >
+                    <Button  Style="{StaticResource AppSecondaryButtonStyle}" Click="SelectValidUnprinted_Click" Margin="0,0,8,0" >
         <StackPanel Orientation="Horizontal">
             <iconPacks:PackIconMaterial Kind="CheckboxMarked" Margin="0,0,6,0" VerticalAlignment="Center"/>
             <TextBlock Text="全选有效未打印" VerticalAlignment="Center"/>
         </StackPanel>
     </Button>
-                    <Button  Click="SelectValid_Click" Margin="0,0,8,0" >
+                    <Button  Style="{StaticResource AppSecondaryButtonStyle}" Click="SelectValid_Click" Margin="0,0,8,0" >
         <StackPanel Orientation="Horizontal">
             <iconPacks:PackIconMaterial Kind="CheckboxMultipleMarked" Margin="0,0,6,0" VerticalAlignment="Center"/>
             <TextBlock Text="全选有效行" VerticalAlignment="Center"/>
         </StackPanel>
     </Button>
-                    <Button  Click="ReverseSelect_Click" Margin="0,0,8,0" >
+                    <Button  Style="{StaticResource AppGhostButtonStyle}" Click="ReverseSelect_Click" Margin="0,0,8,0" >
         <StackPanel Orientation="Horizontal">
             <iconPacks:PackIconMaterial Kind="MinusBoxOutline" Margin="0,0,6,0" VerticalAlignment="Center"/>
             <TextBlock Text="反选" VerticalAlignment="Center"/>
         </StackPanel>
     </Button>
-                    <Button  Style="{StaticResource ButtonDanger}" Click="ClearSelect_Click" Margin="0,0,16,0" >
+                    <Button  Style="{StaticResource AppGhostButtonStyle}" Click="ClearSelect_Click" Margin="0,0,16,0" >
         <StackPanel Orientation="Horizontal">
             <iconPacks:PackIconMaterial Kind="FilterRemoveOutline" Margin="0,0,6,0" VerticalAlignment="Center"/>
             <TextBlock Text="清空" VerticalAlignment="Center"/>
         </StackPanel>
     </Button>
-                    <Button  Click="PreviewSelected_Click" Margin="0,0,8,0" >
+                    <Button  Style="{StaticResource AppSecondaryButtonStyle}" Click="PreviewSelected_Click" Margin="0,0,8,0" >
         <StackPanel Orientation="Horizontal">
             <iconPacks:PackIconMaterial Kind="Eye" Margin="0,0,6,0" VerticalAlignment="Center"/>
             <TextBlock Text="批量预览" VerticalAlignment="Center"/>

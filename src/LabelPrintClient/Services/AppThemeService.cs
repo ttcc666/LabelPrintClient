@@ -7,6 +7,8 @@ namespace LabelPrintClient.Services;
 
 public static class AppThemeService
 {
+    private const string ModernStyleResource = "pack://application:,,,/LabelPrintClient;component/Themes/ModernStyle.xaml";
+
     public static event EventHandler<AppThemeMode>? ThemeModeChanged;
 
     public static void Apply(AppThemeMode mode)
@@ -92,9 +94,12 @@ public static class AppThemeService
             string skinStr = mode == AppThemeMode.Dark ? "SkinDark" : "SkinDefault";
             dicts.Add(new ResourceDictionary { Source = new Uri($"pack://application:,,,/HandyControl;component/Themes/{skinStr}.xaml", UriKind.Absolute) });
             dicts.Add(new ResourceDictionary { Source = new Uri("pack://application:,,,/HandyControl;component/Themes/Theme.xaml", UriKind.Absolute) });
+            dicts.Add(new ResourceDictionary { Source = new Uri(ModernStyleResource, UriKind.Absolute) });
         }
-        catch
+        catch (Exception ex)
         {
+            System.Diagnostics.Debug.WriteLine($"ApplyTheme Error: {ex}");
+            throw;
         }
     }
 }
