@@ -17,6 +17,32 @@
             <Setter Property="Padding" Value="0" />
             <Setter Property="Margin" Value="0,0,6,0" />
         </Style>
+
+        <!-- 操作类型 Badge 模板 -->
+        <DataTemplate x:Key="HistoryOperationBadgeTemplate">
+            <Border x:Name="BadgeBorder" CornerRadius="12" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="8,3" Background="#120066FF">
+                <StackPanel Orientation="Horizontal">
+                    <iconPacks:PackIconMaterial x:Name="BadgeIcon" Kind="PencilOutline" Foreground="{DynamicResource PrimaryBrush}" Width="11" Height="11" Margin="0,0,4,0" VerticalAlignment="Center" />
+                    <TextBlock x:Name="BadgeText" Text="变更" FontSize="11" Foreground="{DynamicResource PrimaryBrush}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                </StackPanel>
+            </Border>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding OperationType}" Value="Delete">
+                    <Setter TargetName="BadgeBorder" Property="Background" Value="#12FF3B30" />
+                    <Setter TargetName="BadgeIcon" Property="Kind" Value="TrashCanOutline" />
+                    <Setter TargetName="BadgeIcon" Property="Foreground" Value="#FF3B30" />
+                    <Setter TargetName="BadgeText" Property="Text" Value="删除" />
+                    <Setter TargetName="BadgeText" Property="Foreground" Value="#FF3B30" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding OperationType}" Value="Restore">
+                    <Setter TargetName="BadgeBorder" Property="Background" Value="#1234C759" />
+                    <Setter TargetName="BadgeIcon" Property="Kind" Value="BackupRestore" />
+                    <Setter TargetName="BadgeIcon" Property="Foreground" Value="#34C759" />
+                    <Setter TargetName="BadgeText" Property="Text" Value="恢复" />
+                    <Setter TargetName="BadgeText" Property="Foreground" Value="#34C759" />
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
     </Window.Resources>
     <Grid Margin="12">
         <Grid.RowDefinitions>
@@ -55,7 +81,13 @@
                     <DataGridTextColumn Header="时间"
                                         Binding="{Binding CreateTime, StringFormat=\{0:yyyy-MM-dd HH:mm:ss\}}"
                                         Width="170" />
-                    <DataGridTextColumn Header="操作" Binding="{Binding OperationTypeText}" Width="72" />
+                    <DataGridTemplateColumn Header="操作" Width="82" MinWidth="82" SortMemberPath="OperationType">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <ContentControl Content="{Binding}" ContentTemplate="{StaticResource HistoryOperationBadgeTemplate}" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
                     <DataGridTextColumn Header="字段名" Binding="{Binding FieldName}" Width="130" />
                     <DataGridTextColumn Header="字段编码" Binding="{Binding FieldCode}" Width="130" />
                     <DataGridTextColumn Header="变更内容" Binding="{Binding ChangeSummary}" Width="*" MinWidth="260" />

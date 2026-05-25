@@ -548,20 +548,18 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         RowGrid.Columns.Add(new DataGridTemplateColumn
         {
             Header = "是否有效",
-            CellTemplate = BuildBooleanCheckBoxTemplate(nameof(ImportRowGridItem.IsValid), false),
+            CellTemplate = (DataTemplate)this.FindResource("RowValidBadgeTemplate"),
             CellStyle = centerCellStyle,
             HeaderStyle = centerHeaderStyle,
-            Width = 90,
-            IsReadOnly = true
+            Width = 90
         });
         RowGrid.Columns.Add(new DataGridTemplateColumn
         {
             Header = "已打印",
-            CellTemplate = BuildBooleanCheckBoxTemplate(nameof(ImportRowGridItem.IsPrinted), false),
+            CellTemplate = (DataTemplate)this.FindResource("RowPrintedBadgeTemplate"),
             CellStyle = centerCellStyle,
             HeaderStyle = centerHeaderStyle,
-            Width = 90,
-            IsReadOnly = true
+            Width = 90
         });
         RowGrid.Columns.Add(new DataGridTextColumn { Header = "打印次数", Binding = new System.Windows.Data.Binding(nameof(ImportRowGridItem.PrintCount)), Width = 90, IsReadOnly = true });
 

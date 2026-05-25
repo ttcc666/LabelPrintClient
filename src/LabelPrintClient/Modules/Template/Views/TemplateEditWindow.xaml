@@ -4,12 +4,12 @@
         xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
         xmlns:hc="https://handyorg.github.io/handycontrol"
         Title="模板维护"
-        Width="520"
-        Height="500"
+        Width="540"
+        Height="540"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
         Background="{DynamicResource SecondaryRegionBrush}" Foreground="{DynamicResource PrimaryTextBrush}">
-    <Grid Margin="20">
+    <Grid Margin="24">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -21,64 +21,90 @@
 
         <!-- 表单 -->
         <StackPanel Grid.Row="1">
-            <StackPanel Margin="0,0,0,12">
-                <TextBlock Text="模板名称" Margin="0,0,0,6" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                <TextBox x:Name="NameBox" MaxLength="50" />
+            <!-- 模板名称 -->
+            <StackPanel Margin="0,0,0,14">
+                <TextBlock Text="模板名称" FontSize="12.5" FontWeight="SemiBold" Margin="0,0,0,6" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                <TextBox x:Name="NameBox" MaxLength="50" Padding="8,8" />
             </StackPanel>
 
-            <StackPanel Margin="0,0,0,12">
-                <TextBlock Text="存储介质" Margin="0,0,0,6" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+            <!-- 存储介质 -->
+            <StackPanel Margin="0,0,0,16">
+                <TextBlock Text="存储介质" FontSize="12.5" FontWeight="SemiBold" Margin="0,0,0,6" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                 <ComboBox x:Name="StorageTypeBox" SelectedIndex="0">
                     <ComboBoxItem Content="本地物理文件 (LocalFile)" Tag="LocalFile" />
                     <ComboBoxItem Content="数据库存储 (Database)" Tag="Database" />
                 </ComboBox>
             </StackPanel>
 
-            <StackPanel Margin="0,0,0,12">
-                <CheckBox x:Name="IsSerialNumberBox" Content="序列号控制" IsChecked="False" VerticalAlignment="Center" Margin="0,0,0,8" Checked="SerialRule_Changed" Unchecked="SerialRule_Changed" />
-                <Grid IsEnabled="{Binding IsChecked, ElementName=IsSerialNumberBox}">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="80" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
+            <!-- 序列号控制与规则配置卡片 -->
+            <StackPanel Margin="0,0,0,14">
+                <CheckBox x:Name="IsSerialNumberBox" Content="序列号控制模式" IsChecked="False" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,0,6" Checked="SerialRule_Changed" Unchecked="SerialRule_Changed" />
+                
+                <!-- 精美规则配置卡片面板 -->
+                <Border CornerRadius="8" 
+                        Background="#050066FF" 
+                        BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
+                        BorderThickness="1" 
+                        Padding="14"
+                        Margin="0,4,0,0"
+                        IsEnabled="{Binding IsChecked, ElementName=IsSerialNumberBox}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="70" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
 
-                    <TextBlock Grid.Row="0" Grid.Column="0" Text="规则" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                    <TextBox x:Name="SerialNumberPatternBox" Grid.Row="0" Grid.Column="1" Text="SN-{seq:0000}" MaxLength="200" TextChanged="SerialRule_Changed" />
+                        <!-- 规则配置 -->
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="规则" FontSize="12.5" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                        <TextBox x:Name="SerialNumberPatternBox" Grid.Row="0" Grid.Column="1" Text="SN-{seq:0000}" MaxLength="200" Padding="8,6" TextChanged="SerialRule_Changed" />
 
-                    <TextBlock Grid.Row="1" Grid.Column="0" Text="重置周期" VerticalAlignment="Center" Margin="0,8,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                    <ComboBox x:Name="SerialResetPeriodBox" Grid.Row="1" Grid.Column="1" Margin="0,8,0,0" SelectedIndex="0" SelectionChanged="SerialRule_Changed">
-                        <ComboBoxItem Content="永不" Tag="Never" />
-                        <ComboBoxItem Content="每天" Tag="Daily" />
-                        <ComboBoxItem Content="每月" Tag="Monthly" />
-                        <ComboBoxItem Content="每年" Tag="Yearly" />
-                    </ComboBox>
+                        <!-- 重置周期 -->
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="重置周期" FontSize="12.5" VerticalAlignment="Center" Margin="0,12,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                        <ComboBox x:Name="SerialResetPeriodBox" Grid.Row="1" Grid.Column="1" Margin="0,12,0,0" SelectedIndex="0" SelectionChanged="SerialRule_Changed">
+                            <ComboBoxItem Content="永不重置 (Never)" Tag="Never" />
+                            <ComboBoxItem Content="每天重置 (Daily)" Tag="Daily" />
+                            <ComboBoxItem Content="每月重置 (Monthly)" Tag="Monthly" />
+                            <ComboBoxItem Content="每年重置 (Yearly)" Tag="Yearly" />
+                        </ComboBox>
 
-                    <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,8,0,0">
-                        <TextBlock Text="示例：SN-{yyyy}{MM}{dd}-{seq:0000}，变量：{yyyy} {yy} {MM} {dd} {HH} {mm} {seq:0000}"
-                                   TextWrapping="Wrap"
-                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                        <TextBlock x:Name="SerialPreviewText" Margin="0,4,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="预览：SN-0001" />
-                    </StackPanel>
-                </Grid>
+                        <!-- 变量提示与胶囊预览 -->
+                        <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,10,0,0">
+                            <TextBlock Text="示例：SN-{yyyy}{MM}{dd}-{seq:0000}" FontSize="11" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                            <TextBlock Text="变量：{yyyy} {yy} {MM} {dd} {HH} {mm} {seq:0000}" FontSize="11" Margin="0,2,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                            
+                            <!-- 胶囊状的高颜值预览 Badge -->
+                            <Border CornerRadius="12" 
+                                    Background="#1A0066FF" 
+                                    HorizontalAlignment="Left" 
+                                    Padding="10,4" 
+                                    Margin="0,8,0,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <iconPacks:PackIconMaterial Kind="Eye" Foreground="{DynamicResource PrimaryBrush}" Width="12" Height="12" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                    <TextBlock x:Name="SerialPreviewText" Text="预览：SN-0001" FontSize="11.5" Foreground="{DynamicResource PrimaryBrush}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Grid>
+                </Border>
             </StackPanel>
 
-            <CheckBox x:Name="IsEnabledBox" Content="启用该模板" IsChecked="True" VerticalAlignment="Center" />
+            <CheckBox x:Name="IsEnabledBox" Content="启用该标签模板" IsChecked="True" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,4,0,0" />
         </StackPanel>
 
         <!-- 底部按钮 -->
-        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
-            <Button Style="{StaticResource AppDialogPrimaryButtonStyle}" Click="Ok_Click" Margin="0,0,10,0">
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+            <Button Width="90" Style="{StaticResource AppDialogPrimaryButtonStyle}" Click="Ok_Click" Margin="0,0,10,0">
                 <StackPanel Orientation="Horizontal">
                     <iconPacks:PackIconMaterial Kind="Check" Width="14" Height="14" Margin="0,0,6,0" VerticalAlignment="Center" />
                     <TextBlock Text="确定" VerticalAlignment="Center" />
                 </StackPanel>
             </Button>
-            <Button Style="{StaticResource AppDialogCancelButtonStyle}" Click="Cancel_Click">
+            <Button Width="90" Style="{StaticResource AppDialogCancelButtonStyle}" Click="Cancel_Click">
                 <StackPanel Orientation="Horizontal">
                     <iconPacks:PackIconMaterial Kind="Close" Width="14" Height="14" Margin="0,0,6,0" VerticalAlignment="Center" />
                     <TextBlock Text="取消" VerticalAlignment="Center" />

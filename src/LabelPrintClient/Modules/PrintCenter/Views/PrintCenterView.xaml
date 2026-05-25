@@ -8,6 +8,44 @@
         <Style x:Key="SectionTitleStyle" TargetType="TextBlock" BasedOn="{StaticResource AppSectionTitleStyle}" />
 
         <Style x:Key="FormLabelStyle" TargetType="TextBlock" BasedOn="{StaticResource AppFormLabelStyle}" />
+
+        <!-- 明细行是否有效胶囊 Badge 模板 -->
+        <DataTemplate x:Key="RowValidBadgeTemplate">
+            <Border x:Name="BadgeBorder" CornerRadius="12" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="8,3" Background="#12FF5722">
+                <StackPanel Orientation="Horizontal">
+                    <iconPacks:PackIconMaterial x:Name="BadgeIcon" Kind="CloseCircle" Foreground="#FF5722" Width="11" Height="11" Margin="0,0,4,0" VerticalAlignment="Center" />
+                    <TextBlock x:Name="BadgeText" Text="无效" FontSize="11" Foreground="#FF5722" FontWeight="SemiBold" VerticalAlignment="Center" />
+                </StackPanel>
+            </Border>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding IsValid}" Value="True">
+                    <Setter TargetName="BadgeBorder" Property="Background" Value="#1200CC66" />
+                    <Setter TargetName="BadgeIcon" Property="Kind" Value="CheckCircle" />
+                    <Setter TargetName="BadgeIcon" Property="Foreground" Value="#00CC66" />
+                    <Setter TargetName="BadgeText" Property="Text" Value="有效" />
+                    <Setter TargetName="BadgeText" Property="Foreground" Value="#00CC66" />
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
+        <!-- 明细行已打印胶囊 Badge 模板 -->
+        <DataTemplate x:Key="RowPrintedBadgeTemplate">
+            <Border x:Name="BadgeBorder" CornerRadius="12" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="8,3" Background="#12708090">
+                <StackPanel Orientation="Horizontal">
+                    <iconPacks:PackIconMaterial x:Name="BadgeIcon" Kind="PrinterOff" Foreground="SlateGray" Width="11" Height="11" Margin="0,0,4,0" VerticalAlignment="Center" />
+                    <TextBlock x:Name="BadgeText" Text="未打印" FontSize="11" Foreground="SlateGray" FontWeight="SemiBold" VerticalAlignment="Center" />
+                </StackPanel>
+            </Border>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding IsPrinted}" Value="True">
+                    <Setter TargetName="BadgeBorder" Property="Background" Value="#120066FF" />
+                    <Setter TargetName="BadgeIcon" Property="Kind" Value="PrinterCheck" />
+                    <Setter TargetName="BadgeIcon" Property="Foreground" Value="{DynamicResource PrimaryBrush}" />
+                    <Setter TargetName="BadgeText" Property="Text" Value="已打印" />
+                    <Setter TargetName="BadgeText" Property="Foreground" Value="{DynamicResource PrimaryBrush}" />
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
     </UserControl.Resources>
 
     <Grid Margin="12">

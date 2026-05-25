@@ -5,6 +5,51 @@
              xmlns:hc="https://handyorg.github.io/handycontrol">
     <UserControl.Resources>
         <Style x:Key="SectionTitleStyle" TargetType="TextBlock" BasedOn="{StaticResource AppSectionTitleStyle}" />
+
+        <!-- 字段必填属性胶囊 Badge 模板 -->
+        <DataTemplate x:Key="FieldRequiredBadgeTemplate">
+            <Border x:Name="BadgeBorder" CornerRadius="12" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="8,3" Background="#12708090">
+                <TextBlock x:Name="BadgeText" Text="选填" FontSize="11" Foreground="SlateGray" FontWeight="SemiBold" VerticalAlignment="Center" />
+            </Border>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding IsRequired}" Value="True">
+                    <Setter TargetName="BadgeBorder" Property="Background" Value="#12E81123" />
+                    <Setter TargetName="BadgeText" Property="Text" Value="必填" />
+                    <Setter TargetName="BadgeText" Property="Foreground" Value="#E81123" />
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
+        <!-- 字段类型属性胶囊 Badge 模板 -->
+        <DataTemplate x:Key="FieldTypeBadgeTemplate">
+            <Border x:Name="BadgeBorder" CornerRadius="12" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="8,3" Background="#120066FF">
+                <TextBlock x:Name="BadgeText" Text="{Binding FieldTypeCn}" FontSize="11" Foreground="{DynamicResource PrimaryBrush}" FontWeight="SemiBold" VerticalAlignment="Center" />
+            </Border>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding FieldType}" Value="Number">
+                    <Setter TargetName="BadgeBorder" Property="Background" Value="#1200CC66" />
+                    <Setter TargetName="BadgeText" Property="Foreground" Value="#00CC66" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding FieldType}" Value="DateTime">
+                    <Setter TargetName="BadgeBorder" Property="Background" Value="#128A2BE2" />
+                    <Setter TargetName="BadgeText" Property="Foreground" Value="#8A2BE2" />
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
+        <!-- 分类启用状态 Badge 模板 -->
+        <DataTemplate x:Key="CategoryStatusBadgeTemplate">
+            <Border x:Name="BadgeBorder" CornerRadius="12" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="8,3" Background="#12708090">
+                <TextBlock x:Name="BadgeText" Text="禁用" FontSize="11" Foreground="SlateGray" FontWeight="SemiBold" VerticalAlignment="Center" />
+            </Border>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding IsEnabled}" Value="True">
+                    <Setter TargetName="BadgeBorder" Property="Background" Value="#1234C759" />
+                    <Setter TargetName="BadgeText" Property="Text" Value="启用" />
+                    <Setter TargetName="BadgeText" Property="Foreground" Value="#34C759" />
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
     </UserControl.Resources>
 
     <Grid Margin="12">
@@ -115,12 +160,17 @@
                               VerticalScrollBarVisibility="Auto">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="名称" Binding="{Binding Name}" Width="*" MinWidth="120" />
-                            <DataGridCheckBoxColumn Header="启用"
-                                                    Binding="{Binding IsEnabled}"
-                                                    Width="56"
+                            <DataGridTemplateColumn Header="状态"
+                                                    Width="76"
                                                     CellStyle="{StaticResource AppDataGridCenterCellStyle}"
                                                     HeaderStyle="{StaticResource AppDataGridCenterColumnHeaderStyle}"
-                                                    ElementStyle="{StaticResource AppDataGridReadOnlyCheckBoxStyle}" />
+                                                    SortMemberPath="IsEnabled">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <ContentControl Content="{Binding}" ContentTemplate="{StaticResource CategoryStatusBadgeTemplate}" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
                         </DataGrid.Columns>
                     </DataGrid>
                     <StackPanel Style="{StaticResource AppDataGridEmptyStatePanelStyle}"
@@ -218,7 +268,28 @@
                               VerticalScrollBarVisibility="Auto">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="名称" Binding="{Binding Name}" Width="130" />
-                            <DataGridTextColumn Header="存储" Binding="{Binding StorageType}" Width="70" />
+                            <!-- 存储介质 Badge 胶囊列 -->
+                            <DataGridTemplateColumn Header="存储" Width="96">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Border x:Name="BadgeBorder" CornerRadius="12" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="8,3" Background="#12FF5722">
+                                            <StackPanel Orientation="Horizontal">
+                                                <iconPacks:PackIconMaterial x:Name="BadgeIcon" Kind="Folder" Foreground="#FF5722" Width="11" Height="11" Margin="0,0,4,0" VerticalAlignment="Center" />
+                                                <TextBlock x:Name="BadgeText" Text="本地物理" FontSize="11" Foreground="#FF5722" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                            </StackPanel>
+                                        </Border>
+                                        <DataTemplate.Triggers>
+                                            <DataTrigger Binding="{Binding StorageType}" Value="Database">
+                                                <Setter TargetName="BadgeBorder" Property="Background" Value="#120066FF" />
+                                                <Setter TargetName="BadgeIcon" Property="Kind" Value="Database" />
+                                                <Setter TargetName="BadgeIcon" Property="Foreground" Value="{DynamicResource PrimaryBrush}" />
+                                                <Setter TargetName="BadgeText" Property="Text" Value="数据库" />
+                                                <Setter TargetName="BadgeText" Property="Foreground" Value="{DynamicResource PrimaryBrush}" />
+                                            </DataTrigger>
+                                        </DataTemplate.Triggers>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
                             <DataGridTextColumn Header="文件" Binding="{Binding TemplateFileName}" Width="*" MinWidth="120" />
                         </DataGrid.Columns>
                     </DataGrid>
@@ -353,13 +424,23 @@
                             <DataGridTextColumn Header="排序" Binding="{Binding Sort}" Width="52" />
                             <DataGridTextColumn Header="字段名" Binding="{Binding FieldName}" Width="110" />
                             <DataGridTextColumn Header="字段编码" Binding="{Binding FieldCode}" Width="120" />
-                            <DataGridTextColumn Header="类型" Binding="{Binding FieldTypeCn}" Width="70" />
-                            <DataGridCheckBoxColumn Header="必填"
-                                                    Binding="{Binding IsRequired}"
-                                                    Width="56"
-                                                    CellStyle="{StaticResource AppDataGridCenterCellStyle}"
-                                                    HeaderStyle="{StaticResource AppDataGridCenterColumnHeaderStyle}"
-                                                    ElementStyle="{StaticResource AppDataGridReadOnlyCheckBoxStyle}" />
+                            <!-- 字段数据类型 Badge 胶囊列 -->
+                            <DataGridTemplateColumn Header="类型" Width="76">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <ContentControl Content="{Binding}" ContentTemplate="{StaticResource FieldTypeBadgeTemplate}" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+
+                            <!-- 字段必填属性 Badge 胶囊列 -->
+                            <DataGridTemplateColumn Header="必填" Width="70">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <ContentControl Content="{Binding}" ContentTemplate="{StaticResource FieldRequiredBadgeTemplate}" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
                             <DataGridTextColumn Header="校验规则" Binding="{Binding ValidationRuleSummary}" Width="160" />
                             <DataGridTextColumn Header="备注" Binding="{Binding Remark}" Width="*" MinWidth="140" />
                         </DataGrid.Columns>
