@@ -1,4 +1,4 @@
-﻿using SqlSugar;
+using SqlSugar;
 
 namespace LabelPrintClient.Modules.PrintCenter.Models;
 
@@ -32,6 +32,9 @@ public class LabelImportBatch
 
     [SugarColumn(Length = 100, IsNullable = true)]
     public string? OperatorName { get; set; }
+
+    [SugarColumn(Length = 100, IsNullable = true)]
+    public string? BatchNo { get; set; }
 
     public DateTime ImportTime { get; set; } = DateTime.Now;
 

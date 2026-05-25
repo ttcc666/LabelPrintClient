@@ -165,9 +165,21 @@
                             <TextBlock Text="删除" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
+                    <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="UploadTemplate_Click" Margin="0,0,8,8">
+                        <StackPanel Orientation="Horizontal">
+                            <iconPacks:PackIconMaterial Kind="CloudUploadOutline" Margin="0,0,6,0" VerticalAlignment="Center" />
+                            <TextBlock Text="上传 .mrt" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="DesignTemplate_Click" Margin="0,0,8,8">
+                        <StackPanel Orientation="Horizontal">
+                            <iconPacks:PackIconMaterial Kind="PaletteOutline" Margin="0,0,6,0" VerticalAlignment="Center" />
+                            <TextBlock Text="设计器" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
                 </WrapPanel>
 
-                <!-- 模板搜索与设计 -->
+                <!-- 模板搜索过滤 -->
                 <WrapPanel Margin="0,0,0,2">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,8,8">
                         <TextBlock Style="{StaticResource AppFormLabelStyle}" Text="关键词" />
@@ -183,18 +195,6 @@
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="FilterRemoveOutline" Margin="0,0,6,0" VerticalAlignment="Center" />
                             <TextBlock Text="清空" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Button>
-                    <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="UploadTemplate_Click" Margin="0,0,8,8">
-                        <StackPanel Orientation="Horizontal">
-                            <iconPacks:PackIconMaterial Kind="CloudUploadOutline" Margin="0,0,6,0" VerticalAlignment="Center" />
-                            <TextBlock Text="上传 .mrt" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Button>
-                    <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="DesignTemplate_Click" Margin="0,0,8,8">
-                        <StackPanel Orientation="Horizontal">
-                            <iconPacks:PackIconMaterial Kind="PaletteOutline" Margin="0,0,6,0" VerticalAlignment="Center" />
-                            <TextBlock Text="设计器" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
                 </WrapPanel>

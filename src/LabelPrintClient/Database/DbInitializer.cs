@@ -17,5 +17,6 @@ public static class DbInitializer
         AppDb.Db.CodeFirst.InitTables<LabelImportRow>();
         AppDb.Db.CodeFirst.InitTables<LabelPrintJob>();
         AppDb.Db.CodeFirst.InitTables<LabelPrintJobRow>();
+        AppDb.Db.CodeFirst.InitTables<LabelSerialCounter>();
     }
 }

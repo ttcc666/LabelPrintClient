@@ -15,13 +15,14 @@ public class LabelImportService
         string? operatorName,
         CancellationToken cancellationToken = default)
     {
-        var preview = await PreviewExcelAsync(templateId, excelPath, cancellationToken).ConfigureAwait(false);
-        return await CommitImportAsync(preview, operatorName, cancellationToken).ConfigureAwait(false);
+        var preview = await PreviewExcelAsync(templateId, excelPath, null, cancellationToken).ConfigureAwait(false);
+        return await CommitImportAsync(preview, null, operatorName, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<ImportPreviewResult> PreviewExcelAsync(
         long templateId,
         string excelPath,
+        string? batchNo = null,
         CancellationToken cancellationToken = default)
     {
         var templates = await AppDb.Db.Queryable<LabelTemplate>()
@@ -41,7 +42,11 @@ public class LabelImportService
         if (fields.Count == 0)
             throw new InvalidOperationException("当前模板没有维护字段，不能导入 Excel。");
 
-        var drafts = await ExcelReader.ReadRowsAsync(excelPath, fields, cancellationToken).ConfigureAwait(false);
+        var importFields = fields
+            .Where(x => !IsSystemField(x.FieldCode))
+            .ToList();
+
+        var drafts = await ExcelReader.ReadRowsAsync(excelPath, importFields, cancellationToken).ConfigureAwait(false);
         if (drafts.Count == 0)
             throw new InvalidOperationException("Excel 中没有可导入的数据行。");
 
@@ -61,6 +66,7 @@ public class LabelImportService
 
     public async Task<long> CommitImportAsync(
         ImportPreviewResult preview,
+        string? batchNo,
         string? operatorName,
         CancellationToken cancellationToken = default)
     {
@@ -78,7 +84,7 @@ public class LabelImportService
             Name = preview.TemplateName,
             Version = preview.TemplateVersion
         };
-        var batch = BuildBatch(template, preview.ExcelPath, preview.ExcelFileHash, preview.Rows, operatorName);
+        var batch = BuildBatch(template, preview.ExcelPath, preview.ExcelFileHash, preview.Rows, operatorName, batchNo);
         var rows = BuildRows(preview.TemplateId, batch.Id, preview.Rows);
 
         await AppDb.UseTranAsync(async () =>
@@ -95,7 +101,8 @@ public class LabelImportService
         string excelPath,
         string? fileHash,
         IReadOnlyList<ImportRowDraft> drafts,
-        string? operatorName)
+        string? operatorName,
+        string? batchNo)
     {
         return new LabelImportBatch
         {
@@ -110,6 +117,7 @@ public class LabelImportService
             InvalidRows = drafts.Count(x => !x.IsValid),
             Status = drafts.Any(x => !x.IsValid) ? "PartError" : "Imported",
             OperatorName = operatorName,
+            BatchNo = batchNo,
             ImportTime = DateTime.Now
         };
     }
@@ -129,5 +137,11 @@ public class LabelImportService
             PrintCount = 0,
             CreateTime = DateTime.Now
         }).ToList();
+    }
+
+    private static bool IsSystemField(string fieldCode)
+    {
+        return string.Equals(fieldCode, "batch_no", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(fieldCode, "serial_no", StringComparison.OrdinalIgnoreCase);
     }
 }

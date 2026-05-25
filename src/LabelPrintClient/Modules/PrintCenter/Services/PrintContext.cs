@@ -6,6 +6,7 @@ namespace LabelPrintClient.Modules.PrintCenter.Services;
 
 public record PrintContext(
     LabelTemplate Template,
+    LabelImportBatch Batch,
     List<LabelTemplateField> Fields,
     List<LabelImportRow> Rows,
     DataTable DataTable);

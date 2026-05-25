@@ -83,12 +83,6 @@ public partial class ImportPreviewWindow : Window
         var centerHeaderStyle = FindAppStyle("AppDataGridCenterColumnHeaderStyle");
         var readOnlyCheckBoxStyle = FindAppStyle("AppDataGridReadOnlyCheckBoxStyle");
 
-        PreviewGrid.Columns.Add(new DataGridTextColumn
-        {
-            Header = "Excel行号",
-            Binding = new System.Windows.Data.Binding(nameof(ImportPreviewRowGridItem.RowIndex)),
-            Width = 100
-        });
         PreviewGrid.Columns.Add(new DataGridCheckBoxColumn
         {
             Header = "是否有效",
@@ -99,7 +93,7 @@ public partial class ImportPreviewWindow : Window
             Width = 90
         });
 
-        foreach (var field in fields)
+        foreach (var field in fields.Where(x => !IsSystemField(x.FieldCode)))
         {
             PreviewGrid.Columns.Add(new DataGridTextColumn
             {
@@ -131,6 +125,12 @@ public partial class ImportPreviewWindow : Window
         style.Setters.Add(new Setter(TextBlock.VerticalAlignmentProperty, VerticalAlignment.Center));
         style.Setters.Add(new Setter(FrameworkElement.MarginProperty, new Thickness(0, 4, 0, 4)));
         return style;
+    }
+
+    private static bool IsSystemField(string fieldCode)
+    {
+        return string.Equals(fieldCode, "batch_no", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(fieldCode, "serial_no", StringComparison.OrdinalIgnoreCase);
     }
 
     private async Task ApplyFilterAsync()

@@ -34,36 +34,29 @@ public class LabelPrintService
         copyCount = ValidateCopyCount(copyCount);
         var context = await BuildPrintContextAsync(templateId, batchId, selectedRowIds, 1, cancellationToken)
             .ConfigureAwait(false);
+        var previewRows = await BuildPreviewJobRowsAsync(context, copyCount, cancellationToken)
+            .ConfigureAwait(false);
+
         await StaThreadRunner.RunAsync(() =>
         {
             StiReport? mainReport = null;
 
-            foreach (var row in context.Rows)
+            foreach (var jobRow in previewRows)
             {
                 cancellationToken.ThrowIfCancellationRequested();
+                var dataTable = BuildDataTableFromJobRow(context.Template.DataSourceName, context.Fields, jobRow);
+                var tempReport = BuildRenderedReport(context.Template, dataTable);
 
-                for (var copyIndex = 0; copyIndex < copyCount; copyIndex++)
+                if (mainReport == null)
                 {
-                    cancellationToken.ThrowIfCancellationRequested();
-
-                    var dataTable = DataTableBuilder.Build(
-                        new[] { row },
-                        context.Fields,
-                        context.Template.DataSourceName);
-
-                    var tempReport = BuildRenderedReport(context.Template, dataTable);
-
-                    if (mainReport == null)
+                    mainReport = tempReport;
+                }
+                else
+                {
+                    foreach (StiPage page in tempReport.RenderedPages)
                     {
-                        mainReport = tempReport;
-                    }
-                    else
-                    {
-                        foreach (StiPage page in tempReport.RenderedPages)
-                        {
-                            page.Report = mainReport;
-                            mainReport.RenderedPages.Add(page);
-                        }
+                        page.Report = mainReport;
+                        mainReport.RenderedPages.Add(page);
                     }
                 }
             }
@@ -89,17 +82,20 @@ public class LabelPrintService
             .ConfigureAwait(false);
 
         var printJob = BuildPrintJob(context.Template, batchId, context.Rows.Count * copyCount, printerName, _settings.OperatorName);
-        var jobRows = BuildPrintJobRows(printJob.Id, context.Rows, copyCount);
+        List<LabelPrintJobRow> jobRows = new();
 
         await ExecuteTransactionAsync(async () =>
         {
+            jobRows = await BuildPrintJobRowsAsync(printJob.Id, context.Template, context.Batch, context.Rows, copyCount, cancellationToken)
+                .ConfigureAwait(false);
+
             await AppDb.Db.Insertable(printJob).ExecuteCommandAsync().ConfigureAwait(false);
             await AppDb.Db.Insertable(jobRows).ExecuteCommandAsync().ConfigureAwait(false);
         }).ConfigureAwait(false);
 
         try
         {
-            await Task.Run(() => PrintLabels(context, printerName, copyCount, cancellationToken, progress), cancellationToken)
+            await Task.Run(() => PrintJobRows(context.Template, context.Fields, jobRows, printerName, cancellationToken, progress, "开始提交打印任务"), cancellationToken)
                 .ConfigureAwait(false);
             await MarkPrintedAsync(printJob, context.Rows, copyCount).ConfigureAwait(false);
         }
@@ -126,22 +122,47 @@ public class LabelPrintService
             .ToListAsync()
             .ConfigureAwait(false);
 
-        var rowIds = rows
-            .Select(x => x.ImportRowId)
-            .Distinct()
-            .ToList();
-
-        if (rowIds.Count == 0)
+        if (rows.Count == 0)
             throw new InvalidOperationException("当前打印任务没有可重打印的明细。");
 
-        await PrintSelectedRowsAsync(
-            job.TemplateId,
-            job.BatchId,
-            rowIds,
-            printerName,
-            copyCount,
-            cancellationToken,
-            progress).ConfigureAwait(false);
+        var expandedRows = rows
+            .SelectMany(row => Enumerable.Range(0, ValidateCopyCount(copyCount)).Select(_ => row))
+            .ToList();
+        await PrintHistoryRowsAsync(job.TemplateId, expandedRows, printerName, cancellationToken, progress)
+            .ConfigureAwait(false);
+    }
+
+    public async Task RetryFailedJobAsync(
+        long printJobId,
+        string? printerName,
+        CancellationToken cancellationToken = default,
+        IProgress<BackgroundTaskProgress>? progress = null)
+    {
+        var job = await LoadPrintJobAsync(printJobId).ConfigureAwait(false);
+        if (!string.Equals(job.Status, "Failed", StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("只有失败的打印任务可以失败重试。");
+
+        var jobRows = await AppDb.Db.Queryable<LabelPrintJobRow>()
+            .Where(x => x.PrintJobId == printJobId)
+            .OrderBy(x => x.RowIndex)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+        if (jobRows.Count == 0)
+            throw new InvalidOperationException("当前失败任务没有可重试的打印明细。");
+
+        try
+        {
+            await PrintHistoryRowsAsync(job.TemplateId, jobRows, printerName, cancellationToken, progress)
+                .ConfigureAwait(false);
+            await MarkRetryPrintedAsync(job, jobRows).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            job.Status = "Failed";
+            job.ErrorMessage = ex.Message;
+            await AppDb.Db.Updateable(job).ExecuteCommandAsync().ConfigureAwait(false);
+            throw;
+        }
     }
 
     public async Task ReprintJobRowAsync(
@@ -160,14 +181,8 @@ public class LabelPrintService
             ?? throw new InvalidOperationException("打印明细不存在。");
 
         var job = await LoadPrintJobAsync(jobRow.PrintJobId).ConfigureAwait(false);
-        await PrintSelectedRowsAsync(
-            job.TemplateId,
-            job.BatchId,
-            new[] { jobRow.ImportRowId },
-            printerName,
-            copyCount,
-            cancellationToken,
-            progress).ConfigureAwait(false);
+        var rows = Enumerable.Range(0, ValidateCopyCount(copyCount)).Select(_ => jobRow).ToList();
+        await PrintHistoryRowsAsync(job.TemplateId, rows, printerName, cancellationToken, progress).ConfigureAwait(false);
     }
 
     private async Task<PrintContext> BuildPrintContextAsync(
@@ -188,6 +203,14 @@ public class LabelPrintService
         var template = templates.FirstOrDefault()
             ?? throw new InvalidOperationException("模板不存在。");
 
+        var batches = await AppDb.Db.Queryable<LabelImportBatch>()
+            .Where(x => x.Id == batchId)
+            .Take(1)
+            .ToListAsync()
+            .ConfigureAwait(false);
+        var batch = batches.FirstOrDefault()
+            ?? throw new InvalidOperationException("导入批次不存在。");
+
         var fields = await AppDb.Db.Queryable<LabelTemplateField>()
             .Where(x => x.TemplateId == templateId && !x.IsDeleted)
             .OrderBy(x => x.Sort)
@@ -207,41 +230,34 @@ public class LabelPrintService
             throw new InvalidOperationException("选中的数据中没有有效行，无法打印。");
 
         var dataTable = DataTableBuilder.Build(rows, fields, template.DataSourceName, copyCount);
-        return new PrintContext(template, fields, rows, dataTable);
+        return new PrintContext(template, batch, fields, rows, dataTable);
     }
 
-    private void PrintLabels(
-        PrintContext context,
+    private void PrintJobRows(
+        LabelTemplate template,
+        IReadOnlyList<LabelTemplateField> fields,
+        IReadOnlyList<LabelPrintJobRow> jobRows,
         string? printerName,
-        int copyCount,
         CancellationToken cancellationToken,
-        IProgress<BackgroundTaskProgress>? progress)
+        IProgress<BackgroundTaskProgress>? progress,
+        string startMessage)
     {
         var settings = CreatePrinterSettings(printerName);
-        var total = context.Rows.Count * copyCount;
+        var total = jobRows.Count;
         var completed = 0;
         var progressReportInterval = Math.Max(1, (int)Math.Ceiling(total / 100.0));
-        progress?.Report(new BackgroundTaskProgress(completed, total, "开始提交打印任务"));
+        progress?.Report(new BackgroundTaskProgress(completed, total, startMessage));
 
-        foreach (var row in context.Rows)
+        foreach (var jobRow in jobRows)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            for (var copyIndex = 0; copyIndex < copyCount; copyIndex++)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-
-                var dataTable = DataTableBuilder.Build(
-                    new[] { row },
-                    context.Fields,
-                    context.Template.DataSourceName);
-
-                var report = BuildRenderedReport(context.Template, dataTable);
-                report.Print(false, settings);
-                completed++;
-                if (ShouldReportProgress(completed, total, progressReportInterval))
-                    progress?.Report(new BackgroundTaskProgress(completed, total, $"已提交 Excel 第 {row.RowIndex} 行"));
-            }
+            var dataTable = BuildDataTableFromJobRow(template.DataSourceName, fields, jobRow);
+            var report = BuildRenderedReport(template, dataTable);
+            report.Print(false, settings);
+            completed++;
+            if (ShouldReportProgress(completed, total, progressReportInterval))
+                progress?.Report(new BackgroundTaskProgress(completed, total, "已提交打印明细"));
         }
     }
 
@@ -286,18 +302,111 @@ public class LabelPrintService
         };
     }
 
-    private static List<LabelPrintJobRow> BuildPrintJobRows(long printJobId, IEnumerable<LabelImportRow> rows, int copyCount)
+    private static async Task<List<LabelPrintJobRow>> BuildPrintJobRowsAsync(
+        long printJobId,
+        LabelTemplate template,
+        LabelImportBatch batch,
+        IEnumerable<LabelImportRow> rows,
+        int copyCount,
+        CancellationToken cancellationToken)
     {
-        return rows
-            .SelectMany(row => Enumerable.Range(0, copyCount).Select(_ => new LabelPrintJobRow
+        var jobRows = new List<LabelPrintJobRow>();
+        var now = DateTime.Now;
+        foreach (var row in rows)
+        {
+            for (var copyIndex = 0; copyIndex < copyCount; copyIndex++)
             {
-                Id = IdHelper.NewId(),
-                PrintJobId = printJobId,
-                ImportRowId = row.Id,
-                RowIndex = row.RowIndex,
-                RowDataJson = row.RowDataJson
-            }))
-            .ToList();
+                var rowDataJson = row.RowDataJson;
+                if (template.IsSerialNumber == true)
+                {
+                    var serialNo = await SerialNumberService.GenerateNextAsync(template, row, now, cancellationToken)
+                        .ConfigureAwait(false);
+                    var dict = JsonHelper.Deserialize<Dictionary<string, string>>(row.RowDataJson) ?? new Dictionary<string, string>();
+                    dict["serial_no"] = serialNo;
+                    rowDataJson = JsonHelper.Serialize(dict);
+                }
+                else if (!string.IsNullOrWhiteSpace(batch.BatchNo))
+                {
+                    var dict = JsonHelper.Deserialize<Dictionary<string, string>>(row.RowDataJson) ?? new Dictionary<string, string>();
+                    dict["batch_no"] = batch.BatchNo;
+                    rowDataJson = JsonHelper.Serialize(dict);
+                }
+
+                jobRows.Add(new LabelPrintJobRow
+                {
+                    Id = IdHelper.NewId(),
+                    PrintJobId = printJobId,
+                    ImportRowId = row.Id,
+                    RowIndex = row.RowIndex,
+                    RowDataJson = rowDataJson
+                });
+            }
+        }
+        return jobRows;
+    }
+
+    private static async Task<List<LabelPrintJobRow>> BuildPreviewJobRowsAsync(
+        PrintContext context,
+        int copyCount,
+        CancellationToken cancellationToken)
+    {
+        var jobRows = new List<LabelPrintJobRow>();
+        var now = DateTime.Now;
+        foreach (var row in context.Rows)
+        {
+            var currentSerial = context.Template.IsSerialNumber == true
+                ? await SerialNumberService.GetCurrentValueAsync(context.Template, row, now, cancellationToken).ConfigureAwait(false)
+                : 0;
+            for (var copyIndex = 0; copyIndex < copyCount; copyIndex++)
+            {
+                var rowDataJson = row.RowDataJson;
+                if (context.Template.IsSerialNumber == true)
+                {
+                    var pattern = SerialNumberService.NormalizePattern(context.Template.SerialNumberPattern, context.Template.SerialNumberPrefix);
+                    var dict = JsonHelper.Deserialize<Dictionary<string, string>>(row.RowDataJson) ?? new Dictionary<string, string>();
+                    dict["serial_no"] = SerialNumberService.Preview(pattern, now, ++currentSerial);
+                    rowDataJson = JsonHelper.Serialize(dict);
+                }
+                else if (!string.IsNullOrWhiteSpace(context.Batch.BatchNo))
+                {
+                    var dict = JsonHelper.Deserialize<Dictionary<string, string>>(row.RowDataJson) ?? new Dictionary<string, string>();
+                    dict["batch_no"] = context.Batch.BatchNo;
+                    rowDataJson = JsonHelper.Serialize(dict);
+                }
+
+                jobRows.Add(new LabelPrintJobRow
+                {
+                    Id = IdHelper.NewId(),
+                    PrintJobId = 0,
+                    ImportRowId = row.Id,
+                    RowIndex = row.RowIndex,
+                    RowDataJson = rowDataJson
+                });
+            }
+        }
+        return jobRows;
+    }
+
+    private static DataTable BuildDataTableFromJobRow(
+        string dataSourceName,
+        IReadOnlyList<LabelTemplateField> fields,
+        LabelPrintJobRow jobRow)
+    {
+        var dict = JsonHelper.Deserialize<Dictionary<string, string>>(jobRow.RowDataJson) ?? new Dictionary<string, string>();
+        var table = new DataTable(dataSourceName);
+        foreach (var field in fields)
+        {
+            if (!table.Columns.Contains(field.FieldCode))
+                table.Columns.Add(field.FieldCode, typeof(string));
+        }
+
+        var dataRow = table.NewRow();
+        foreach (var field in fields)
+        {
+            dataRow[field.FieldCode] = dict.TryGetValue(field.FieldCode, out var value) ? value : string.Empty;
+        }
+        table.Rows.Add(dataRow);
+        return table;
     }
 
     private static PrinterSettings CreatePrinterSettings(string? printerName)
@@ -353,6 +462,78 @@ public class LabelPrintService
             await AppDb.Db.Updateable(printJob).ExecuteCommandAsync().ConfigureAwait(false);
             await AppDb.Db.Updateable(rows).ExecuteCommandAsync().ConfigureAwait(false);
         }).ConfigureAwait(false);
+    }
+
+    private static async Task MarkRetryPrintedAsync(LabelPrintJob printJob, IReadOnlyList<LabelPrintJobRow> jobRows)
+    {
+        var rowCounts = jobRows
+            .GroupBy(x => x.ImportRowId)
+            .ToDictionary(x => x.Key, x => x.Count());
+        var rowIds = rowCounts.Keys.ToList();
+        var rows = await AppDb.Db.Queryable<LabelImportRow>()
+            .Where(x => rowIds.Contains(x.Id))
+            .ToListAsync()
+            .ConfigureAwait(false);
+
+        foreach (var row in rows)
+        {
+            row.IsPrinted = true;
+            row.PrintCount += rowCounts.TryGetValue(row.Id, out var count) ? count : 0;
+            row.LastPrintTime = DateTime.Now;
+        }
+
+        printJob.Status = "Printed";
+        printJob.PrintTime = DateTime.Now;
+        printJob.ErrorMessage = null;
+
+        await ExecuteTransactionAsync(async () =>
+        {
+            await AppDb.Db.Updateable(printJob).ExecuteCommandAsync().ConfigureAwait(false);
+            if (rows.Count > 0)
+                await AppDb.Db.Updateable(rows).ExecuteCommandAsync().ConfigureAwait(false);
+        }).ConfigureAwait(false);
+    }
+
+    public async Task PrintHistoryRowsAsync(
+        long templateId,
+        List<LabelPrintJobRow> jobRows,
+        string? printerName,
+        CancellationToken cancellationToken = default,
+        IProgress<BackgroundTaskProgress>? progress = null)
+    {
+        var templates = await AppDb.Db.Queryable<LabelTemplate>()
+            .Where(x => x.Id == templateId)
+            .Take(1)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+        var template = templates.FirstOrDefault()
+            ?? throw new InvalidOperationException("模板不存在。");
+
+        var fields = await AppDb.Db.Queryable<LabelTemplateField>()
+            .Where(x => x.TemplateId == templateId && !x.IsDeleted)
+            .OrderBy(x => x.Sort)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        var settings = CreatePrinterSettings(printerName);
+        var total = jobRows.Count;
+        var completed = 0;
+        progress?.Report(new BackgroundTaskProgress(completed, total, "开始提交历史重打任务"));
+
+        await Task.Run(() =>
+        {
+            foreach (var jobRow in jobRows)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                var table = BuildDataTableFromJobRow(template.DataSourceName, fields, jobRow);
+                var report = BuildRenderedReport(template, table);
+                report.Print(false, settings);
+
+                completed++;
+                progress?.Report(new BackgroundTaskProgress(completed, total, "已提交历史重打明细"));
+            }
+        }, cancellationToken).ConfigureAwait(false);
     }
 
     private static async Task ExecuteTransactionAsync(Func<Task> operation)

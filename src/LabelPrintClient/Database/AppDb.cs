@@ -10,6 +10,8 @@ public static class AppDb
 
     private static SqlSugarScope _scope = null!;
 
+    public static DbType CurrentDbType { get; private set; }
+
     public static SqlSugarClient Db => CurrentTransactionClient.Value ?? _scope.CopyNew();
 
     public static void Init(AppSettings settings)
@@ -17,6 +19,7 @@ public static class AppDb
         var dbType = settings.RunMode == AppRunMode.LocalSqlite
             ? DbType.Sqlite
             : DbType.PostgreSQL;
+        CurrentDbType = dbType;
 
         var connectionString = settings.RunMode == AppRunMode.LocalSqlite
             ? NormalizeSqliteConnection(settings.SqliteConnection)

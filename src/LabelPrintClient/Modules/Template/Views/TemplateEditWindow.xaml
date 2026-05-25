@@ -4,8 +4,8 @@
         xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
         xmlns:hc="https://handyorg.github.io/handycontrol"
         Title="模板维护"
-        Width="420"
-        Height="320"
+        Width="520"
+        Height="500"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
         Background="{DynamicResource SecondaryRegionBrush}" Foreground="{DynamicResource PrimaryTextBrush}">
@@ -32,6 +32,39 @@
                     <ComboBoxItem Content="本地物理文件 (LocalFile)" Tag="LocalFile" />
                     <ComboBoxItem Content="数据库存储 (Database)" Tag="Database" />
                 </ComboBox>
+            </StackPanel>
+
+            <StackPanel Margin="0,0,0,12">
+                <CheckBox x:Name="IsSerialNumberBox" Content="序列号控制" IsChecked="False" VerticalAlignment="Center" Margin="0,0,0,8" Checked="SerialRule_Changed" Unchecked="SerialRule_Changed" />
+                <Grid IsEnabled="{Binding IsChecked, ElementName=IsSerialNumberBox}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="80" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Row="0" Grid.Column="0" Text="规则" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                    <TextBox x:Name="SerialNumberPatternBox" Grid.Row="0" Grid.Column="1" Text="SN-{seq:0000}" MaxLength="200" TextChanged="SerialRule_Changed" />
+
+                    <TextBlock Grid.Row="1" Grid.Column="0" Text="重置周期" VerticalAlignment="Center" Margin="0,8,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                    <ComboBox x:Name="SerialResetPeriodBox" Grid.Row="1" Grid.Column="1" Margin="0,8,0,0" SelectedIndex="0" SelectionChanged="SerialRule_Changed">
+                        <ComboBoxItem Content="永不" Tag="Never" />
+                        <ComboBoxItem Content="每天" Tag="Daily" />
+                        <ComboBoxItem Content="每月" Tag="Monthly" />
+                        <ComboBoxItem Content="每年" Tag="Yearly" />
+                    </ComboBox>
+
+                    <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,8,0,0">
+                        <TextBlock Text="示例：SN-{yyyy}{MM}{dd}-{seq:0000}，变量：{yyyy} {yy} {MM} {dd} {HH} {mm} {seq:0000}"
+                                   TextWrapping="Wrap"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                        <TextBlock x:Name="SerialPreviewText" Margin="0,4,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="预览：SN-0001" />
+                    </StackPanel>
+                </Grid>
             </StackPanel>
 
             <CheckBox x:Name="IsEnabledBox" Content="启用该模板" IsChecked="True" VerticalAlignment="Center" />

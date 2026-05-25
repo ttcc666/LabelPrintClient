@@ -328,13 +328,29 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
 
     private async void ImportExcel_Click(object sender, RoutedEventArgs e)
     {
-        if (SelectedTemplate == null)
+        var template = SelectedTemplate;
+        if (template == null)
         {
             AppMessageBox.Show("请先选择模板。");
             return;
         }
 
-        var templateId = SelectedTemplate.Id;
+        var templateId = template.Id;
+        string? batchNo = null;
+        if (template.IsSerialNumber != true)
+        {
+            var batchWin = new BatchNoInputWindow
+            {
+                Owner = Window.GetWindow(this)
+            };
+            if (batchWin.ShowDialog() != true)
+            {
+                SummaryText.Text = "已取消导入，未指定批号。";
+                return;
+            }
+            batchNo = batchWin.BatchNo;
+        }
+
         var dialog = new Microsoft.Win32.OpenFileDialog
         {
             Filter = "Excel 文件|*.xlsx;*.xlsm|所有文件|*.*"
@@ -345,7 +361,7 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         {
             var service = new LabelImportService();
             var preview = await RunQueuedAsync(sender, BackgroundTaskKind.Import, "正在读取 Excel 数据...", context =>
-                service.PreviewExcelAsync(templateId, dialog.FileName, context.CancellationToken));
+                service.PreviewExcelAsync(templateId, dialog.FileName, batchNo, context.CancellationToken));
 
             var previewWindow = new ImportPreviewWindow(preview)
             {
@@ -359,7 +375,7 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
             }
 
             var batchId = await RunQueuedAsync(sender, BackgroundTaskKind.Import, "正在提交导入数据...", context =>
-                service.CommitImportAsync(preview, App.Settings.OperatorName, context.CancellationToken));
+                service.CommitImportAsync(preview, batchNo, App.Settings.OperatorName, context.CancellationToken));
 
             if (SelectedTemplate?.Id == templateId)
             {
@@ -487,7 +503,7 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
                 PrintCount = x.PrintCount,
                 ErrorMessage = x.ErrorMessage,
                 IsSelected = false,
-                Data = GridRowDataHelper.Deserialize(x.RowDataJson, fields)
+                Data = GridRowDataHelper.Deserialize(x.RowDataJson, fields.Where(f => !IsSystemField(f.FieldCode)))
             }).ToList(), token);
 
             BuildRowGridColumnsIfNeeded(fields);
@@ -529,7 +545,6 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
             HeaderStyle = centerHeaderStyle,
             Width = 70
         });
-        RowGrid.Columns.Add(new DataGridTextColumn { Header = "Excel行号", Binding = new System.Windows.Data.Binding(nameof(ImportRowGridItem.RowIndex)), Width = 100, IsReadOnly = true });
         RowGrid.Columns.Add(new DataGridTemplateColumn
         {
             Header = "是否有效",
@@ -550,7 +565,7 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         });
         RowGrid.Columns.Add(new DataGridTextColumn { Header = "打印次数", Binding = new System.Windows.Data.Binding(nameof(ImportRowGridItem.PrintCount)), Width = 90, IsReadOnly = true });
 
-        foreach (var field in fields)
+        foreach (var field in fields.Where(x => !IsSystemField(x.FieldCode)))
         {
             RowGrid.Columns.Add(new DataGridTextColumn
             {
@@ -616,7 +631,13 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
 
     private static string BuildFieldSignature(IEnumerable<LabelTemplateField> fields)
     {
-        return string.Join("|", fields.Select(x => $"{x.Id}:{x.Sort}:{x.FieldCode}:{x.FieldName}"));
+        return string.Join("|", fields.Where(x => !IsSystemField(x.FieldCode)).Select(x => $"{x.Id}:{x.Sort}:{x.FieldCode}:{x.FieldName}"));
+    }
+
+    private static bool IsSystemField(string fieldCode)
+    {
+        return string.Equals(fieldCode, "batch_no", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(fieldCode, "serial_no", StringComparison.OrdinalIgnoreCase);
     }
 
     private DataTemplate BuildRowActionTemplate()
@@ -629,7 +650,19 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         previewButton.SetValue(FrameworkElement.MarginProperty, new Thickness(0, 0, 6, 0));
         panel.AppendChild(previewButton);
 
-        panel.AppendChild(BuildRowActionButton("打印", MahApps.Metro.IconPacks.PackIconMaterialKind.Printer, PrintRow_Click, true));
+        var printButton = BuildRowActionButton("打印", MahApps.Metro.IconPacks.PackIconMaterialKind.Printer, PrintRow_Click, true);
+        printButton.SetValue(FrameworkElement.MarginProperty, new Thickness(0, 0, 6, 0));
+        panel.AppendChild(printButton);
+
+        var reprintButton = new FrameworkElementFactory(typeof(System.Windows.Controls.Button));
+        reprintButton.SetValue(System.Windows.FrameworkElement.HeightProperty, 28.0);
+        reprintButton.SetValue(System.Windows.FrameworkElement.StyleProperty, System.Windows.Application.Current.FindResource("AppSecondaryButtonStyle"));
+        reprintButton.SetBinding(System.Windows.UIElement.IsEnabledProperty, new System.Windows.Data.Binding(nameof(ImportRowGridItem.IsPrinted)));
+        reprintButton.AddHandler(System.Windows.Controls.Primitives.ButtonBase.ClickEvent, new System.Windows.RoutedEventHandler(ReprintRow_Click));
+
+        var reprintPanel = BuildButtonContent("补打", MahApps.Metro.IconPacks.PackIconMaterialKind.PrinterAlert);
+        reprintButton.AppendChild(reprintPanel);
+        panel.AppendChild(reprintButton);
 
         return new DataTemplate
         {
@@ -909,7 +942,7 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
             return;
 
         if (App.Settings.ConfirmBeforePrint &&
-            AppMessageBox.Show($"确定打印 Excel 第 {row.RowIndex} 行数据，{printCopies} 张？", "确认打印", MessageBoxButton.YesNo) != MessageBoxResult.Yes)
+            AppMessageBox.Show($"确定打印当前行数据，{printCopies} 张？", "确认打印", MessageBoxButton.YesNo) != MessageBoxResult.Yes)
             return;
 
         try
@@ -929,6 +962,84 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         catch (Exception ex)
         {
             AppMessageBox.Show($"打印失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private async void ReprintRow_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { DataContext: ImportRowGridItem rowItem })
+            return;
+
+        var template = SelectedTemplate;
+        var batch = SelectedBatch;
+        if (template == null || batch == null)
+        {
+            AppMessageBox.Show("请先选择模板和导入批次。");
+            return;
+        }
+
+        if (!EnsureBatchCanPrint(batch))
+            return;
+
+        var parentWindow = Window.GetWindow(this);
+        var reprintWin = new RowReprintWindow(template, batch, rowItem)
+        {
+            Owner = parentWindow
+        };
+
+        if (reprintWin.ShowDialog() == true)
+        {
+            var printerName = reprintWin.SelectedPrinterName;
+            var printCopies = reprintWin.PrintCopies;
+
+            try
+            {
+                if (template.IsSerialNumber == true)
+                {
+                    // 序列号模板：物理原号补打
+                    var targetRows = reprintWin.SelectedJobRows;
+                    if (targetRows == null || targetRows.Count == 0)
+                        return;
+
+                    // 根据份数进行外部数据复制扩增
+                    var expandedRows = new List<LabelPrintJobRow>();
+                    foreach (var r in targetRows)
+                    {
+                        for (var i = 0; i < printCopies; i++)
+                        {
+                            expandedRows.Add(r);
+                        }
+                    }
+
+                    await RunQueuedAsync(sender, BackgroundTaskKind.Print, "正在物理原号补打序列号...", context =>
+                        new LabelPrintService(App.Settings).PrintHistoryRowsAsync(
+                            template.Id,
+                            expandedRows,
+                            printerName,
+                            context.CancellationToken,
+                            context.Progress));
+                }
+                else
+                {
+                    // 批次模板：一比一复制重印
+                    await RunQueuedAsync(sender, BackgroundTaskKind.Print, "正在重印当前行...", context =>
+                        new LabelPrintService(App.Settings).PrintSelectedRowsAsync(
+                            template.Id,
+                            batch.Id,
+                            new[] { rowItem.Id },
+                            printerName,
+                            printCopies,
+                            context.CancellationToken,
+                            context.Progress));
+                }
+
+                AppMessageBox.Show("补打任务已完成。");
+                await LoadRowsAsync();
+            }
+            catch (Exception ex)
+            {
+                AppMessageBox.Show($"补打失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
     }
 

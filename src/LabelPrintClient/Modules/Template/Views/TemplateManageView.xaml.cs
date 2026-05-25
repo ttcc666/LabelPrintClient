@@ -1,4 +1,5 @@
 using System.IO;
+using System.Data;
 using System.Windows;
 using System.Windows.Controls;
 using LabelPrintClient.Config;
@@ -9,6 +10,7 @@ using LabelPrintClient.Modules.Template.Models;
 using LabelPrintClient.Modules.Template.Services;
 using LabelPrintClient.Services;
 using SqlSugar;
+using Stimulsoft.Report;
 
 namespace LabelPrintClient.Modules.Template.Views;
 
@@ -374,7 +376,33 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
             template.TemplatePath = BuildLocalTemplatePath(template.Id);
         }
 
-        await AppDb.Db.Insertable(template).ExecuteCommandAsync();
+        await AppDb.UseTranAsync(async () =>
+        {
+            await AppDb.Db.Insertable(template).ExecuteCommandAsync();
+
+            var defaultField = new LabelTemplateField
+            {
+                Id = IdHelper.NewId(),
+                TemplateId = template.Id,
+                Sort = 10,
+                IsRequired = true,
+                Remark = "系统自动生成的默认控制列，禁止修改与删除"
+            };
+            if (template.IsSerialNumber == true)
+            {
+                defaultField.FieldName = "序列号";
+                defaultField.FieldCode = "serial_no";
+                defaultField.FieldType = "string";
+            }
+            else
+            {
+                defaultField.FieldName = "批次";
+                defaultField.FieldCode = "batch_no";
+                defaultField.FieldType = "string";
+            }
+            await AppDb.Db.Insertable(defaultField).ExecuteCommandAsync();
+        });
+
         _templateCurrentPage = 1;
         await LoadTemplatesAsync();
     }
@@ -415,7 +443,31 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
             edited.TemplatePath = null;
         }
 
-        await AppDb.Db.Updateable(edited).ExecuteCommandAsync();
+        await AppDb.UseTranAsync(async () =>
+        {
+            await AppDb.Db.Updateable(edited).ExecuteCommandAsync();
+
+            if ((template.IsSerialNumber == true) != (edited.IsSerialNumber == true))
+            {
+                if (edited.IsSerialNumber == true)
+                {
+                    await AppDb.Db.Updateable<LabelTemplateField>()
+                        .SetColumns(x => x.FieldCode == "serial_no")
+                        .SetColumns(x => x.FieldName == "序列号")
+                        .Where(x => x.TemplateId == edited.Id && x.FieldCode == "batch_no" && !x.IsDeleted)
+                        .ExecuteCommandAsync();
+                }
+                else
+                {
+                    await AppDb.Db.Updateable<LabelTemplateField>()
+                        .SetColumns(x => x.FieldCode == "batch_no")
+                        .SetColumns(x => x.FieldName == "批次")
+                        .Where(x => x.TemplateId == edited.Id && x.FieldCode == "serial_no" && !x.IsDeleted)
+                        .ExecuteCommandAsync();
+                }
+            }
+        });
+
         await LoadTemplatesAsync();
     }
 
@@ -510,6 +562,12 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
             return;
         }
 
+        if (field.FieldCode == "batch_no" || field.FieldCode == "serial_no")
+        {
+            AppMessageBox.Show("系统默认控制字段，不允许修改！", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
         var parentWindow = Window.GetWindow(this);
         var win = new FieldEditWindow(field)
         {
@@ -589,6 +647,12 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         if (field == null)
         {
             AppMessageBox.Show("请先选择要删除的字段。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        if (field.FieldCode == "batch_no" || field.FieldCode == "serial_no")
+        {
+            AppMessageBox.Show("系统默认控制字段，不允许删除！", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -789,6 +853,27 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         // 移除了表单填充逻辑，选择改变现在仅用于选中数据
     }
 
+    private static byte[] CreateEmptyReportBytes(string dataSourceName, List<LabelTemplateField> fields)
+    {
+        using (var report = new StiReport())
+        {
+            report.Dictionary.Databases.Clear();
+            var dt = new DataTable(dataSourceName);
+            foreach (var f in fields)
+            {
+                if (!string.IsNullOrWhiteSpace(f.FieldCode))
+                    dt.Columns.Add(f.FieldCode, typeof(string));
+            }
+            report.RegData(dataSourceName, dt);
+            report.Dictionary.Synchronize();
+            using (var ms = new MemoryStream())
+            {
+                report.Save(ms);
+                return ms.ToArray();
+            }
+        }
+    }
+
     private async void SeedDemo_Click(object sender, RoutedEventArgs e)
     {
         var category = await FindCategoryAsync("产品标签", 0);
@@ -804,13 +889,14 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
             await AppDb.Db.Insertable(category).ExecuteCommandAsync();
         }
 
+        var storageType = App.Settings.RunMode == AppRunMode.LocalSqlite
+            ? TemplateStorageType.LocalFile
+            : TemplateStorageType.Database;
+
+        // 1. 初始化“产品基础标签” (批次控制模板)
         var template = await FindTemplateAsync(category.Id, "产品基础标签");
         if (template == null)
         {
-            var storageType = App.Settings.RunMode == AppRunMode.LocalSqlite
-                ? TemplateStorageType.LocalFile
-                : TemplateStorageType.Database;
-
             var templateId = IdHelper.NewId();
             template = new LabelTemplate
             {
@@ -824,7 +910,9 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
                     ? BuildLocalTemplatePath(templateId)
                     : null,
                 Version = 1,
-                IsEnabled = true
+                IsEnabled = true,
+                IsSerialNumber = false,
+                CurrentSerialValue = 0
             };
             await AppDb.Db.Insertable(template).ExecuteCommandAsync();
         }
@@ -832,10 +920,13 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         var existsFields = await AppDb.Db.Queryable<LabelTemplateField>()
             .Where(x => x.TemplateId == template.Id)
             .AnyAsync();
+        
+        List<LabelTemplateField> fields;
         if (!existsFields)
         {
-            var fields = new List<LabelTemplateField>
+            fields = new List<LabelTemplateField>
             {
+                NewField(template.Id, "批次", "batch_no", "string", true, 5, "系统自动生成的默认控制列，禁止修改与删除"),
                 NewField(template.Id, "产品名称", "ProductName", "string", true, 10, "产品中文名称"),
                 NewField(template.Id, "条码", "Barcode", "string", true, 20, "一维码或二维码内容"),
                 NewField(template.Id, "规格", "Spec", "string", false, 30, "如 500ml"),
@@ -844,9 +935,324 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
             };
             await AppDb.Db.Insertable(fields).ExecuteCommandAsync();
         }
+        else
+        {
+            fields = await AppDb.Db.Queryable<LabelTemplateField>().Where(x => x.TemplateId == template.Id && !x.IsDeleted).ToListAsync();
+        }
+
+        // 生成物理 MRT 模板文件 (批次)
+        var bytes = CreateEmptyReportBytes(template.DataSourceName, fields);
+        if (template.StorageType == TemplateStorageType.LocalFile)
+        {
+            try
+            {
+                var dir = Path.GetDirectoryName(template.TemplatePath);
+                if (!string.IsNullOrWhiteSpace(dir)) Directory.CreateDirectory(dir);
+                File.WriteAllBytes(template.TemplatePath!, bytes);
+            }
+            catch { }
+        }
+        else
+        {
+            template.TemplateContent = bytes;
+            template.TemplateHash = FileHashHelper.GetSha256(bytes);
+            await AppDb.Db.Updateable(template).UpdateColumns(x => new { x.TemplateContent, x.TemplateHash }).ExecuteCommandAsync();
+        }
+
+        // 2. 初始化“产品序列号标签” (序列号控制模板)
+        var template2 = await FindTemplateAsync(category.Id, "产品序列号标签");
+        if (template2 == null)
+        {
+            var templateId = IdHelper.NewId();
+            template2 = new LabelTemplate
+            {
+                Id = templateId,
+                CategoryId = category.Id,
+                Name = "产品序列号标签",
+                StorageType = storageType,
+                DataSourceName = "LabelData",
+                TemplateFileName = "产品序列号标签.mrt",
+                TemplatePath = storageType == TemplateStorageType.LocalFile
+                    ? BuildLocalTemplatePath(templateId)
+                    : null,
+                Version = 1,
+                IsEnabled = true,
+                IsSerialNumber = true,
+                SerialNumberPrefix = "SN-",
+                SerialNumberPattern = "SN-{seq:0000}",
+                SerialResetPeriod = SerialResetPeriod.Never,
+                CurrentSerialValue = 0
+            };
+            await AppDb.Db.Insertable(template2).ExecuteCommandAsync();
+        }
+
+        var existsFields2 = await AppDb.Db.Queryable<LabelTemplateField>()
+            .Where(x => x.TemplateId == template2.Id)
+            .AnyAsync();
+
+        List<LabelTemplateField> fields2;
+        if (!existsFields2)
+        {
+            fields2 = new List<LabelTemplateField>
+            {
+                NewField(template2.Id, "序列号", "serial_no", "string", true, 5, "系统自动生成的默认控制列，禁止修改与删除"),
+                NewField(template2.Id, "产品名称", "ProductName", "string", true, 10, "产品中文名称"),
+                NewField(template2.Id, "条码", "Barcode", "string", true, 20, "一维码或二维码内容"),
+                NewField(template2.Id, "规格", "Spec", "string", false, 30, "如 500ml"),
+                NewField(template2.Id, "数量", "Qty", "int", true, 40, "打印数量或产品数量")
+            };
+            await AppDb.Db.Insertable(fields2).ExecuteCommandAsync();
+        }
+        else
+        {
+            fields2 = await AppDb.Db.Queryable<LabelTemplateField>().Where(x => x.TemplateId == template2.Id && !x.IsDeleted).ToListAsync();
+        }
+
+        // 生成物理 MRT 模板文件 (序列号)
+        var bytes2 = CreateEmptyReportBytes(template2.DataSourceName, fields2);
+        if (template2.StorageType == TemplateStorageType.LocalFile)
+        {
+            try
+            {
+                var dir = Path.GetDirectoryName(template2.TemplatePath);
+                if (!string.IsNullOrWhiteSpace(dir)) Directory.CreateDirectory(dir);
+                File.WriteAllBytes(template2.TemplatePath!, bytes2);
+            }
+            catch { }
+        }
+        else
+        {
+            template2.TemplateContent = bytes2;
+            template2.TemplateHash = FileHashHelper.GetSha256(bytes2);
+            await AppDb.Db.Updateable(template2).UpdateColumns(x => new { x.TemplateContent, x.TemplateHash }).ExecuteCommandAsync();
+        }
+
+        // 3. 一键初始化导入批次、行明细、以及已打印的历史 Job (支持即时预览、即时区间补打)
+        var hasBatches = await AppDb.Db.Queryable<LabelImportBatch>().AnyAsync();
+        if (!hasBatches)
+        {
+            // 为“产品基础标签”插入一笔批次导入
+            var batch1Id = IdHelper.NewId();
+            var batch1 = new LabelImportBatch
+            {
+                Id = batch1Id,
+                TemplateId = template.Id,
+                TemplateName = template.Name,
+                TemplateVersion = template.Version,
+                ExcelFileName = "产品基础标签导入_示例.xlsx",
+                ExcelFileHash = "SAMPLE_HASH_BATCH",
+                TotalRows = 3,
+                ValidRows = 3,
+                InvalidRows = 0,
+                Status = "Imported",
+                OperatorName = "管理员",
+                BatchNo = "BATCH-20260525",
+                ImportTime = DateTime.Now
+            };
+            await AppDb.Db.Insertable(batch1).ExecuteCommandAsync();
+
+            var rows1 = new List<LabelImportRow>
+            {
+                new LabelImportRow
+                {
+                    Id = IdHelper.NewId(),
+                    BatchId = batch1Id,
+                    TemplateId = template.Id,
+                    RowIndex = 1,
+                    RowDataJson = JsonHelper.Serialize(new Dictionary<string, string>
+                    {
+                        ["batch_no"] = "BATCH-20260525",
+                        ["ProductName"] = "感冒灵颗粒",
+                        ["Barcode"] = "6901234567890",
+                        ["Spec"] = "10g*9袋",
+                        ["Qty"] = "5",
+                        ["ProduceDate"] = "2026-05-20"
+                    }),
+                    IsValid = true,
+                    IsPrinted = false,
+                    CreateTime = DateTime.Now
+                },
+                new LabelImportRow
+                {
+                    Id = IdHelper.NewId(),
+                    BatchId = batch1Id,
+                    TemplateId = template.Id,
+                    RowIndex = 2,
+                    RowDataJson = JsonHelper.Serialize(new Dictionary<string, string>
+                    {
+                        ["batch_no"] = "BATCH-20260525",
+                        ["ProductName"] = "阿莫西林胶囊",
+                        ["Barcode"] = "6901234567891",
+                        ["Spec"] = "0.25g*24粒",
+                        ["Qty"] = "10",
+                        ["ProduceDate"] = "2026-05-21"
+                    }),
+                    IsValid = true,
+                    IsPrinted = false,
+                    CreateTime = DateTime.Now
+                },
+                new LabelImportRow
+                {
+                    Id = IdHelper.NewId(),
+                    BatchId = batch1Id,
+                    TemplateId = template.Id,
+                    RowIndex = 3,
+                    RowDataJson = JsonHelper.Serialize(new Dictionary<string, string>
+                    {
+                        ["batch_no"] = "BATCH-20260525",
+                        ["ProductName"] = "布洛芬缓释胶囊",
+                        ["Barcode"] = "6901234567892",
+                        ["Spec"] = "0.3g*24粒",
+                        ["Qty"] = "2",
+                        ["ProduceDate"] = "2026-05-22"
+                    }),
+                    IsValid = true,
+                    IsPrinted = false,
+                    CreateTime = DateTime.Now
+                }
+            };
+            await AppDb.Db.Insertable(rows1).ExecuteCommandAsync();
+
+            // 为“产品序列号标签”插入一笔批次导入
+            var batch2Id = IdHelper.NewId();
+            var batch2 = new LabelImportBatch
+            {
+                Id = batch2Id,
+                TemplateId = template2.Id,
+                TemplateName = template2.Name,
+                TemplateVersion = template2.Version,
+                ExcelFileName = "产品序列号标签导入_示例.xlsx",
+                ExcelFileHash = "SAMPLE_HASH_SERIAL",
+                TotalRows = 2,
+                ValidRows = 2,
+                InvalidRows = 0,
+                Status = "Imported",
+                OperatorName = "管理员",
+                BatchNo = "序列号自增",
+                ImportTime = DateTime.Now
+            };
+            await AppDb.Db.Insertable(batch2).ExecuteCommandAsync();
+
+            var rows2 = new List<LabelImportRow>
+            {
+                new LabelImportRow
+                {
+                    Id = IdHelper.NewId(),
+                    BatchId = batch2Id,
+                    TemplateId = template2.Id,
+                    RowIndex = 1,
+                    RowDataJson = JsonHelper.Serialize(new Dictionary<string, string>
+                    {
+                        ["ProductName"] = "华为 Mate 60 Pro",
+                        ["Barcode"] = "HUAWEI-M60P",
+                        ["Spec"] = "12GB+512GB",
+                        ["Qty"] = "1",
+                        ["serial_no"] = ""
+                    }),
+                    IsValid = true,
+                    IsPrinted = false,
+                    CreateTime = DateTime.Now
+                },
+                new LabelImportRow
+                {
+                    Id = IdHelper.NewId(),
+                    BatchId = batch2Id,
+                    TemplateId = template2.Id,
+                    RowIndex = 2,
+                    RowDataJson = JsonHelper.Serialize(new Dictionary<string, string>
+                    {
+                        ["ProductName"] = "iPhone 15 Pro",
+                        ["Barcode"] = "APPLE-I15P",
+                        ["Spec"] = "256GB",
+                        ["Qty"] = "1",
+                        ["serial_no"] = ""
+                    }),
+                    IsValid = true,
+                    IsPrinted = false,
+                    CreateTime = DateTime.Now
+                }
+            };
+            await AppDb.Db.Insertable(rows2).ExecuteCommandAsync();
+
+            // 4. 为“产品序列号标签”插入一笔已打印任务 Job (以供直接测试序列号补打)
+            var jobId = IdHelper.NewId();
+            var job = new LabelPrintJob
+            {
+                Id = jobId,
+                TemplateId = template2.Id,
+                BatchId = batch2Id,
+                TemplateName = template2.Name,
+                SelectedRowCount = 3,
+                PrinterName = "虚拟打印机",
+                Status = "Printed",
+                OperatorName = "管理员",
+                CreateTime = DateTime.Now.AddMinutes(-5),
+                PrintTime = DateTime.Now.AddMinutes(-4)
+            };
+            await AppDb.Db.Insertable(job).ExecuteCommandAsync();
+
+            var jobRows = new List<LabelPrintJobRow>
+            {
+                new LabelPrintJobRow
+                {
+                    Id = IdHelper.NewId(),
+                    PrintJobId = jobId,
+                    ImportRowId = rows2[0].Id,
+                    RowIndex = 1,
+                    RowDataJson = JsonHelper.Serialize(new Dictionary<string, string>
+                    {
+                        ["ProductName"] = "华为 Mate 60 Pro",
+                        ["Barcode"] = "HUAWEI-M60P",
+                        ["Spec"] = "12GB+512GB",
+                        ["Qty"] = "1",
+                        ["serial_no"] = "SN-0001"
+                    })
+                },
+                new LabelPrintJobRow
+                {
+                    Id = IdHelper.NewId(),
+                    PrintJobId = jobId,
+                    ImportRowId = rows2[0].Id,
+                    RowIndex = 1,
+                    RowDataJson = JsonHelper.Serialize(new Dictionary<string, string>
+                    {
+                        ["ProductName"] = "华为 Mate 60 Pro",
+                        ["Barcode"] = "HUAWEI-M60P",
+                        ["Spec"] = "12GB+512GB",
+                        ["Qty"] = "1",
+                        ["serial_no"] = "SN-0002"
+                    })
+                },
+                new LabelPrintJobRow
+                {
+                    Id = IdHelper.NewId(),
+                    PrintJobId = jobId,
+                    ImportRowId = rows2[1].Id,
+                    RowIndex = 2,
+                    RowDataJson = JsonHelper.Serialize(new Dictionary<string, string>
+                    {
+                        ["ProductName"] = "iPhone 15 Pro",
+                        ["Barcode"] = "APPLE-I15P",
+                        ["Spec"] = "256GB",
+                        ["Qty"] = "1",
+                        ["serial_no"] = "SN-0001"
+                    })
+                }
+            };
+            await AppDb.Db.Insertable(jobRows).ExecuteCommandAsync();
+
+            // 标记对应的 row 为已打印
+            foreach (var r in rows2)
+            {
+                r.IsPrinted = true;
+                r.PrintCount = r.RowIndex == 1 ? 2 : 1;
+                r.LastPrintTime = DateTime.Now;
+            }
+            await AppDb.Db.Updateable(rows2).ExecuteCommandAsync();
+        }
 
         await RefreshAllAsync();
-        AppMessageBox.Show("示例分类、模板和字段已初始化。请继续上传或设计 .mrt 模板。");
+        AppMessageBox.Show("示例分类、模板（含物理 MRT 文件）、预置测试导入批次及已打印重打历史已完美初始化！\n您可以直接前往打印中心点预览/打印，或前往打印记录测试区间补打！");
     }
 
     private static LabelTemplateField NewField(long templateId, string name, string code, string type, bool required, int sort, string remark)

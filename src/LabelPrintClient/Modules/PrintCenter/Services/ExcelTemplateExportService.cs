@@ -20,7 +20,13 @@ public class ExcelTemplateExportService
         if (fields.Count == 0)
             throw new InvalidOperationException("当前模板没有维护字段，无法生成 Excel 模板。");
 
-        await Task.Run(() => SaveWorkbook(fields, savePath), cancellationToken).ConfigureAwait(false);
+        var exportFields = fields
+            .Where(x => !IsSystemField(x.FieldCode))
+            .ToList();
+        if (exportFields.Count == 0)
+            throw new InvalidOperationException("当前模板没有可导入字段，无法生成 Excel 模板。");
+
+        await Task.Run(() => SaveWorkbook(exportFields, savePath), cancellationToken).ConfigureAwait(false);
     }
 
     private static void SaveWorkbook(IReadOnlyList<LabelTemplateField> fields, string savePath)
@@ -203,6 +209,12 @@ public class ExcelTemplateExportService
     {
         var values = ParseEnumOptions(enumOptions);
         return values.Count == 0 ? string.Empty : string.Join(Environment.NewLine, values);
+    }
+
+    private static bool IsSystemField(string fieldCode)
+    {
+        return string.Equals(fieldCode, "batch_no", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(fieldCode, "serial_no", StringComparison.OrdinalIgnoreCase);
     }
 
     private sealed record EnumFieldSource(LabelTemplateField Field, int FieldIndex, List<string> Values);

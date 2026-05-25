@@ -30,8 +30,8 @@
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
 
                     <TextBlock Grid.Column="0" Style="{StaticResource AppPageTitleStyle}" Text="标签打印中心" Margin="0,0,16,0" />
@@ -58,7 +58,7 @@
                                   infra:SearchableComboBoxBehavior.IsEnabled="True" />
                     </StackPanel>
 
-                    <Button Grid.Column="4" Style="{StaticResource AppSecondaryButtonStyle}" Click="Refresh_Click" Margin="8,0,0,0">
+                    <Button Grid.Column="4" Style="{StaticResource AppSecondaryButtonStyle}" Click="Refresh_Click" Margin="12,0,0,0">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="Refresh" Margin="0,0,6,0" VerticalAlignment="Center" />
                             <TextBlock Text="刷新" VerticalAlignment="Center" />
@@ -168,6 +168,7 @@
                                 </DataGridTemplateColumn>
                                 <DataGridTextColumn Header="导入时间" Binding="{Binding ImportTime, StringFormat=\{0:yyyy-MM-dd HH:mm:ss\}}" Width="170" />
                                 <DataGridTextColumn Header="Excel" Binding="{Binding ExcelFileName}" Width="*" MinWidth="130" />
+                                <DataGridTextColumn Header="批次号" Binding="{Binding BatchNo}" Width="120" />
                                 <DataGridTemplateColumn Header="状态" Width="96" SortMemberPath="Status">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>

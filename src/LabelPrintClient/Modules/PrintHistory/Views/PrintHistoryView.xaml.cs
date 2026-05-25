@@ -265,7 +265,7 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
                 })
                 .ToList();
 
-                var activeFields = fields.Where(f => !f.IsDeleted).ToList();
+                var activeFields = fields.Where(f => !f.IsDeleted && !IsSystemField(f.FieldCode)).ToList();
 
                 GridRowDataHelper.EnsureFieldKeys(rows.Select(x => x.Data), activeFields);
                 var activeCodes = activeFields
@@ -275,11 +275,19 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
                 var extraKeys = rows
                     .SelectMany(x => x.Data.Keys)
                     .Where(x => !activeCodes.Contains(x))
+                    .Where(x => !IsSystemField(x))
                     .Distinct(StringComparer.OrdinalIgnoreCase)
                     .OrderBy(x => x)
                     .ToList();
+                var systemKeys = rows
+                    .SelectMany(x => x.Data.Keys)
+                    .Where(IsSystemField)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(GetSystemFieldSort)
+                    .ToList();
                 GridRowDataHelper.EnsureKeys(rows.Select(x => x.Data), extraKeys);
-                return (Rows: rows, ExtraKeys: extraKeys);
+                GridRowDataHelper.EnsureKeys(rows.Select(x => x.Data), systemKeys);
+                return (Rows: rows, ExtraKeys: extraKeys, SystemKeys: systemKeys);
             }, token);
 
             if (token.IsCancellationRequested ||
@@ -293,7 +301,7 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
             _rowTotalPages = totalPages;
             _rowCurrentPage = currentPage;
 
-            BuildRowGridColumnsIfNeeded(fields, rowLoadResult.ExtraKeys);
+            BuildRowGridColumnsIfNeeded(fields, rowLoadResult.ExtraKeys, rowLoadResult.SystemKeys);
             _rows.Clear();
             foreach (var item in rowLoadResult.Rows)
             {
@@ -321,22 +329,52 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
         }
     }
 
-    private void BuildRowGridColumnsIfNeeded(IReadOnlyList<LabelTemplateField> fields, IReadOnlyList<string> extraKeys)
+    private void BuildRowGridColumnsIfNeeded(
+        IReadOnlyList<LabelTemplateField> fields,
+        IReadOnlyList<string> extraKeys,
+        IReadOnlyList<string> systemKeys)
     {
-        var signature = $"{BuildFieldSignature(fields)}||{string.Join("|", extraKeys)}";
+        var signature = $"{BuildFieldSignature(fields)}||{string.Join("|", systemKeys)}||{string.Join("|", extraKeys)}";
         if (string.Equals(_rowGridColumnSignature, signature, StringComparison.Ordinal))
             return;
 
         _rowGridColumnSignature = signature;
-        BuildRowGridColumns(fields, extraKeys);
+        BuildRowGridColumns(fields, extraKeys, systemKeys);
     }
 
     private static string BuildFieldSignature(IEnumerable<LabelTemplateField> fields)
     {
-        return string.Join("|", fields.Select(x => $"{x.Id}:{x.Sort}:{x.FieldCode}:{x.FieldName}"));
+        return string.Join("|", fields.Where(x => !IsSystemField(x.FieldCode)).Select(x => $"{x.Id}:{x.Sort}:{x.FieldCode}:{x.FieldName}"));
     }
 
-    private void BuildRowGridColumns(IReadOnlyList<LabelTemplateField> fields, IEnumerable<string> extraKeys)
+    private static bool IsSystemField(string fieldCode)
+    {
+        return string.Equals(fieldCode, "batch_no", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(fieldCode, "serial_no", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static int GetSystemFieldSort(string fieldCode)
+    {
+        if (string.Equals(fieldCode, "batch_no", StringComparison.OrdinalIgnoreCase))
+            return 0;
+        if (string.Equals(fieldCode, "serial_no", StringComparison.OrdinalIgnoreCase))
+            return 1;
+        return 2;
+    }
+
+    private static string GetSystemFieldHeader(string fieldCode)
+    {
+        if (string.Equals(fieldCode, "batch_no", StringComparison.OrdinalIgnoreCase))
+            return "批次号";
+        if (string.Equals(fieldCode, "serial_no", StringComparison.OrdinalIgnoreCase))
+            return "序列号";
+        return fieldCode;
+    }
+
+    private void BuildRowGridColumns(
+        IReadOnlyList<LabelTemplateField> fields,
+        IEnumerable<string> extraKeys,
+        IEnumerable<string> systemKeys)
     {
         RowGrid.Columns.Clear();
 
@@ -346,15 +384,19 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
             Width = DataGridLength.Auto,
             CellTemplate = BuildRowActionTemplate()
         });
-        RowGrid.Columns.Add(new DataGridTextColumn
-        {
-            Header = "Excel行号",
-            Binding = new System.Windows.Data.Binding(nameof(PrintJobRowGridItem.RowIndex)),
-            Width = 100,
-            IsReadOnly = true
-        });
 
-        var activeFields = fields.Where(x => !x.IsDeleted).ToList();
+        foreach (var key in systemKeys)
+        {
+            RowGrid.Columns.Add(new DataGridTextColumn
+            {
+                Header = GetSystemFieldHeader(key),
+                Binding = new System.Windows.Data.Binding($"Data[{key}]"),
+                Width = 150,
+                IsReadOnly = true
+            });
+        }
+
+        var activeFields = fields.Where(x => !x.IsDeleted && !IsSystemField(x.FieldCode)).ToList();
 
         foreach (var field in activeFields)
         {
@@ -456,24 +498,6 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
         return panel;
     }
 
-    private async void ReprintJob_Click(object sender, RoutedEventArgs e)
-    {
-        if (sender is not FrameworkElement { DataContext: PrintJobGridItem job })
-            return;
-        if (!TryGetPrintOptions(out var printerName, out var printCopies))
-            return;
-
-        await ExecuteHistoryPrintAsync(
-            sender,
-            $"确定重打印任务 {job.TemplateName} 的历史数据，{printCopies} 份？",
-            context => new LabelPrintService(App.Settings).ReprintJobAsync(
-                job.Id,
-                printerName,
-                printCopies,
-                context.CancellationToken,
-                context.Progress));
-    }
-
     private async void RetryJob_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not FrameworkElement { DataContext: PrintJobGridItem job })
@@ -484,16 +508,15 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
             AppMessageBox.Show("只有失败的打印任务可以失败重试。");
             return;
         }
-        if (!TryGetPrintOptions(out var printerName, out var printCopies))
+        if (!TryGetPrintOptions(out var printerName, out _))
             return;
 
         await ExecuteHistoryPrintAsync(
             sender,
-            $"确定重试失败任务 {job.TemplateName}，{printCopies} 份？请确认现场没有重复出纸。",
-            context => new LabelPrintService(App.Settings).ReprintJobAsync(
+            $"确定按原任务明细重试失败任务 {job.TemplateName}？请确认现场没有重复出纸。",
+            context => new LabelPrintService(App.Settings).RetryFailedJobAsync(
                 job.Id,
                 printerName,
-                printCopies,
                 context.CancellationToken,
                 context.Progress));
     }
@@ -505,15 +528,40 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
         if (!TryGetPrintOptions(out var printerName, out var printCopies))
             return;
 
-        await ExecuteHistoryPrintAsync(
-            sender,
-            $"确定重打印 Excel 第 {row.RowIndex} 行，{printCopies} 份？",
-            context => new LabelPrintService(App.Settings).ReprintJobRowAsync(
-                row.Id,
-                printerName,
-                printCopies,
-                context.CancellationToken,
-                context.Progress));
+        var job = SelectedJob;
+        if (job == null) return;
+
+        var template = await AppDb.Db.Queryable<LabelTemplate>().InSingleAsync(job.TemplateId);
+        if (template != null && template.IsSerialNumber == true)
+        {
+            var jobRow = await AppDb.Db.Queryable<LabelPrintJobRow>().InSingleAsync(row.Id);
+            if (jobRow == null) return;
+
+            var list = Enumerable.Range(0, printCopies).Select(_ => jobRow).ToList();
+            var sn = row.Data.TryGetValue("serial_no", out var sVal) ? sVal : "未知";
+
+            await ExecuteHistoryPrintAsync(
+                sender,
+                $"确定原样补打序列号 {sn} 的标签，{printCopies} 份？",
+                context => new LabelPrintService(App.Settings).PrintHistoryRowsAsync(
+                    job.TemplateId,
+                    list,
+                    printerName,
+                    context.CancellationToken,
+                    context.Progress));
+        }
+        else
+        {
+            await ExecuteHistoryPrintAsync(
+                sender,
+                $"确定重打印当前明细，{printCopies} 份？",
+                context => new LabelPrintService(App.Settings).ReprintJobRowAsync(
+                    row.Id,
+                    printerName,
+                    printCopies,
+                    context.CancellationToken,
+                    context.Progress));
+        }
     }
 
     private async void JobFirstPage_Click(object sender, RoutedEventArgs e)

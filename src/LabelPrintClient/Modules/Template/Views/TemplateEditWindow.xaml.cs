@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using LabelPrintClient.Config;
+using LabelPrintClient.Modules.PrintCenter.Services;
 using LabelPrintClient.Modules.Template.Models;
 using LabelPrintClient.Services;
 
@@ -30,12 +31,20 @@ public partial class TemplateEditWindow : Window
                 DataSourceName = template.DataSourceName,
                 Version = template.Version,
                 IsEnabled = template.IsEnabled,
+                IsSerialNumber = template.IsSerialNumber,
+                SerialNumberPrefix = template.SerialNumberPrefix,
+                SerialNumberPattern = template.SerialNumberPattern,
+                SerialResetPeriod = template.SerialResetPeriod,
+                CurrentSerialValue = template.CurrentSerialValue,
                 CreateTime = template.CreateTime,
                 UpdateTime = template.UpdateTime
             };
             TitleText.Text = "编辑模板";
             NameBox.Text = Template.Name;
             IsEnabledBox.IsChecked = Template.IsEnabled;
+            IsSerialNumberBox.IsChecked = Template.IsSerialNumber;
+            SerialNumberPatternBox.Text = SerialNumberService.NormalizePattern(Template.SerialNumberPattern, Template.SerialNumberPrefix);
+            SelectSerialResetPeriod(Template.SerialResetPeriod);
 
             // 选中存储介质
             if (Template.StorageType == TemplateStorageType.Database)
@@ -68,6 +77,7 @@ public partial class TemplateEditWindow : Window
 
         // 根据当前的数据库模式，强制限制下拉框的可选状态
         ApplyStorageTypeLimits();
+        UpdateSerialPreview();
     }
 
     private void ApplyStorageTypeLimits()
@@ -105,8 +115,20 @@ public partial class TemplateEditWindow : Window
             return;
         }
 
+        var isSerial = IsSerialNumberBox.IsChecked == true;
+        var pattern = SerialNumberPatternBox.Text.Trim();
+        if (isSerial && !SerialNumberService.IsValidPattern(pattern, out var patternError))
+        {
+            AppMessageBox.Show(patternError, "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
         Template.Name = name;
         Template.IsEnabled = IsEnabledBox.IsChecked == true;
+        Template.IsSerialNumber = isSerial;
+        Template.SerialNumberPattern = isSerial ? pattern : null;
+        Template.SerialNumberPrefix = null;
+        Template.SerialResetPeriod = isSerial ? ReadSerialResetPeriod() : SerialResetPeriod.Never;
 
         // 读取存储介质
         if (StorageTypeBox.SelectedItem is ComboBoxItem selectedItem)
@@ -119,6 +141,41 @@ public partial class TemplateEditWindow : Window
 
         DialogResult = true;
         Close();
+    }
+
+    private void SerialRule_Changed(object sender, RoutedEventArgs e)
+    {
+        UpdateSerialPreview();
+    }
+
+    private void UpdateSerialPreview()
+    {
+        if (SerialPreviewText == null || SerialNumberPatternBox == null)
+            return;
+
+        var pattern = SerialNumberPatternBox.Text.Trim();
+        SerialPreviewText.Text = SerialNumberService.IsValidPattern(pattern, out var error)
+            ? $"预览：{SerialNumberService.Preview(pattern, DateTime.Now)}"
+            : $"预览：{error}";
+    }
+
+    private SerialResetPeriod ReadSerialResetPeriod()
+    {
+        var tag = (SerialResetPeriodBox.SelectedItem as ComboBoxItem)?.Tag?.ToString();
+        return Enum.TryParse<SerialResetPeriod>(tag, out var period) ? period : SerialResetPeriod.Never;
+    }
+
+    private void SelectSerialResetPeriod(SerialResetPeriod period)
+    {
+        foreach (var item in SerialResetPeriodBox.Items.OfType<ComboBoxItem>())
+        {
+            if (string.Equals(item.Tag?.ToString(), period.ToString(), StringComparison.OrdinalIgnoreCase))
+            {
+                SerialResetPeriodBox.SelectedItem = item;
+                return;
+            }
+        }
+        SerialResetPeriodBox.SelectedIndex = 0;
     }
 
     private void Cancel_Click(object sender, RoutedEventArgs e)

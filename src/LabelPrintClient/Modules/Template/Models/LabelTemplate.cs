@@ -1,4 +1,4 @@
-﻿using SqlSugar;
+using SqlSugar;
 
 namespace LabelPrintClient.Modules.Template.Models;
 
@@ -33,6 +33,20 @@ public class LabelTemplate
     public int Version { get; set; } = 1;
 
     public bool IsEnabled { get; set; } = true;
+
+    [SugarColumn(IsNullable = true)]
+    public bool? IsSerialNumber { get; set; } = false;
+
+    [SugarColumn(Length = 100, IsNullable = true)]
+    public string? SerialNumberPrefix { get; set; } = "SN-";
+
+    [SugarColumn(Length = 200, IsNullable = true)]
+    public string? SerialNumberPattern { get; set; } = "SN-{seq:0000}";
+
+    public SerialResetPeriod SerialResetPeriod { get; set; } = SerialResetPeriod.Never;
+
+    [SugarColumn(IsNullable = true)]
+    public long? CurrentSerialValue { get; set; } = 0;
 
     public DateTime CreateTime { get; set; } = DateTime.Now;
 
