@@ -81,18 +81,11 @@ public class LabelImportService
         var batch = BuildBatch(template, preview.ExcelPath, preview.ExcelFileHash, preview.Rows, operatorName);
         var rows = BuildRows(preview.TemplateId, batch.Id, preview.Rows);
 
-        await AppDb.Db.Ado.BeginTranAsync().ConfigureAwait(false);
-        try
+        await AppDb.UseTranAsync(async () =>
         {
             await AppDb.Db.Insertable(batch).ExecuteCommandAsync().ConfigureAwait(false);
             await AppDb.Db.Insertable(rows).ExecuteCommandAsync().ConfigureAwait(false);
-            await AppDb.Db.Ado.CommitTranAsync().ConfigureAwait(false);
-        }
-        catch
-        {
-            await AppDb.Db.Ado.RollbackTranAsync().ConfigureAwait(false);
-            throw;
-        }
+        }).ConfigureAwait(false);
 
         return batch.Id;
     }

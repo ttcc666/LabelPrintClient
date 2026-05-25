@@ -6,7 +6,11 @@ namespace LabelPrintClient.Database;
 
 public static class AppDb
 {
-    public static SqlSugarScope Db { get; private set; } = null!;
+    private static readonly AsyncLocal<SqlSugarClient?> CurrentTransactionClient = new();
+
+    private static SqlSugarScope _scope = null!;
+
+    public static SqlSugarClient Db => CurrentTransactionClient.Value ?? _scope.CopyNew();
 
     public static void Init(AppSettings settings)
     {
@@ -18,7 +22,7 @@ public static class AppDb
             ? NormalizeSqliteConnection(settings.SqliteConnection)
             : settings.PostgreSqlConnection;
 
-        Db = new SqlSugarScope(new ConnectionConfig
+        _scope = new SqlSugarScope(new ConnectionConfig
         {
             DbType = dbType,
             ConnectionString = connectionString,
@@ -63,10 +67,39 @@ public static class AppDb
     {
         try
         {
-            Db?.Ado.Close();
+            CurrentTransactionClient.Value?.Close();
+            _scope?.Close();
         }
         catch
         {
+        }
+    }
+
+    public static async Task UseTranAsync(Func<Task> operation)
+    {
+        if (CurrentTransactionClient.Value != null)
+        {
+            await operation().ConfigureAwait(false);
+            return;
+        }
+
+        var db = _scope.CopyNew();
+        CurrentTransactionClient.Value = db;
+        try
+        {
+            await db.Ado.BeginTranAsync().ConfigureAwait(false);
+            await operation().ConfigureAwait(false);
+            await db.Ado.CommitTranAsync().ConfigureAwait(false);
+        }
+        catch
+        {
+            await db.Ado.RollbackTranAsync().ConfigureAwait(false);
+            throw;
+        }
+        finally
+        {
+            CurrentTransactionClient.Value = null;
+            db.Close();
         }
     }
 

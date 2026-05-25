@@ -90,7 +90,7 @@ public partial class FieldHistoryWindow : Window
         newField.Sort = maxSort + 10;
         newField.IsDeleted = false;
 
-        await AppDb.Db.UseTranAsync(async () =>
+        await AppDb.UseTranAsync(async () =>
         {
             await AppDb.Db.Insertable(newField).ExecuteCommandAsync();
             await NormalizeFieldSortAsync(_templateId);
@@ -148,7 +148,7 @@ public partial class FieldHistoryWindow : Window
             CreateFieldSnapshotJson(field),
             $"恢复字段：{field.FieldName}（{field.FieldCode}）");
 
-        await AppDb.Db.UseTranAsync(async () =>
+        await AppDb.UseTranAsync(async () =>
         {
             await AppDb.Db.Updateable(field)
                 .UpdateColumns(x => new { x.IsDeleted, x.Sort })

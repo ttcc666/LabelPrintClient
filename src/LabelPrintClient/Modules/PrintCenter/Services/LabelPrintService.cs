@@ -357,16 +357,6 @@ public class LabelPrintService
 
     private static async Task ExecuteTransactionAsync(Func<Task> operation)
     {
-        await AppDb.Db.Ado.BeginTranAsync().ConfigureAwait(false);
-        try
-        {
-            await operation().ConfigureAwait(false);
-            await AppDb.Db.Ado.CommitTranAsync().ConfigureAwait(false);
-        }
-        catch
-        {
-            await AppDb.Db.Ado.RollbackTranAsync().ConfigureAwait(false);
-            throw;
-        }
+        await AppDb.UseTranAsync(operation).ConfigureAwait(false);
     }
 }

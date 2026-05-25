@@ -315,7 +315,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
             return;
         }
 
-        await AppDb.Db.UseTranAsync(async () =>
+        await AppDb.UseTranAsync(async () =>
         {
             var templates = await AppDb.Db.Queryable<LabelTemplate>().Where(x => x.CategoryId == category.Id).ToListAsync();
             var templateIds = templates.Select(x => x.Id).ToList();
@@ -433,7 +433,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
             return;
         }
 
-        await AppDb.Db.UseTranAsync(async () =>
+        await AppDb.UseTranAsync(async () =>
         {
             await AppDb.Db.Deleteable<LabelTemplateField>().Where(x => x.TemplateId == template.Id).ExecuteCommandAsync();
             await AppDb.Db.Deleteable<LabelTemplate>().Where(x => x.Id == template.Id).ExecuteCommandAsync();
@@ -491,7 +491,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         field.TemplateId = template.Id;
         field.Sort = maxSort + 10;
 
-        await AppDb.Db.UseTranAsync(async () =>
+        await AppDb.UseTranAsync(async () =>
         {
             await AppDb.Db.Insertable(field).ExecuteCommandAsync();
             await NormalizeFieldSortAsync(template.Id);
@@ -557,7 +557,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
             CreateFieldSnapshotJson(edited),
             $"编辑字段：{edited.FieldName}（{edited.FieldCode}）");
 
-        await AppDb.Db.UseTranAsync(async () =>
+        await AppDb.UseTranAsync(async () =>
         {
             await AppDb.Db.Insertable(history).ExecuteCommandAsync();
             await AppDb.Db.Updateable(edited)
@@ -626,7 +626,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
             CreateFieldSnapshotJson(before, true),
             $"删除字段：{before.FieldName}（{before.FieldCode}）");
 
-        await AppDb.Db.UseTranAsync(async () =>
+        await AppDb.UseTranAsync(async () =>
         {
             await AppDb.Db.Insertable(history).ExecuteCommandAsync();
             before.IsDeleted = true;
