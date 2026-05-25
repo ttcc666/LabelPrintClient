@@ -8,6 +8,7 @@
         Background="{DynamicResource SecondaryRegionBrush}"
         Foreground="{DynamicResource PrimaryTextBrush}"
         WindowStartupLocation="CenterScreen"
+        WindowState="Maximized"
         ShowTitle="True"
         NonClientAreaBackground="{DynamicResource RegionBrush}">
 
