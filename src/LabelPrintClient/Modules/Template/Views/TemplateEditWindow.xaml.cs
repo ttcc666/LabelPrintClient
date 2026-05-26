@@ -10,6 +10,7 @@ namespace LabelPrintClient.Modules.Template.Views;
 public partial class TemplateEditWindow : Window
 {
     public new LabelTemplate Template { get; private set; }
+    public bool ResetSerialCounter { get; private set; } = false;
 
     public TemplateEditWindow(LabelTemplate? template = null)
     {
@@ -121,6 +122,42 @@ public partial class TemplateEditWindow : Window
         {
             AppMessageBox.Show(patternError, "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
+        }
+
+        // 检测是否修改了序列号生成规则
+        var oldIsSerial = Template.IsSerialNumber == true;
+        var oldPattern = Template.SerialNumberPattern ?? string.Empty;
+        var oldPeriod = Template.SerialResetPeriod;
+        var newPeriod = isSerial ? ReadSerialResetPeriod() : SerialResetPeriod.Never;
+
+        bool isRuleChanged = false;
+        if (oldIsSerial)
+        {
+            // 以前就是序列号模式，现在关闭了，或者格式变了，或者重置周期变了
+            if (!isSerial || oldPattern != pattern || oldPeriod != newPeriod)
+            {
+                isRuleChanged = true;
+            }
+        }
+        else if (isSerial)
+        {
+            // 以前不是，现在开启了
+            isRuleChanged = true;
+        }
+
+        // 只有在原先存在序列号计数历史且本次确实修改了规则时，提示是否重置流水号
+        if (oldIsSerial && isRuleChanged)
+        {
+            var confirmResult = AppMessageBox.Show(
+                "检测到您修改了序列号生成规则，是否需要将当前流水号计数器重置为初始状态 (从1开始)？\n\n点击【是】将计数重置为 0；\n点击【否】将继续保留并累加当前已有的流水计数。",
+                "重置流水号确认",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+
+            if (confirmResult == MessageBoxResult.Yes)
+            {
+                ResetSerialCounter = true;
+            }
         }
 
         Template.Name = name;

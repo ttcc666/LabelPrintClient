@@ -104,6 +104,15 @@ public class LabelImportService
         string? operatorName,
         string? batchNo)
     {
+        var firstBatchNo = batchNo;
+        if (string.IsNullOrWhiteSpace(firstBatchNo) && drafts.Count > 0)
+        {
+            if (drafts[0].Data.TryGetValue("batch_no", out var bVal) && bVal != null)
+            {
+                firstBatchNo = bVal.ToString();
+            }
+        }
+
         return new LabelImportBatch
         {
             Id = IdHelper.NewId(),
@@ -117,7 +126,7 @@ public class LabelImportService
             InvalidRows = drafts.Count(x => !x.IsValid),
             Status = drafts.Any(x => !x.IsValid) ? "PartError" : "Imported",
             OperatorName = operatorName,
-            BatchNo = batchNo,
+            BatchNo = firstBatchNo,
             ImportTime = DateTime.Now
         };
     }
@@ -141,7 +150,6 @@ public class LabelImportService
 
     private static bool IsSystemField(string fieldCode)
     {
-        return string.Equals(fieldCode, "batch_no", StringComparison.OrdinalIgnoreCase) ||
-               string.Equals(fieldCode, "serial_no", StringComparison.OrdinalIgnoreCase);
+        return string.Equals(fieldCode, "serial_no", StringComparison.OrdinalIgnoreCase);
     }
 }

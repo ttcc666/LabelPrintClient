@@ -1,4 +1,4 @@
-﻿using LabelPrintClient.Modules.PrintCenter.Services;
+using LabelPrintClient.Modules.PrintCenter.Services;
 using LabelPrintClient.Modules.PrintCenter.ViewModels;
 using LabelPrintClient.Modules.Template.Models;
 using LabelPrintClient.Services;
@@ -129,8 +129,7 @@ public partial class ImportPreviewWindow : Window
 
     private static bool IsSystemField(string fieldCode)
     {
-        return string.Equals(fieldCode, "batch_no", StringComparison.OrdinalIgnoreCase) ||
-               string.Equals(fieldCode, "serial_no", StringComparison.OrdinalIgnoreCase);
+        return string.Equals(fieldCode, "serial_no", StringComparison.OrdinalIgnoreCase);
     }
 
     private async Task ApplyFilterAsync()

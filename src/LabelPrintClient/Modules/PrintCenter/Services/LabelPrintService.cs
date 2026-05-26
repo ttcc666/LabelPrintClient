@@ -325,11 +325,17 @@ public class LabelPrintService
                     dict["serial_no"] = serialNo;
                     rowDataJson = JsonHelper.Serialize(dict);
                 }
-                else if (!string.IsNullOrWhiteSpace(batch.BatchNo))
+                else
                 {
                     var dict = JsonHelper.Deserialize<Dictionary<string, string>>(row.RowDataJson) ?? new Dictionary<string, string>();
-                    dict["batch_no"] = batch.BatchNo;
-                    rowDataJson = JsonHelper.Serialize(dict);
+                    if (!dict.TryGetValue("batch_no", out var bNo) || string.IsNullOrWhiteSpace(bNo))
+                    {
+                        if (!string.IsNullOrWhiteSpace(batch.BatchNo))
+                        {
+                            dict["batch_no"] = batch.BatchNo;
+                            rowDataJson = JsonHelper.Serialize(dict);
+                        }
+                    }
                 }
 
                 jobRows.Add(new LabelPrintJobRow
@@ -367,11 +373,17 @@ public class LabelPrintService
                     dict["serial_no"] = SerialNumberService.Preview(pattern, now, ++currentSerial);
                     rowDataJson = JsonHelper.Serialize(dict);
                 }
-                else if (!string.IsNullOrWhiteSpace(context.Batch.BatchNo))
+                else
                 {
                     var dict = JsonHelper.Deserialize<Dictionary<string, string>>(row.RowDataJson) ?? new Dictionary<string, string>();
-                    dict["batch_no"] = context.Batch.BatchNo;
-                    rowDataJson = JsonHelper.Serialize(dict);
+                    if (!dict.TryGetValue("batch_no", out var bNo) || string.IsNullOrWhiteSpace(bNo))
+                    {
+                        if (!string.IsNullOrWhiteSpace(context.Batch.BatchNo))
+                        {
+                            dict["batch_no"] = context.Batch.BatchNo;
+                            rowDataJson = JsonHelper.Serialize(dict);
+                        }
+                    }
                 }
 
                 jobRows.Add(new LabelPrintJobRow

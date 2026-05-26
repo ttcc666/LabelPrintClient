@@ -337,19 +337,6 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
 
         var templateId = template.Id;
         string? batchNo = null;
-        if (template.IsSerialNumber != true)
-        {
-            var batchWin = new BatchNoInputWindow
-            {
-                Owner = Window.GetWindow(this)
-            };
-            if (batchWin.ShowDialog() != true)
-            {
-                SummaryText.Text = "已取消导入，未指定批号。";
-                return;
-            }
-            batchNo = batchWin.BatchNo;
-        }
 
         var dialog = new Microsoft.Win32.OpenFileDialog
         {
@@ -634,8 +621,7 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
 
     private static bool IsSystemField(string fieldCode)
     {
-        return string.Equals(fieldCode, "batch_no", StringComparison.OrdinalIgnoreCase) ||
-               string.Equals(fieldCode, "serial_no", StringComparison.OrdinalIgnoreCase);
+        return string.Equals(fieldCode, "serial_no", StringComparison.OrdinalIgnoreCase);
     }
 
     private DataTemplate BuildRowActionTemplate()

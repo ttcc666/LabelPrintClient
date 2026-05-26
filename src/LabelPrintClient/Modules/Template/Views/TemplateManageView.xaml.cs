@@ -447,6 +447,22 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         {
             await AppDb.Db.Updateable(edited).ExecuteCommandAsync();
 
+            if (win.ResetSerialCounter)
+            {
+                var now = DateTime.Now;
+                var counterKey = edited.SerialResetPeriod switch
+                {
+                    SerialResetPeriod.Daily => now.ToString("yyyyMMdd"),
+                    SerialResetPeriod.Monthly => now.ToString("yyyyMM"),
+                    SerialResetPeriod.Yearly => now.ToString("yyyy"),
+                    _ => "global"
+                };
+
+                await AppDb.Db.Deleteable<LabelSerialCounter>()
+                    .Where(x => x.TemplateId == edited.Id && x.CounterKey == counterKey)
+                    .ExecuteCommandAsync();
+            }
+
             if ((template.IsSerialNumber == true) != (edited.IsSerialNumber == true))
             {
                 if (edited.IsSerialNumber == true)

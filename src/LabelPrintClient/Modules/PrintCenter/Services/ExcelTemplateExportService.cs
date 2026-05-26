@@ -213,8 +213,7 @@ public class ExcelTemplateExportService
 
     private static bool IsSystemField(string fieldCode)
     {
-        return string.Equals(fieldCode, "batch_no", StringComparison.OrdinalIgnoreCase) ||
-               string.Equals(fieldCode, "serial_no", StringComparison.OrdinalIgnoreCase);
+        return string.Equals(fieldCode, "serial_no", StringComparison.OrdinalIgnoreCase);
     }
 
     private sealed record EnumFieldSource(LabelTemplateField Field, int FieldIndex, List<string> Values);
