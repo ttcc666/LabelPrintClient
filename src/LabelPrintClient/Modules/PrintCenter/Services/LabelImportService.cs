@@ -133,18 +133,23 @@ public class LabelImportService
 
     private static List<LabelImportRow> BuildRows(long templateId, long batchId, IEnumerable<ImportRowDraft> drafts)
     {
-        return drafts.Select(x => new LabelImportRow
+        return drafts.Select(x =>
         {
-            Id = IdHelper.NewId(),
-            BatchId = batchId,
-            TemplateId = templateId,
-            RowIndex = x.RowIndex,
-            RowDataJson = JsonHelper.Serialize(x.Data),
-            IsValid = x.IsValid,
-            ErrorMessage = x.IsValid ? null : x.ErrorMessage,
-            IsPrinted = false,
-            PrintCount = 0,
-            CreateTime = DateTime.Now
+            var rowDataJson = JsonHelper.Serialize(x.Data);
+            return new LabelImportRow
+            {
+                Id = IdHelper.NewId(),
+                BatchId = batchId,
+                TemplateId = templateId,
+                RowIndex = x.RowIndex,
+                RowDataJson = rowDataJson,
+                SearchText = SearchTextBuilder.FromDictionary(x.Data),
+                IsValid = x.IsValid,
+                ErrorMessage = x.IsValid ? null : x.ErrorMessage,
+                IsPrinted = false,
+                PrintCount = 0,
+                CreateTime = DateTime.Now
+            };
         }).ToList();
     }
 

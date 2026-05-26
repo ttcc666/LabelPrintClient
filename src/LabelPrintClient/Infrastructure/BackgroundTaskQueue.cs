@@ -8,8 +8,11 @@ public sealed class BackgroundTaskQueue
     public static BackgroundTaskQueue Shared { get; } = new();
 
     private const int MaxTaskItems = 200;
+    private const int GeneralConcurrency = 2;
 
-    private readonly SemaphoreSlim _gate = new(1, 1);
+    private readonly SemaphoreSlim _generalGate = new(GeneralConcurrency, GeneralConcurrency);
+    private readonly SemaphoreSlim _printGate = new(1, 1);
+    private readonly SemaphoreSlim _staGate = new(1, 1);
     private readonly ObservableCollection<BackgroundTaskItem> _tasks = new();
 
     private BackgroundTaskQueue()
@@ -67,10 +70,11 @@ public sealed class BackgroundTaskQueue
         var item = new BackgroundTaskItem(IdHelper.NewId(), kind, title);
         AddTask(item);
 
+        var gate = ResolveGate(kind);
         var acquired = false;
         try
         {
-            await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+            await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
             acquired = true;
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -94,7 +98,7 @@ public sealed class BackgroundTaskQueue
         finally
         {
             if (acquired)
-                _gate.Release();
+                gate.Release();
         }
     }
 
@@ -125,6 +129,16 @@ public sealed class BackgroundTaskQueue
     private void Report(BackgroundTaskItem item, BackgroundTaskProgress progress)
     {
         UpdateTask(item, x => x.SetProgress(progress.Current, progress.Total, progress.Message));
+    }
+
+    private SemaphoreSlim ResolveGate(BackgroundTaskKind kind)
+    {
+        return kind switch
+        {
+            BackgroundTaskKind.Print => _printGate,
+            BackgroundTaskKind.Preview or BackgroundTaskKind.Design => _staGate,
+            _ => _generalGate
+        };
     }
 
     private static void UpdateTask(BackgroundTaskItem item, Action<BackgroundTaskItem> update)

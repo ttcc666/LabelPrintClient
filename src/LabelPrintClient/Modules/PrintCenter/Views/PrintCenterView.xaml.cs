@@ -446,9 +446,14 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
             if (!string.IsNullOrWhiteSpace(rowKeyword))
             {
                 if (int.TryParse(rowKeyword, out var rowIndex))
-                    rowQuery = rowQuery.Where(x => x.RowIndex == rowIndex || x.RowDataJson.Contains(rowKeyword) || (x.ErrorMessage != null && x.ErrorMessage.Contains(rowKeyword)));
+                    rowQuery = rowQuery.Where(x =>
+                        x.RowIndex == rowIndex ||
+                        (x.SearchText != null && x.SearchText.Contains(rowKeyword)) ||
+                        (x.ErrorMessage != null && x.ErrorMessage.Contains(rowKeyword)));
                 else
-                    rowQuery = rowQuery.Where(x => x.RowDataJson.Contains(rowKeyword) || (x.ErrorMessage != null && x.ErrorMessage.Contains(rowKeyword)));
+                    rowQuery = rowQuery.Where(x =>
+                        (x.SearchText != null && x.SearchText.Contains(rowKeyword)) ||
+                        (x.ErrorMessage != null && x.ErrorMessage.Contains(rowKeyword)));
             }
 
             RefAsync<int> totalRowsRef = 0;

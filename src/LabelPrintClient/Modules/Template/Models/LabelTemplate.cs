@@ -3,6 +3,11 @@ using SqlSugar;
 namespace LabelPrintClient.Modules.Template.Models;
 
 [SugarTable("label_template")]
+[SugarIndex(
+    "ix_label_template_category_enabled_name",
+    nameof(CategoryId), OrderByType.Asc,
+    nameof(IsEnabled), OrderByType.Asc,
+    nameof(Name), OrderByType.Asc)]
 public class LabelTemplate
 {
     [SugarColumn(IsPrimaryKey = true)]

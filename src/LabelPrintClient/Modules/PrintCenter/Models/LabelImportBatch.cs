@@ -3,6 +3,15 @@ using SqlSugar;
 namespace LabelPrintClient.Modules.PrintCenter.Models;
 
 [SugarTable("label_import_batch")]
+[SugarIndex(
+    "ix_label_import_batch_template_time",
+    nameof(TemplateId), OrderByType.Asc,
+    nameof(ImportTime), OrderByType.Desc,
+    nameof(Id), OrderByType.Desc)]
+[SugarIndex(
+    "ix_label_import_batch_template_status",
+    nameof(TemplateId), OrderByType.Asc,
+    nameof(Status), OrderByType.Asc)]
 public class LabelImportBatch
 {
     [SugarColumn(IsPrimaryKey = true)]

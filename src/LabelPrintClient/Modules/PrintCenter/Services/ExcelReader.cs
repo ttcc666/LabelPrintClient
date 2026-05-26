@@ -11,11 +11,16 @@ public static class ExcelReader
         IReadOnlyList<LabelTemplateField> fields,
         CancellationToken cancellationToken = default)
     {
-        return Task.Run(() => ReadRows(filePath, fields), cancellationToken);
+        return Task.Run(() => ReadRows(filePath, fields, cancellationToken), cancellationToken);
     }
 
-    public static List<ImportRowDraft> ReadRows(string filePath, IReadOnlyList<LabelTemplateField> fields)
+    public static List<ImportRowDraft> ReadRows(
+        string filePath,
+        IReadOnlyList<LabelTemplateField> fields,
+        CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         using var workbook = new XLWorkbook(filePath);
         var sheet = workbook.Worksheet(1);
         var result = new List<ImportRowDraft>();
@@ -25,6 +30,8 @@ public static class ExcelReader
 
         for (var rowIndex = 2; rowIndex <= lastRow; rowIndex++)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var draft = new ImportRowDraft { RowIndex = rowIndex };
 
             var isEmptyRow = true;

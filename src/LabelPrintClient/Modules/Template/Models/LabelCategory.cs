@@ -3,6 +3,10 @@
 namespace LabelPrintClient.Modules.Template.Models;
 
 [SugarTable("label_category")]
+[SugarIndex(
+    "ix_label_category_enabled_sort",
+    nameof(IsEnabled), OrderByType.Asc,
+    nameof(Sort), OrderByType.Asc)]
 public class LabelCategory
 {
     [SugarColumn(IsPrimaryKey = true)]

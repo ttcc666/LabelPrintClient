@@ -730,4 +730,10 @@
             </Trigger>
         </Style.Triggers>
     </Style>
+
+    <!-- 彻底解决第三方库 ComboBoxItem 向上寻址祖先 ItemsControl 导致的控制台 Binding Error 4 绑定红字报错 -->
+    <Style TargetType="ComboBoxItem" BasedOn="{StaticResource {x:Type ComboBoxItem}}">
+        <Setter Property="HorizontalContentAlignment" Value="Left" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
 </ResourceDictionary>

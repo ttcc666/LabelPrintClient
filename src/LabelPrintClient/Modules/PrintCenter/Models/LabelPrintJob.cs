@@ -3,6 +3,17 @@
 namespace LabelPrintClient.Modules.PrintCenter.Models;
 
 [SugarTable("label_print_job")]
+[SugarIndex(
+    "ix_label_print_job_time",
+    nameof(CreateTime), OrderByType.Desc,
+    nameof(Id), OrderByType.Desc)]
+[SugarIndex(
+    "ix_label_print_job_status_time",
+    nameof(Status), OrderByType.Asc,
+    nameof(CreateTime), OrderByType.Desc)]
+[SugarIndex(
+    "ix_label_print_job_batch",
+    nameof(BatchId), OrderByType.Asc)]
 public class LabelPrintJob
 {
     [SugarColumn(IsPrimaryKey = true)]

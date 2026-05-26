@@ -6,6 +6,7 @@ using LabelPrintClient.Config;
 using LabelPrintClient.Database;
 using LabelPrintClient.Infrastructure;
 using LabelPrintClient.Modules.PrintCenter.Models;
+using LabelPrintClient.Modules.PrintCenter.Services;
 using LabelPrintClient.Modules.Template.Models;
 using LabelPrintClient.Modules.Template.Services;
 using LabelPrintClient.Services;
@@ -1133,6 +1134,10 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
                     CreateTime = DateTime.Now
                 }
             };
+            foreach (var row in rows1)
+            {
+                row.SearchText = SearchTextBuilder.FromJson(row.RowDataJson);
+            }
             await AppDb.Db.Insertable(rows1).ExecuteCommandAsync();
 
             // 为“产品序列号标签”插入一笔批次导入
@@ -1194,6 +1199,10 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
                     CreateTime = DateTime.Now
                 }
             };
+            foreach (var row in rows2)
+            {
+                row.SearchText = SearchTextBuilder.FromJson(row.RowDataJson);
+            }
             await AppDb.Db.Insertable(rows2).ExecuteCommandAsync();
 
             // 4. 为“产品序列号标签”插入一笔已打印任务 Job (以供直接测试序列号补打)
@@ -1261,6 +1270,10 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
                     })
                 }
             };
+            foreach (var row in jobRows)
+            {
+                row.SearchText = SearchTextBuilder.FromJson(row.RowDataJson);
+            }
             await AppDb.Db.Insertable(jobRows).ExecuteCommandAsync();
 
             // 标记对应的 row 为已打印
@@ -1514,7 +1527,10 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
 
         var keyPattern = $"\"{fieldCode}\"";
         var hasImportRows = await AppDb.Db.Queryable<LabelImportRow>()
-            .Where(x => x.TemplateId == templateId && x.RowDataJson.Contains(keyPattern))
+            .Where(x =>
+                x.TemplateId == templateId &&
+                ((x.SearchText != null && x.SearchText.Contains(fieldCode)) ||
+                 (x.SearchText == null && x.RowDataJson.Contains(keyPattern))))
             .AnyAsync();
         if (hasImportRows)
             return true;
@@ -1527,7 +1543,10 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
             return false;
 
         return await AppDb.Db.Queryable<LabelPrintJobRow>()
-            .Where(x => jobIds.Contains(x.PrintJobId) && x.RowDataJson.Contains(keyPattern))
+            .Where(x =>
+                jobIds.Contains(x.PrintJobId) &&
+                ((x.SearchText != null && x.SearchText.Contains(fieldCode)) ||
+                 (x.SearchText == null && x.RowDataJson.Contains(keyPattern))))
             .AnyAsync();
     }
 

@@ -230,9 +230,12 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
             if (!string.IsNullOrWhiteSpace(keyword))
             {
                 if (int.TryParse(keyword, out var rowIndex))
-                    rowQuery = rowQuery.Where(x => x.RowIndex == rowIndex || x.RowDataJson.Contains(keyword));
+                    rowQuery = rowQuery.Where(x =>
+                        x.RowIndex == rowIndex ||
+                        (x.SearchText != null && x.SearchText.Contains(keyword)));
                 else
-                    rowQuery = rowQuery.Where(x => x.RowDataJson.Contains(keyword));
+                    rowQuery = rowQuery.Where(x =>
+                        (x.SearchText != null && x.SearchText.Contains(keyword)));
             }
 
             RefAsync<int> totalRowsRef = 0;

@@ -3,6 +3,17 @@
 namespace LabelPrintClient.Modules.PrintCenter.Models;
 
 [SugarTable("label_import_row")]
+[SugarIndex(
+    "ix_label_import_row_batch_row",
+    nameof(BatchId), OrderByType.Asc,
+    nameof(RowIndex), OrderByType.Asc)]
+[SugarIndex(
+    "ix_label_import_row_batch_valid",
+    nameof(BatchId), OrderByType.Asc,
+    nameof(IsValid), OrderByType.Asc)]
+[SugarIndex(
+    "ix_label_import_row_template",
+    nameof(TemplateId), OrderByType.Asc)]
 public class LabelImportRow
 {
     [SugarColumn(IsPrimaryKey = true)]
@@ -16,6 +27,9 @@ public class LabelImportRow
 
     [SugarColumn(ColumnDataType = "TEXT")]
     public string RowDataJson { get; set; } = "{}";
+
+    [SugarColumn(ColumnDataType = "TEXT", IsNullable = true)]
+    public string? SearchText { get; set; }
 
     public bool IsValid { get; set; }
 

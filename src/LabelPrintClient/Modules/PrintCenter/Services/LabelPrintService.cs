@@ -8,6 +8,7 @@ using Stimulsoft.Report;
 using Stimulsoft.Report.Components;
 using System.Data;
 using System.Drawing.Printing;
+using System.IO;
 
 namespace LabelPrintClient.Modules.PrintCenter.Services;
 
@@ -32,20 +33,21 @@ public class LabelPrintService
         CancellationToken cancellationToken = default)
     {
         copyCount = ValidateCopyCount(copyCount);
-        var context = await BuildPrintContextAsync(templateId, batchId, selectedRowIds, 1, cancellationToken)
+        var context = await BuildPrintContextAsync(templateId, batchId, selectedRowIds, cancellationToken)
             .ConfigureAwait(false);
         var previewRows = await BuildPreviewJobRowsAsync(context, copyCount, cancellationToken)
             .ConfigureAwait(false);
 
         await StaThreadRunner.RunAsync(() =>
         {
+            var templateBytes = CaptureReportTemplate(context.Template);
             StiReport? mainReport = null;
 
             foreach (var jobRow in previewRows)
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var dataTable = BuildDataTableFromJobRow(context.Template.DataSourceName, context.Fields, jobRow);
-                var tempReport = BuildRenderedReport(context.Template, dataTable);
+                var tempReport = BuildRenderedReport(templateBytes, context.Template.DataSourceName, dataTable);
 
                 if (mainReport == null)
                 {
@@ -78,7 +80,7 @@ public class LabelPrintService
         IProgress<BackgroundTaskProgress>? progress = null)
     {
         copyCount = ValidateCopyCount(copyCount);
-        var context = await BuildPrintContextAsync(templateId, batchId, selectedRowIds, 1, cancellationToken)
+        var context = await BuildPrintContextAsync(templateId, batchId, selectedRowIds, cancellationToken)
             .ConfigureAwait(false);
 
         var printJob = BuildPrintJob(context.Template, batchId, context.Rows.Count * copyCount, printerName, _settings.OperatorName);
@@ -189,7 +191,6 @@ public class LabelPrintService
         long templateId,
         long batchId,
         IReadOnlyCollection<long> selectedRowIds,
-        int copyCount,
         CancellationToken cancellationToken)
     {
         if (selectedRowIds.Count == 0)
@@ -229,8 +230,7 @@ public class LabelPrintService
         if (rows.Count == 0)
             throw new InvalidOperationException("选中的数据中没有有效行，无法打印。");
 
-        var dataTable = DataTableBuilder.Build(rows, fields, template.DataSourceName, copyCount);
-        return new PrintContext(template, batch, fields, rows, dataTable);
+        return new PrintContext(template, batch, fields, rows);
     }
 
     private void PrintJobRows(
@@ -243,6 +243,7 @@ public class LabelPrintService
         string startMessage)
     {
         var settings = CreatePrinterSettings(printerName);
+        var templateBytes = CaptureReportTemplate(template);
         var total = jobRows.Count;
         var completed = 0;
         var progressReportInterval = Math.Max(1, (int)Math.Ceiling(total / 100.0));
@@ -253,7 +254,7 @@ public class LabelPrintService
             cancellationToken.ThrowIfCancellationRequested();
 
             var dataTable = BuildDataTableFromJobRow(template.DataSourceName, fields, jobRow);
-            var report = BuildRenderedReport(template, dataTable);
+            var report = BuildRenderedReport(templateBytes, template.DataSourceName, dataTable);
             report.Print(false, settings);
             completed++;
             if (ShouldReportProgress(completed, total, progressReportInterval))
@@ -266,10 +267,20 @@ public class LabelPrintService
         return completed >= total || completed % reportInterval == 0;
     }
 
-    private StiReport BuildRenderedReport(LabelTemplate template, DataTable dataTable)
+    private byte[] CaptureReportTemplate(LabelTemplate template)
     {
         var report = _templateStorage.LoadReport(template);
-        RegisterReportData(report, template.DataSourceName, dataTable);
+        using var ms = new MemoryStream();
+        report.Save(ms);
+        return ms.ToArray();
+    }
+
+    private static StiReport BuildRenderedReport(byte[] templateBytes, string dataSourceName, DataTable dataTable)
+    {
+        var report = new StiReport();
+        using var ms = new MemoryStream(templateBytes);
+        report.Load(ms);
+        RegisterReportData(report, dataSourceName, dataTable);
         report.Render(false);
         return report;
     }
@@ -344,7 +355,8 @@ public class LabelPrintService
                     PrintJobId = printJobId,
                     ImportRowId = row.Id,
                     RowIndex = row.RowIndex,
-                    RowDataJson = rowDataJson
+                    RowDataJson = rowDataJson,
+                    SearchText = SearchTextBuilder.FromJson(rowDataJson)
                 });
             }
         }
@@ -392,7 +404,8 @@ public class LabelPrintService
                     PrintJobId = 0,
                     ImportRowId = row.Id,
                     RowIndex = row.RowIndex,
-                    RowDataJson = rowDataJson
+                    RowDataJson = rowDataJson,
+                    SearchText = SearchTextBuilder.FromJson(rowDataJson)
                 });
             }
         }
@@ -528,6 +541,7 @@ public class LabelPrintService
             .ConfigureAwait(false);
 
         var settings = CreatePrinterSettings(printerName);
+        var templateBytes = CaptureReportTemplate(template);
         var total = jobRows.Count;
         var completed = 0;
         progress?.Report(new BackgroundTaskProgress(completed, total, "开始提交历史重打任务"));
@@ -539,7 +553,7 @@ public class LabelPrintService
                 cancellationToken.ThrowIfCancellationRequested();
 
                 var table = BuildDataTableFromJobRow(template.DataSourceName, fields, jobRow);
-                var report = BuildRenderedReport(template, table);
+                var report = BuildRenderedReport(templateBytes, template.DataSourceName, table);
                 report.Print(false, settings);
 
                 completed++;
