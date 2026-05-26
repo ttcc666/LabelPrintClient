@@ -80,7 +80,8 @@
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="时间"
                                         Binding="{Binding CreateTime, StringFormat=\{0:yyyy-MM-dd HH:mm:ss\}}"
-                                        Width="170" />
+                                        Width="170"
+                                        ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
                     <DataGridTemplateColumn Header="操作" Width="82" MinWidth="82" SortMemberPath="OperationType">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
@@ -88,10 +89,10 @@
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
-                    <DataGridTextColumn Header="字段名" Binding="{Binding FieldName}" Width="130" />
-                    <DataGridTextColumn Header="字段编码" Binding="{Binding FieldCode}" Width="130" />
-                    <DataGridTextColumn Header="变更内容" Binding="{Binding ChangeSummary}" Width="*" MinWidth="260" />
-                    <DataGridTextColumn Header="操作人" Binding="{Binding OperatorName}" Width="100" />
+                    <DataGridTextColumn Header="字段名" Binding="{Binding FieldName}" Width="130" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
+                    <DataGridTextColumn Header="字段编码" Binding="{Binding FieldCode}" Width="130" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
+                    <DataGridTextColumn Header="变更内容" Binding="{Binding ChangeSummary}" Width="*" MinWidth="260" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
+                    <DataGridTextColumn Header="操作人" Binding="{Binding OperatorName}" Width="100" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
                     <DataGridTemplateColumn Header="操作" Width="92" MinWidth="92">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>

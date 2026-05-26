@@ -24,6 +24,12 @@
     <SolidColorBrush x:Key="AppDataGridHoverBrush" Color="#142563EB" />
     <SolidColorBrush x:Key="AppDataGridSelectedBrush" Color="#1F2563EB" />
 
+    <!-- 全局 DataGridTextColumn 的文本显示 ElementStyle -->
+    <Style x:Key="AppDataGridTextColumnElementStyle" TargetType="TextBlock">
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        <Setter Property="ToolTip" Value="{Binding RelativeSource={RelativeSource Self}, Path=Text}" />
+    </Style>
+
     <Style x:Key="AppPageTitleStyle" TargetType="TextBlock">
         <Setter Property="FontSize" Value="18" />
         <Setter Property="FontWeight" Value="SemiBold" />
@@ -565,7 +571,6 @@
         <Setter Property="BorderThickness" Value="0,0,0,1" />
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
-        <Setter Property="ToolTip" Value="{Binding RelativeSource={RelativeSource Self}, Path=Content.Text}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="DataGridCell">
@@ -685,11 +690,6 @@
     </Style>
 
     <Style TargetType="DataGrid" BasedOn="{StaticResource DataGridBaseStyle}">
-        <Style.Resources>
-            <Style TargetType="TextBlock">
-                <Setter Property="TextTrimming" Value="CharacterEllipsis" />
-            </Style>
-        </Style.Resources>
         <Setter Property="CanUserResizeColumns" Value="True" />
         <Setter Property="AutoGenerateColumns" Value="False" />
         <Setter Property="CanUserAddRows" Value="False" />

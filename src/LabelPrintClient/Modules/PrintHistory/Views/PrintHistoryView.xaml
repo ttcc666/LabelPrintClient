@@ -139,13 +139,13 @@
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTextColumn Header="创建时间" Binding="{Binding CreateTime, StringFormat=\{0:yyyy-MM-dd HH:mm:ss\}}" Width="170" />
-                                <DataGridTextColumn Header="打印时间" Binding="{Binding PrintTime, StringFormat=\{0:yyyy-MM-dd HH:mm:ss\}}" Width="170" />
-                                <DataGridTextColumn Header="模板名称" Binding="{Binding TemplateName}" Width="160" />
-                                <DataGridTextColumn Header="打印张数" Binding="{Binding SelectedRowCount}" Width="80" />
-                                <DataGridTextColumn Header="打印机" Binding="{Binding PrinterNameText}" Width="150" />
-                                <DataGridTextColumn Header="操作人" Binding="{Binding OperatorName}" Width="100" />
-                                <DataGridTextColumn Header="错误信息" Binding="{Binding ErrorMessage}" Width="*" MinWidth="180" />
+                                <DataGridTextColumn Header="创建时间" Binding="{Binding CreateTime, StringFormat=\{0:yyyy-MM-dd HH:mm:ss\}}" Width="170" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
+                                <DataGridTextColumn Header="打印时间" Binding="{Binding PrintTime, StringFormat=\{0:yyyy-MM-dd HH:mm:ss\}}" Width="170" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
+                                <DataGridTextColumn Header="模板名称" Binding="{Binding TemplateName}" Width="160" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
+                                <DataGridTextColumn Header="打印张数" Binding="{Binding SelectedRowCount}" Width="80" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
+                                <DataGridTextColumn Header="打印机" Binding="{Binding PrinterNameText}" Width="150" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
+                                <DataGridTextColumn Header="操作人" Binding="{Binding OperatorName}" Width="100" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
+                                <DataGridTextColumn Header="错误信息" Binding="{Binding ErrorMessage}" Width="*" MinWidth="180" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
                             </DataGrid.Columns>
                         </DataGrid>
                         <Border Grid.Row="1" Padding="0,8,0,0" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" Margin="8,8,8,8">

@@ -127,7 +127,7 @@
                               HorizontalScrollBarVisibility="Auto"
                               VerticalScrollBarVisibility="Auto">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="类型" Binding="{Binding KindText}" Width="70" />
+                            <DataGridTextColumn Header="类型" Binding="{Binding KindText}" Width="70" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
                             <DataGridTemplateColumn Header="状态" Width="96" SortMemberPath="Status">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
@@ -135,7 +135,7 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTextColumn Header="任务" Binding="{Binding DisplayTitle}" Width="220" />
+                            <DataGridTextColumn Header="任务" Binding="{Binding DisplayTitle}" Width="220" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
                             <DataGridTemplateColumn Header="进度" Width="180">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
@@ -160,10 +160,10 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTextColumn Header="说明" Binding="{Binding Description}" Width="260" />
-                            <DataGridTextColumn Header="创建时间" Binding="{Binding CreateTime, StringFormat=\{0:yyyy-MM-dd HH:mm:ss\}}" Width="170" />
-                            <DataGridTextColumn Header="完成时间" Binding="{Binding FinishTime, StringFormat=\{0:yyyy-MM-dd HH:mm:ss\}}" Width="170" />
-                            <DataGridTextColumn Header="错误" Binding="{Binding ErrorMessage}" Width="*" MinWidth="180" />
+                            <DataGridTextColumn Header="说明" Binding="{Binding Description}" Width="260" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
+                            <DataGridTextColumn Header="创建时间" Binding="{Binding CreateTime, StringFormat=\{0:yyyy-MM-dd HH:mm:ss\}}" Width="170" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
+                            <DataGridTextColumn Header="完成时间" Binding="{Binding FinishTime, StringFormat=\{0:yyyy-MM-dd HH:mm:ss\}}" Width="170" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
+                            <DataGridTextColumn Header="错误" Binding="{Binding ErrorMessage}" Width="*" MinWidth="180" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
                         </DataGrid.Columns>
                     </DataGrid>
                     <StackPanel Style="{StaticResource AppDataGridEmptyStatePanelStyle}"

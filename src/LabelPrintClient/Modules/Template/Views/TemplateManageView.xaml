@@ -159,7 +159,7 @@
                               HorizontalScrollBarVisibility="Auto"
                               VerticalScrollBarVisibility="Auto">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="名称" Binding="{Binding Name}" Width="*" MinWidth="120" />
+                            <DataGridTextColumn Header="名称" Binding="{Binding Name}" Width="*" MinWidth="120" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
                             <DataGridTemplateColumn Header="状态"
                                                     Width="76"
                                                     CellStyle="{StaticResource AppDataGridCenterCellStyle}"
@@ -267,7 +267,7 @@
                               HorizontalScrollBarVisibility="Auto"
                               VerticalScrollBarVisibility="Auto">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="名称" Binding="{Binding Name}" Width="130" />
+                            <DataGridTextColumn Header="名称" Binding="{Binding Name}" Width="130" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
                             <!-- 存储介质 Badge 胶囊列 -->
                             <DataGridTemplateColumn Header="存储" Width="96">
                                 <DataGridTemplateColumn.CellTemplate>
@@ -290,7 +290,7 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTextColumn Header="文件" Binding="{Binding TemplateFileName}" Width="*" MinWidth="120" />
+                            <DataGridTextColumn Header="文件" Binding="{Binding TemplateFileName}" Width="*" MinWidth="120" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
                         </DataGrid.Columns>
                     </DataGrid>
                     <StackPanel Grid.Row="0"
@@ -421,9 +421,9 @@
                               HorizontalScrollBarVisibility="Auto"
                               VerticalScrollBarVisibility="Auto">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="排序" Binding="{Binding Sort}" Width="52" />
-                            <DataGridTextColumn Header="字段名" Binding="{Binding FieldName}" Width="110" />
-                            <DataGridTextColumn Header="字段编码" Binding="{Binding FieldCode}" Width="120" />
+                            <DataGridTextColumn Header="排序" Binding="{Binding Sort}" Width="52" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
+                            <DataGridTextColumn Header="字段名" Binding="{Binding FieldName}" Width="110" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
+                            <DataGridTextColumn Header="字段编码" Binding="{Binding FieldCode}" Width="120" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
                             <!-- 字段数据类型 Badge 胶囊列 -->
                             <DataGridTemplateColumn Header="类型" Width="76">
                                 <DataGridTemplateColumn.CellTemplate>
@@ -441,8 +441,8 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTextColumn Header="校验规则" Binding="{Binding ValidationRuleSummary}" Width="160" />
-                            <DataGridTextColumn Header="备注" Binding="{Binding Remark}" Width="*" MinWidth="140" />
+                            <DataGridTextColumn Header="校验规则" Binding="{Binding ValidationRuleSummary}" Width="160" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
+                            <DataGridTextColumn Header="备注" Binding="{Binding Remark}" Width="*" MinWidth="140" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
                         </DataGrid.Columns>
                     </DataGrid>
                     <StackPanel Style="{StaticResource AppDataGridEmptyStatePanelStyle}"
