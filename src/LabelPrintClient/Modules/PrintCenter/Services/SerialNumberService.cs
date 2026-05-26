@@ -12,7 +12,10 @@ public static partial class SerialNumberService
     public const string DefaultPattern = "SN-{seq:0000}";
     private static readonly ConcurrentDictionary<string, SemaphoreSlim> CounterLocks = new();
 
-    public static bool IsValidPattern(string? pattern, out string error)
+    public static bool IsValidPattern(
+        string? pattern, 
+        IEnumerable<string>? allowedFields, 
+        out string error)
     {
         error = string.Empty;
         if (string.IsNullOrWhiteSpace(pattern))
@@ -20,6 +23,10 @@ public static partial class SerialNumberService
             error = "序列号规则不能为空。";
             return false;
         }
+
+        var allowedSet = allowedFields != null
+            ? new HashSet<string>(allowedFields, StringComparer.OrdinalIgnoreCase)
+            : new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         var hasSeq = false;
         foreach (Match match in TokenRegex().Matches(pattern))
@@ -40,7 +47,11 @@ public static partial class SerialNumberService
             if (token is "yyyy" or "yy" or "MM" or "dd" or "HH" or "mm")
                 continue;
 
-            error = $"不支持的序列号变量：{{{token}}}。";
+            // 增强的字段存在性校验：只有当前模板已存在的字段 FieldCode 才允许作为序列号规则变量
+            if (allowedSet.Contains(token))
+                continue;
+
+            error = $"不支持的序列号变量：{{{token}}}（当前模板变量字段中不存在此字段，请先添加它）。";
             return false;
         }
 
@@ -53,9 +64,13 @@ public static partial class SerialNumberService
         return true;
     }
 
-    public static string Preview(string? pattern, DateTime now, long sequence = 1)
+    public static string Preview(
+        string? pattern, 
+        DateTime now, 
+        long sequence = 1,
+        IReadOnlyDictionary<string, string>? rowData = null)
     {
-        return Format(NormalizePattern(pattern, null), now, sequence);
+        return Format(NormalizePattern(pattern, null), now, sequence, rowData);
     }
 
     public static async Task<string> GenerateNextAsync(
@@ -71,7 +86,11 @@ public static partial class SerialNumberService
         {
             var nextValue = await NextCounterValueAsync(template.Id, row.Id, counterKey, now, cancellationToken)
                 .ConfigureAwait(false);
-            return Format(NormalizePattern(template.SerialNumberPattern, template.SerialNumberPrefix), now, nextValue);
+            
+            // 解析行数据的自定义字典以供格式化替换
+            var rowDict = JsonHelper.Deserialize<Dictionary<string, string>>(row.RowDataJson);
+
+            return Format(NormalizePattern(template.SerialNumberPattern, template.SerialNumberPrefix), now, nextValue, rowDict);
         }
         finally
         {
@@ -196,23 +215,41 @@ public static partial class SerialNumberService
         return counters.FirstOrDefault();
     }
 
-    private static string Format(string pattern, DateTime now, long sequence)
+    private static string Format(
+        string pattern, 
+        DateTime now, 
+        long sequence,
+        IReadOnlyDictionary<string, string>? rowData)
     {
         return TokenRegex().Replace(pattern, match =>
         {
             var token = match.Groups[1].Value;
-            return token switch
+            
+            // 优先匹配预设的系统时间变量与序列流水号
+            switch (token)
             {
-                "yyyy" => now.ToString("yyyy"),
-                "yy" => now.ToString("yy"),
-                "MM" => now.ToString("MM"),
-                "dd" => now.ToString("dd"),
-                "HH" => now.ToString("HH"),
-                "mm" => now.ToString("mm"),
-                "seq" => sequence.ToString(),
-                _ when token.StartsWith("seq:", StringComparison.Ordinal) => sequence.ToString(token[4..]),
-                _ => match.Value
-            };
+                case "yyyy": return now.ToString("yyyy");
+                case "yy": return now.ToString("yy");
+                case "MM": return now.ToString("MM");
+                case "dd": return now.ToString("dd");
+                case "HH": return now.ToString("HH");
+                case "mm": return now.ToString("mm");
+                case "seq": return sequence.ToString();
+            }
+
+            if (token.StartsWith("seq:", StringComparison.Ordinal))
+            {
+                return sequence.ToString(token[4..]);
+            }
+
+            // 尝试读取该行数据级绑定的自定义打印变量进行动态替换
+            if (rowData != null && rowData.TryGetValue(token, out var val))
+            {
+                return val ?? string.Empty;
+            }
+
+            // 未找到任何匹配时，原样保留占位符本身以起提示作用
+            return match.Value;
         });
     }
 

@@ -370,7 +370,7 @@ public class LabelPrintService
                 {
                     var pattern = SerialNumberService.NormalizePattern(context.Template.SerialNumberPattern, context.Template.SerialNumberPrefix);
                     var dict = JsonHelper.Deserialize<Dictionary<string, string>>(row.RowDataJson) ?? new Dictionary<string, string>();
-                    dict["serial_no"] = SerialNumberService.Preview(pattern, now, ++currentSerial);
+                    dict["serial_no"] = SerialNumberService.Preview(pattern, now, ++currentSerial, dict);
                     rowDataJson = JsonHelper.Serialize(dict);
                 }
                 else

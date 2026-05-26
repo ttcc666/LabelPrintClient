@@ -9,11 +9,14 @@ namespace LabelPrintClient.Modules.Template.Views;
 
 public partial class TemplateEditWindow : Window
 {
+    private readonly IEnumerable<string>? _allowedFields;
+
     public new LabelTemplate Template { get; private set; }
     public bool ResetSerialCounter { get; private set; } = false;
 
-    public TemplateEditWindow(LabelTemplate? template = null)
+    public TemplateEditWindow(LabelTemplate? template = null, IEnumerable<string>? allowedFields = null)
     {
+        _allowedFields = allowedFields;
         InitializeComponent();
 
         if (template != null)
@@ -118,7 +121,7 @@ public partial class TemplateEditWindow : Window
 
         var isSerial = IsSerialNumberBox.IsChecked == true;
         var pattern = SerialNumberPatternBox.Text.Trim();
-        if (isSerial && !SerialNumberService.IsValidPattern(pattern, out var patternError))
+        if (isSerial && !SerialNumberService.IsValidPattern(pattern, _allowedFields, out var patternError))
         {
             AppMessageBox.Show(patternError, "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
@@ -191,7 +194,7 @@ public partial class TemplateEditWindow : Window
             return;
 
         var pattern = SerialNumberPatternBox.Text.Trim();
-        SerialPreviewText.Text = SerialNumberService.IsValidPattern(pattern, out var error)
+        SerialPreviewText.Text = SerialNumberService.IsValidPattern(pattern, _allowedFields, out var error)
             ? $"预览：{SerialNumberService.Preview(pattern, DateTime.Now)}"
             : $"预览：{error}";
     }

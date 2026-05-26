@@ -416,8 +416,14 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
             return;
         }
 
+        // 查询该模板下已维护的字段编码以供序列号规则强校验
+        var allowedFields = await AppDb.Db.Queryable<LabelTemplateField>()
+            .Where(x => x.TemplateId == template.Id && !x.IsDeleted)
+            .Select(x => x.FieldCode)
+            .ToListAsync();
+
         var parentWindow = Window.GetWindow(this);
-        var win = new TemplateEditWindow(template)
+        var win = new TemplateEditWindow(template, allowedFields)
         {
             Owner = parentWindow
         };
