@@ -381,27 +381,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         {
             await AppDb.Db.Insertable(template).ExecuteCommandAsync();
 
-            var defaultField = new LabelTemplateField
-            {
-                Id = IdHelper.NewId(),
-                TemplateId = template.Id,
-                Sort = 10,
-                IsRequired = true,
-                Remark = "系统自动生成的默认控制列，禁止修改与删除"
-            };
-            if (template.IsSerialNumber == true)
-            {
-                defaultField.FieldName = "序列号";
-                defaultField.FieldCode = "serial_no";
-                defaultField.FieldType = "string";
-            }
-            else
-            {
-                defaultField.FieldName = "批次";
-                defaultField.FieldCode = "batch_no";
-                defaultField.FieldType = "string";
-            }
-            await AppDb.Db.Insertable(defaultField).ExecuteCommandAsync();
+            await EnsureTemplateModeFieldsAsync(template);
         });
 
         _templateCurrentPage = 1;
@@ -470,28 +450,66 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
                     .ExecuteCommandAsync();
             }
 
-            if ((template.IsSerialNumber == true) != (edited.IsSerialNumber == true))
-            {
-                if (edited.IsSerialNumber == true)
-                {
-                    await AppDb.Db.Updateable<LabelTemplateField>()
-                        .SetColumns(x => x.FieldCode == "serial_no")
-                        .SetColumns(x => x.FieldName == "序列号")
-                        .Where(x => x.TemplateId == edited.Id && x.FieldCode == "batch_no" && !x.IsDeleted)
-                        .ExecuteCommandAsync();
-                }
-                else
-                {
-                    await AppDb.Db.Updateable<LabelTemplateField>()
-                        .SetColumns(x => x.FieldCode == "batch_no")
-                        .SetColumns(x => x.FieldName == "批次")
-                        .Where(x => x.TemplateId == edited.Id && x.FieldCode == "serial_no" && !x.IsDeleted)
-                        .ExecuteCommandAsync();
-                }
-            }
+            await EnsureTemplateModeFieldsAsync(edited);
         });
 
         await LoadTemplatesAsync();
+    }
+
+    private static async Task EnsureTemplateModeFieldsAsync(LabelTemplate template)
+    {
+        var fields = await AppDb.Db.Queryable<LabelTemplateField>()
+            .Where(x => x.TemplateId == template.Id)
+            .ToListAsync();
+
+        var targetCode = template.TemplateMode switch
+        {
+            LabelTemplateMode.Batch => TemplateSystemFields.BatchNo,
+            LabelTemplateMode.Serialized => TemplateSystemFields.SerialNo,
+            _ => null
+        };
+
+        foreach (var field in fields.Where(x => TemplateSystemFields.IsManagedSystemField(x.FieldCode)))
+        {
+            if (!string.Equals(field.FieldCode, targetCode, StringComparison.OrdinalIgnoreCase) && !field.IsDeleted)
+            {
+                field.IsDeleted = true;
+                await AppDb.Db.Updateable(field).UpdateColumns(x => x.IsDeleted).ExecuteCommandAsync();
+            }
+        }
+
+        if (targetCode == null)
+            return;
+
+        var existing = fields.FirstOrDefault(x => string.Equals(x.FieldCode, targetCode, StringComparison.OrdinalIgnoreCase));
+        if (existing == null)
+        {
+            await AppDb.Db.Insertable(NewSystemField(template.Id, targetCode)).ExecuteCommandAsync();
+            return;
+        }
+
+        existing.FieldName = TemplateSystemFields.GetDisplayName(targetCode);
+        existing.FieldType = "string";
+        existing.IsRequired = true;
+        existing.Sort = existing.Sort <= 0 ? 5 : existing.Sort;
+        existing.Remark = "系统自动生成的模板类型固定字段，禁止修改与删除";
+        existing.IsDeleted = false;
+        await AppDb.Db.Updateable(existing).ExecuteCommandAsync();
+    }
+
+    private static LabelTemplateField NewSystemField(long templateId, string fieldCode)
+    {
+        return new LabelTemplateField
+        {
+            Id = IdHelper.NewId(),
+            TemplateId = templateId,
+            FieldName = TemplateSystemFields.GetDisplayName(fieldCode),
+            FieldCode = fieldCode,
+            FieldType = "string",
+            IsRequired = true,
+            Sort = 5,
+            Remark = "系统自动生成的模板类型固定字段，禁止修改与删除"
+        };
     }
 
     private async void DeleteTemplate_Click(object sender, RoutedEventArgs e)
@@ -585,7 +603,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
             return;
         }
 
-        if (field.FieldCode == "batch_no" || field.FieldCode == "serial_no")
+        if (TemplateSystemFields.IsManagedSystemField(field.FieldCode))
         {
             AppMessageBox.Show("系统默认控制字段，不允许修改！", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
@@ -673,7 +691,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
             return;
         }
 
-        if (field.FieldCode == "batch_no" || field.FieldCode == "serial_no")
+        if (TemplateSystemFields.IsManagedSystemField(field.FieldCode))
         {
             AppMessageBox.Show("系统默认控制字段，不允许删除！", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
@@ -886,6 +904,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
             {
                 if (!string.IsNullOrWhiteSpace(f.FieldCode))
                     dt.Columns.Add(f.FieldCode, typeof(string));
+
             }
             report.RegData(dataSourceName, dt);
             report.Dictionary.Synchronize();
@@ -934,7 +953,9 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
                     : null,
                 Version = 1,
                 IsEnabled = true,
+                TemplateMode = LabelTemplateMode.Batch,
                 IsSerialNumber = false,
+                BatchNumberPattern = SerialNumberService.DefaultBatchPattern,
                 CurrentSerialValue = 0
             };
             await AppDb.Db.Insertable(template).ExecuteCommandAsync();
@@ -949,7 +970,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         {
             fields = new List<LabelTemplateField>
             {
-                NewField(template.Id, "批次", "batch_no", "string", true, 5, "系统自动生成的默认控制列，禁止修改与删除"),
+                NewField(template.Id, "批号", TemplateSystemFields.BatchNo, "string", true, 5, "系统自动生成的模板类型固定字段，禁止修改与删除"),
                 NewField(template.Id, "产品名称", "ProductName", "string", true, 10, "产品中文名称"),
                 NewField(template.Id, "条码", "Barcode", "string", true, 20, "一维码或二维码内容"),
                 NewField(template.Id, "规格", "Spec", "string", false, 30, "如 500ml"),
@@ -1000,9 +1021,10 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
                     : null,
                 Version = 1,
                 IsEnabled = true,
+                TemplateMode = LabelTemplateMode.Serialized,
                 IsSerialNumber = true,
-                SerialNumberPrefix = "SN-",
-                SerialNumberPattern = "SN-{seq:0000}",
+                SerialNumberPrefix = null,
+                SerialNumberPattern = SerialNumberService.DefaultPattern,
                 SerialResetPeriod = SerialResetPeriod.Never,
                 CurrentSerialValue = 0
             };
@@ -1018,7 +1040,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         {
             fields2 = new List<LabelTemplateField>
             {
-                NewField(template2.Id, "序列号", "serial_no", "string", true, 5, "系统自动生成的默认控制列，禁止修改与删除"),
+                NewField(template2.Id, "序列号", TemplateSystemFields.SerialNo, "string", true, 5, "系统自动生成的模板类型固定字段，禁止修改与删除"),
                 NewField(template2.Id, "产品名称", "ProductName", "string", true, 10, "产品中文名称"),
                 NewField(template2.Id, "条码", "Barcode", "string", true, 20, "一维码或二维码内容"),
                 NewField(template2.Id, "规格", "Spec", "string", false, 30, "如 500ml"),
@@ -1084,7 +1106,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
                     RowIndex = 1,
                     RowDataJson = JsonHelper.Serialize(new Dictionary<string, string>
                     {
-                        ["batch_no"] = "BATCH-20260525",
+                        [TemplateSystemFields.BatchNo] = "BATCH-20260525",
                         ["ProductName"] = "感冒灵颗粒",
                         ["Barcode"] = "6901234567890",
                         ["Spec"] = "10g*9袋",
@@ -1103,7 +1125,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
                     RowIndex = 2,
                     RowDataJson = JsonHelper.Serialize(new Dictionary<string, string>
                     {
-                        ["batch_no"] = "BATCH-20260525",
+                        [TemplateSystemFields.BatchNo] = "BATCH-20260525",
                         ["ProductName"] = "阿莫西林胶囊",
                         ["Barcode"] = "6901234567891",
                         ["Spec"] = "0.25g*24粒",
@@ -1122,7 +1144,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
                     RowIndex = 3,
                     RowDataJson = JsonHelper.Serialize(new Dictionary<string, string>
                     {
-                        ["batch_no"] = "BATCH-20260525",
+                        [TemplateSystemFields.BatchNo] = "BATCH-20260525",
                         ["ProductName"] = "布洛芬缓释胶囊",
                         ["Barcode"] = "6901234567892",
                         ["Spec"] = "0.3g*24粒",
@@ -1174,7 +1196,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
                         ["Barcode"] = "HUAWEI-M60P",
                         ["Spec"] = "12GB+512GB",
                         ["Qty"] = "1",
-                        ["serial_no"] = ""
+                        [TemplateSystemFields.SerialNo] = ""
                     }),
                     IsValid = true,
                     IsPrinted = false,
@@ -1192,7 +1214,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
                         ["Barcode"] = "APPLE-I15P",
                         ["Spec"] = "256GB",
                         ["Qty"] = "1",
-                        ["serial_no"] = ""
+                        [TemplateSystemFields.SerialNo] = ""
                     }),
                     IsValid = true,
                     IsPrinted = false,
@@ -1236,7 +1258,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
                         ["Barcode"] = "HUAWEI-M60P",
                         ["Spec"] = "12GB+512GB",
                         ["Qty"] = "1",
-                        ["serial_no"] = "SN-0001"
+                        [TemplateSystemFields.SerialNo] = "SN-0001"
                     })
                 },
                 new LabelPrintJobRow
@@ -1251,7 +1273,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
                         ["Barcode"] = "HUAWEI-M60P",
                         ["Spec"] = "12GB+512GB",
                         ["Qty"] = "1",
-                        ["serial_no"] = "SN-0002"
+                        [TemplateSystemFields.SerialNo] = "SN-0002"
                     })
                 },
                 new LabelPrintJobRow
@@ -1266,7 +1288,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
                         ["Barcode"] = "APPLE-I15P",
                         ["Spec"] = "256GB",
                         ["Qty"] = "1",
-                        ["serial_no"] = "SN-0001"
+                        [TemplateSystemFields.SerialNo] = "SN-0001"
                     })
                 }
             };

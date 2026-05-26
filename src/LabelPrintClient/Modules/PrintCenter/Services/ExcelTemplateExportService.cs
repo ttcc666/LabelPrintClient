@@ -21,7 +21,7 @@ public class ExcelTemplateExportService
             throw new InvalidOperationException("当前模板没有维护字段，无法生成 Excel 模板。");
 
         var exportFields = fields
-            .Where(x => !IsSystemField(x.FieldCode))
+            .Where(x => !TemplateSystemFields.IsSystemField(x.FieldCode))
             .ToList();
         if (exportFields.Count == 0)
             throw new InvalidOperationException("当前模板没有可导入字段，无法生成 Excel 模板。");
@@ -210,11 +210,5 @@ public class ExcelTemplateExportService
         var values = ParseEnumOptions(enumOptions);
         return values.Count == 0 ? string.Empty : string.Join(Environment.NewLine, values);
     }
-
-    private static bool IsSystemField(string fieldCode)
-    {
-        return string.Equals(fieldCode, "serial_no", StringComparison.OrdinalIgnoreCase);
-    }
-
     private sealed record EnumFieldSource(LabelTemplateField Field, int FieldIndex, List<string> Values);
 }

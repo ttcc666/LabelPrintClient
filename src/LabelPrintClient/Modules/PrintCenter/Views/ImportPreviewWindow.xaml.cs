@@ -93,7 +93,7 @@ public partial class ImportPreviewWindow : Window
             Width = 90
         });
 
-        foreach (var field in fields.Where(x => !IsSystemField(x.FieldCode)))
+        foreach (var field in fields.Where(x => !TemplateSystemFields.IsSystemField(x.FieldCode)))
         {
             PreviewGrid.Columns.Add(new DataGridTextColumn
             {
@@ -125,11 +125,6 @@ public partial class ImportPreviewWindow : Window
         style.Setters.Add(new Setter(TextBlock.VerticalAlignmentProperty, VerticalAlignment.Center));
         style.Setters.Add(new Setter(FrameworkElement.MarginProperty, new Thickness(0, 4, 0, 4)));
         return style;
-    }
-
-    private static bool IsSystemField(string fieldCode)
-    {
-        return string.Equals(fieldCode, "serial_no", StringComparison.OrdinalIgnoreCase);
     }
 
     private async Task ApplyFilterAsync()

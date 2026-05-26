@@ -39,6 +39,16 @@ public class LabelTemplate
 
     public bool IsEnabled { get; set; } = true;
 
+    public LabelTemplateMode TemplateMode { get; set; } = LabelTemplateMode.Normal;
+
+    [SugarColumn(IsIgnore = true)]
+    public string TemplateModeText => TemplateMode switch
+    {
+        LabelTemplateMode.Batch => "批次",
+        LabelTemplateMode.Serialized => "序列化",
+        _ => "普通"
+    };
+
     [SugarColumn(IsNullable = true)]
     public bool? IsSerialNumber { get; set; } = false;
 
@@ -47,6 +57,9 @@ public class LabelTemplate
 
     [SugarColumn(Length = 200, IsNullable = true)]
     public string? SerialNumberPattern { get; set; } = "SN-{seq:0000}";
+
+    [SugarColumn(Length = 200, IsNullable = true)]
+    public string? BatchNumberPattern { get; set; } = "BATCH-{yyyy}{MM}{dd}";
 
     public SerialResetPeriod SerialResetPeriod { get; set; } = SerialResetPeriod.Never;
 

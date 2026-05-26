@@ -10,6 +10,7 @@ namespace LabelPrintClient.Modules.PrintCenter.Services;
 public static partial class SerialNumberService
 {
     public const string DefaultPattern = "SN-{seq:0000}";
+    public const string DefaultBatchPattern = "BATCH-{yyyy}{MM}{dd}";
     private static readonly ConcurrentDictionary<string, SemaphoreSlim> CounterLocks = new();
 
     public static bool IsValidPattern(
@@ -17,10 +18,27 @@ public static partial class SerialNumberService
         IEnumerable<string>? allowedFields, 
         out string error)
     {
+        return IsValidPattern(pattern, allowedFields, true, out error);
+    }
+
+    public static bool IsValidBatchPattern(
+        string? pattern,
+        IEnumerable<string>? allowedFields,
+        out string error)
+    {
+        return IsValidPattern(pattern, allowedFields, false, out error);
+    }
+
+    private static bool IsValidPattern(
+        string? pattern,
+        IEnumerable<string>? allowedFields,
+        bool requireSeq,
+        out string error)
+    {
         error = string.Empty;
         if (string.IsNullOrWhiteSpace(pattern))
         {
-            error = "序列号规则不能为空。";
+            error = requireSeq ? "序列号规则不能为空。" : "批号规则不能为空。";
             return false;
         }
 
@@ -34,6 +52,12 @@ public static partial class SerialNumberService
             var token = match.Groups[1].Value;
             if (token == "seq" || token.StartsWith("seq:", StringComparison.Ordinal))
             {
+                if (!requireSeq)
+                {
+                    error = "批号规则不支持 {seq} 流水号变量。";
+                    return false;
+                }
+
                 hasSeq = true;
                 if (token.StartsWith("seq:", StringComparison.Ordinal) &&
                     (token.Length == 4 || token[4..].Any(x => x != '0')))
@@ -57,6 +81,9 @@ public static partial class SerialNumberService
 
         if (!hasSeq)
         {
+            if (!requireSeq)
+                return true;
+
             error = "序列号规则必须包含 {seq} 或 {seq:0000}。";
             return false;
         }
@@ -71,6 +98,14 @@ public static partial class SerialNumberService
         IReadOnlyDictionary<string, string>? rowData = null)
     {
         return Format(NormalizePattern(pattern, null), now, sequence, rowData);
+    }
+
+    public static string PreviewBatch(
+        string? pattern,
+        DateTime now,
+        IReadOnlyDictionary<string, string>? rowData = null)
+    {
+        return Format(NormalizeBatchPattern(pattern), now, 0, rowData);
     }
 
     public static async Task<string> GenerateNextAsync(
@@ -116,6 +151,13 @@ public static partial class SerialNumberService
 
         var prefix = string.IsNullOrWhiteSpace(legacyPrefix) ? "SN-" : legacyPrefix.Trim();
         return $"{prefix}{{seq:0000}}";
+    }
+
+    public static string NormalizeBatchPattern(string? pattern)
+    {
+        return string.IsNullOrWhiteSpace(pattern)
+            ? DefaultBatchPattern
+            : pattern.Trim();
     }
 
     private static string BuildCounterKey(SerialResetPeriod period, DateTime now)

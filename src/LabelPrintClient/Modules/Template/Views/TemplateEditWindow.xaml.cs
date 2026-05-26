@@ -10,9 +10,12 @@ namespace LabelPrintClient.Modules.Template.Views;
 public partial class TemplateEditWindow : Window
 {
     private readonly IEnumerable<string>? _allowedFields;
+    private readonly LabelTemplateMode _originalMode;
+    private readonly string _originalSerialPattern;
+    private readonly SerialResetPeriod _originalSerialResetPeriod;
 
     public new LabelTemplate Template { get; private set; }
-    public bool ResetSerialCounter { get; private set; } = false;
+    public bool ResetSerialCounter { get; private set; }
 
     public TemplateEditWindow(LabelTemplate? template = null, IEnumerable<string>? allowedFields = null)
     {
@@ -21,91 +24,86 @@ public partial class TemplateEditWindow : Window
 
         if (template != null)
         {
-            // 编辑模式，深拷贝
-            Template = new LabelTemplate
-            {
-                Id = template.Id,
-                CategoryId = template.CategoryId,
-                Name = template.Name,
-                StorageType = template.StorageType,
-                TemplatePath = template.TemplatePath,
-                TemplateFileName = template.TemplateFileName,
-                TemplateContent = template.TemplateContent,
-                TemplateHash = template.TemplateHash,
-                DataSourceName = template.DataSourceName,
-                Version = template.Version,
-                IsEnabled = template.IsEnabled,
-                IsSerialNumber = template.IsSerialNumber,
-                SerialNumberPrefix = template.SerialNumberPrefix,
-                SerialNumberPattern = template.SerialNumberPattern,
-                SerialResetPeriod = template.SerialResetPeriod,
-                CurrentSerialValue = template.CurrentSerialValue,
-                CreateTime = template.CreateTime,
-                UpdateTime = template.UpdateTime
-            };
+            Template = CopyTemplate(template);
+            _originalMode = Template.TemplateMode;
+            _originalSerialPattern = Template.SerialNumberPattern ?? string.Empty;
+            _originalSerialResetPeriod = Template.SerialResetPeriod;
+
             TitleText.Text = "编辑模板";
             NameBox.Text = Template.Name;
             IsEnabledBox.IsChecked = Template.IsEnabled;
-            IsSerialNumberBox.IsChecked = Template.IsSerialNumber;
-            SerialNumberPatternBox.Text = SerialNumberService.NormalizePattern(Template.SerialNumberPattern, Template.SerialNumberPrefix);
+            SelectTemplateMode(Template.TemplateMode);
             SelectSerialResetPeriod(Template.SerialResetPeriod);
-
-            // 选中存储介质
-            if (Template.StorageType == TemplateStorageType.Database)
-            {
-                StorageTypeBox.SelectedIndex = 1;
-            }
-            else
-            {
-                StorageTypeBox.SelectedIndex = 0;
-            }
+            ApplyPatternForMode(Template.TemplateMode);
+            StorageTypeBox.SelectedIndex = Template.StorageType == TemplateStorageType.Database ? 1 : 0;
         }
         else
         {
             Template = new LabelTemplate
             {
-                IsEnabled = true
+                IsEnabled = true,
+                TemplateMode = LabelTemplateMode.Normal,
+                IsSerialNumber = false,
+                BatchNumberPattern = SerialNumberService.DefaultBatchPattern,
+                SerialNumberPattern = SerialNumberService.DefaultPattern,
+                SerialResetPeriod = SerialResetPeriod.Never
             };
-            TitleText.Text = "新增模板";
+            _originalMode = Template.TemplateMode;
+            _originalSerialPattern = Template.SerialNumberPattern ?? string.Empty;
+            _originalSerialResetPeriod = Template.SerialResetPeriod;
 
-            // 根据 App.Settings.RunMode 自动决定默认存储介质
-            if (App.Settings.RunMode == AppRunMode.LocalSqlite)
-            {
-                StorageTypeBox.SelectedIndex = 0; // LocalFile
-            }
-            else
-            {
-                StorageTypeBox.SelectedIndex = 1; // Database
-            }
+            TitleText.Text = "新增模板";
+            SelectTemplateMode(LabelTemplateMode.Normal);
+            StorageTypeBox.SelectedIndex = App.Settings.RunMode == AppRunMode.LocalSqlite ? 0 : 1;
         }
 
-        // 根据当前的数据库模式，强制限制下拉框的可选状态
         ApplyStorageTypeLimits();
-        UpdateSerialPreview();
+        UpdateRulePanel();
+    }
+
+    private static LabelTemplate CopyTemplate(LabelTemplate template)
+    {
+        return new LabelTemplate
+        {
+            Id = template.Id,
+            CategoryId = template.CategoryId,
+            Name = template.Name,
+            StorageType = template.StorageType,
+            TemplatePath = template.TemplatePath,
+            TemplateFileName = template.TemplateFileName,
+            TemplateContent = template.TemplateContent,
+            TemplateHash = template.TemplateHash,
+            DataSourceName = template.DataSourceName,
+            Version = template.Version,
+            IsEnabled = template.IsEnabled,
+            TemplateMode = template.TemplateMode,
+            IsSerialNumber = template.IsSerialNumber,
+            SerialNumberPrefix = template.SerialNumberPrefix,
+            SerialNumberPattern = template.SerialNumberPattern,
+            BatchNumberPattern = template.BatchNumberPattern,
+            SerialResetPeriod = template.SerialResetPeriod,
+            CurrentSerialValue = template.CurrentSerialValue,
+            CreateTime = template.CreateTime,
+            UpdateTime = template.UpdateTime
+        };
     }
 
     private void ApplyStorageTypeLimits()
     {
         if (App.Settings.RunMode == AppRunMode.LocalSqlite)
         {
-            // SQLite 模式：只能存本地物理文件，禁用数据库存储
             foreach (var item in StorageTypeBox.Items.OfType<ComboBoxItem>())
             {
                 if (string.Equals(item.Tag?.ToString(), "Database", StringComparison.OrdinalIgnoreCase))
-                {
                     item.IsEnabled = false;
-                }
             }
         }
         else if (App.Settings.RunMode == AppRunMode.LanPostgreSql)
         {
-            // PgSQL 模式：只能存数据库，禁用本地物理文件
             foreach (var item in StorageTypeBox.Items.OfType<ComboBoxItem>())
             {
                 if (string.Equals(item.Tag?.ToString(), "LocalFile", StringComparison.OrdinalIgnoreCase))
-                {
                     item.IsEnabled = false;
-                }
             }
         }
     }
@@ -119,37 +117,29 @@ public partial class TemplateEditWindow : Window
             return;
         }
 
-        var isSerial = IsSerialNumberBox.IsChecked == true;
-        var pattern = SerialNumberPatternBox.Text.Trim();
-        if (isSerial && !SerialNumberService.IsValidPattern(pattern, _allowedFields, out var patternError))
+        var mode = ReadTemplateMode();
+        var pattern = RulePatternBox.Text.Trim();
+        if (mode == LabelTemplateMode.Batch &&
+            !SerialNumberService.IsValidBatchPattern(pattern, _allowedFields, out var batchPatternError))
         {
-            AppMessageBox.Show(patternError, "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppMessageBox.Show(batchPatternError, "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
-        // 检测是否修改了序列号生成规则
-        var oldIsSerial = Template.IsSerialNumber == true;
-        var oldPattern = Template.SerialNumberPattern ?? string.Empty;
-        var oldPeriod = Template.SerialResetPeriod;
-        var newPeriod = isSerial ? ReadSerialResetPeriod() : SerialResetPeriod.Never;
-
-        bool isRuleChanged = false;
-        if (oldIsSerial)
+        if (mode == LabelTemplateMode.Serialized &&
+            !SerialNumberService.IsValidPattern(pattern, _allowedFields, out var serialPatternError))
         {
-            // 以前就是序列号模式，现在关闭了，或者格式变了，或者重置周期变了
-            if (!isSerial || oldPattern != pattern || oldPeriod != newPeriod)
-            {
-                isRuleChanged = true;
-            }
-        }
-        else if (isSerial)
-        {
-            // 以前不是，现在开启了
-            isRuleChanged = true;
+            AppMessageBox.Show(serialPatternError, "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
         }
 
-        // 只有在原先存在序列号计数历史且本次确实修改了规则时，提示是否重置流水号
-        if (oldIsSerial && isRuleChanged)
+        var newPeriod = mode == LabelTemplateMode.Serialized ? ReadSerialResetPeriod() : SerialResetPeriod.Never;
+        var serialRuleChanged = _originalMode == LabelTemplateMode.Serialized &&
+                                (mode != LabelTemplateMode.Serialized ||
+                                 !string.Equals(_originalSerialPattern, pattern, StringComparison.Ordinal) ||
+                                 _originalSerialResetPeriod != newPeriod);
+
+        if (serialRuleChanged)
         {
             var confirmResult = AppMessageBox.Show(
                 "检测到您修改了序列号生成规则，是否需要将当前流水号计数器重置为初始状态 (从1开始)？\n\n点击【是】将计数重置为 0；\n点击【否】将继续保留并累加当前已有的流水计数。",
@@ -157,20 +147,22 @@ public partial class TemplateEditWindow : Window
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Question);
 
-            if (confirmResult == MessageBoxResult.Yes)
-            {
-                ResetSerialCounter = true;
-            }
+            ResetSerialCounter = confirmResult == MessageBoxResult.Yes;
         }
 
         Template.Name = name;
         Template.IsEnabled = IsEnabledBox.IsChecked == true;
-        Template.IsSerialNumber = isSerial;
-        Template.SerialNumberPattern = isSerial ? pattern : null;
+        Template.TemplateMode = mode;
+        Template.IsSerialNumber = mode == LabelTemplateMode.Serialized;
+        Template.BatchNumberPattern = mode == LabelTemplateMode.Batch
+            ? SerialNumberService.NormalizeBatchPattern(pattern)
+            : null;
+        Template.SerialNumberPattern = mode == LabelTemplateMode.Serialized
+            ? SerialNumberService.NormalizePattern(pattern, null)
+            : null;
         Template.SerialNumberPrefix = null;
-        Template.SerialResetPeriod = isSerial ? ReadSerialResetPeriod() : SerialResetPeriod.Never;
+        Template.SerialResetPeriod = newPeriod;
 
-        // 读取存储介质
         if (StorageTypeBox.SelectedItem is ComboBoxItem selectedItem)
         {
             var tag = selectedItem.Tag?.ToString();
@@ -183,20 +175,79 @@ public partial class TemplateEditWindow : Window
         Close();
     }
 
-    private void SerialRule_Changed(object sender, RoutedEventArgs e)
+    private void Rule_Changed(object sender, RoutedEventArgs e)
     {
-        UpdateSerialPreview();
-    }
-
-    private void UpdateSerialPreview()
-    {
-        if (SerialPreviewText == null || SerialNumberPatternBox == null)
+        if (!IsInitialized)
             return;
 
-        var pattern = SerialNumberPatternBox.Text.Trim();
-        SerialPreviewText.Text = SerialNumberService.IsValidPattern(pattern, _allowedFields, out var error)
-            ? $"预览：{SerialNumberService.Preview(pattern, DateTime.Now)}"
-            : $"预览：{error}";
+        if (sender == TemplateModeBox)
+            ApplyPatternForMode(ReadTemplateMode());
+
+        UpdateRulePanel();
+    }
+
+    private void ApplyPatternForMode(LabelTemplateMode mode)
+    {
+        if (RulePatternBox == null)
+            return;
+
+        RulePatternBox.Text = mode switch
+        {
+            LabelTemplateMode.Batch => SerialNumberService.NormalizeBatchPattern(Template.BatchNumberPattern),
+            LabelTemplateMode.Serialized => SerialNumberService.NormalizePattern(Template.SerialNumberPattern, Template.SerialNumberPrefix),
+            _ => string.Empty
+        };
+    }
+
+    private void UpdateRulePanel()
+    {
+        if (RulePanel == null || RulePatternBox == null || RulePreviewText == null)
+            return;
+
+        var mode = ReadTemplateMode();
+        var hasRule = mode != LabelTemplateMode.Normal;
+        RulePanel.IsEnabled = hasRule;
+        RulePanel.Visibility = hasRule ? Visibility.Visible : Visibility.Collapsed;
+        ResetPeriodLabel.Visibility = mode == LabelTemplateMode.Serialized ? Visibility.Visible : Visibility.Collapsed;
+        SerialResetPeriodBox.Visibility = mode == LabelTemplateMode.Serialized ? Visibility.Visible : Visibility.Collapsed;
+
+        if (mode == LabelTemplateMode.Batch)
+        {
+            RuleExampleText.Text = "示例：BATCH-{yyyy}{MM}{dd}";
+            RuleVariableText.Text = "变量：{yyyy} {yy} {MM} {dd} {HH} {mm}，可引用字段编码";
+            RulePreviewText.Text = SerialNumberService.IsValidBatchPattern(RulePatternBox.Text.Trim(), _allowedFields, out var error)
+                ? $"预览：{SerialNumberService.PreviewBatch(RulePatternBox.Text.Trim(), DateTime.Now)}"
+                : $"预览：{error}";
+            return;
+        }
+
+        if (mode == LabelTemplateMode.Serialized)
+        {
+            RuleExampleText.Text = "示例：SN-{yyyy}{MM}{dd}-{seq:0000}";
+            RuleVariableText.Text = "变量：{yyyy} {yy} {MM} {dd} {HH} {mm} {seq:0000}，可引用字段编码";
+            RulePreviewText.Text = SerialNumberService.IsValidPattern(RulePatternBox.Text.Trim(), _allowedFields, out var error)
+                ? $"预览：{SerialNumberService.Preview(RulePatternBox.Text.Trim(), DateTime.Now)}"
+                : $"预览：{error}";
+        }
+    }
+
+    private LabelTemplateMode ReadTemplateMode()
+    {
+        var tag = (TemplateModeBox.SelectedItem as ComboBoxItem)?.Tag?.ToString();
+        return Enum.TryParse<LabelTemplateMode>(tag, out var mode) ? mode : LabelTemplateMode.Normal;
+    }
+
+    private void SelectTemplateMode(LabelTemplateMode mode)
+    {
+        foreach (var item in TemplateModeBox.Items.OfType<ComboBoxItem>())
+        {
+            if (string.Equals(item.Tag?.ToString(), mode.ToString(), StringComparison.OrdinalIgnoreCase))
+            {
+                TemplateModeBox.SelectedItem = item;
+                return;
+            }
+        }
+        TemplateModeBox.SelectedIndex = 0;
     }
 
     private SerialResetPeriod ReadSerialResetPeriod()

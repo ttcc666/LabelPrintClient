@@ -129,6 +129,7 @@ public class StiTemplateDesignerService
                 {
                     column.Alias = field.FieldName; // 将别名设置为维护的中文名称，例如 “商品名称”
                 }
+
             }
         }
     }

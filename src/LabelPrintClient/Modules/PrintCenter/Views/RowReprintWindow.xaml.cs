@@ -87,7 +87,7 @@ public partial class RowReprintWindow : Window
 
     private async Task LoadSerialNumbersAsync()
     {
-        if (_template.IsSerialNumber != true)
+        if (_template.TemplateMode != LabelTemplateMode.Serialized)
         {
             SerialPanel.Visibility = Visibility.Collapsed;
             CopiesPanel.Visibility = Visibility.Visible;
@@ -162,7 +162,7 @@ public partial class RowReprintWindow : Window
             return;
         }
 
-        if (_template.IsSerialNumber == true)
+        if (_template.TemplateMode == LabelTemplateMode.Serialized)
         {
             var startSerial = StartSerialBox.SelectedItem as string;
             var endSerial = EndSerialBox.SelectedItem as string;
@@ -229,6 +229,8 @@ public partial class RowReprintWindow : Window
     private static string? ExtractSerialNo(LabelPrintJobRow row)
     {
         var dict = JsonHelper.Deserialize<Dictionary<string, string>>(row.RowDataJson);
-        return dict != null && dict.TryGetValue("serial_no", out var sn) ? sn : null;
+        if (dict == null)
+            return null;
+        return dict.TryGetValue(TemplateSystemFields.SerialNo, out var sn) ? sn : null;
     }
 }

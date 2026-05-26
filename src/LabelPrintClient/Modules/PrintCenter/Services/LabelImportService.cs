@@ -43,7 +43,7 @@ public class LabelImportService
             throw new InvalidOperationException("当前模板没有维护字段，不能导入 Excel。");
 
         var importFields = fields
-            .Where(x => !IsSystemField(x.FieldCode))
+            .Where(x => !TemplateSystemFields.IsSystemField(x.FieldCode))
             .ToList();
 
         var drafts = await ExcelReader.ReadRowsAsync(excelPath, importFields, cancellationToken).ConfigureAwait(false);
@@ -104,15 +104,6 @@ public class LabelImportService
         string? operatorName,
         string? batchNo)
     {
-        var firstBatchNo = batchNo;
-        if (string.IsNullOrWhiteSpace(firstBatchNo) && drafts.Count > 0)
-        {
-            if (drafts[0].Data.TryGetValue("batch_no", out var bVal) && bVal != null)
-            {
-                firstBatchNo = bVal.ToString();
-            }
-        }
-
         return new LabelImportBatch
         {
             Id = IdHelper.NewId(),
@@ -126,7 +117,7 @@ public class LabelImportService
             InvalidRows = drafts.Count(x => !x.IsValid),
             Status = drafts.Any(x => !x.IsValid) ? "PartError" : "Imported",
             OperatorName = operatorName,
-            BatchNo = firstBatchNo,
+            BatchNo = batchNo,
             ImportTime = DateTime.Now
         };
     }
@@ -151,10 +142,5 @@ public class LabelImportService
                 CreateTime = DateTime.Now
             };
         }).ToList();
-    }
-
-    private static bool IsSystemField(string fieldCode)
-    {
-        return string.Equals(fieldCode, "serial_no", StringComparison.OrdinalIgnoreCase);
     }
 }

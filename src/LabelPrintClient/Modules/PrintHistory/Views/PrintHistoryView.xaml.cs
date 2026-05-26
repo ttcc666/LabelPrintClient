@@ -268,7 +268,7 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
                 })
                 .ToList();
 
-                var activeFields = fields.Where(f => !f.IsDeleted && !IsSystemField(f.FieldCode)).ToList();
+                var activeFields = fields.Where(f => !f.IsDeleted && !TemplateSystemFields.IsSystemField(f.FieldCode)).ToList();
 
                 GridRowDataHelper.EnsureFieldKeys(rows.Select(x => x.Data), activeFields);
                 var activeCodes = activeFields
@@ -278,16 +278,17 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
                 var extraKeys = rows
                     .SelectMany(x => x.Data.Keys)
                     .Where(x => !activeCodes.Contains(x))
-                    .Where(x => !IsSystemField(x))
+                    .Where(x => !TemplateSystemFields.IsSystemField(x))
                     .Distinct(StringComparer.OrdinalIgnoreCase)
                     .OrderBy(x => x)
                     .ToList();
                 var systemKeys = rows
                     .SelectMany(x => x.Data.Keys)
-                    .Where(IsSystemField)
+                    .Where(TemplateSystemFields.IsSystemField)
                     .Distinct(StringComparer.OrdinalIgnoreCase)
                     .OrderBy(GetSystemFieldSort)
                     .ToList();
+                systemKeys = NormalizeSystemKeys(systemKeys);
                 GridRowDataHelper.EnsureKeys(rows.Select(x => x.Data), extraKeys);
                 GridRowDataHelper.EnsureKeys(rows.Select(x => x.Data), systemKeys);
                 return (Rows: rows, ExtraKeys: extraKeys, SystemKeys: systemKeys);
@@ -347,32 +348,25 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
 
     private static string BuildFieldSignature(IEnumerable<LabelTemplateField> fields)
     {
-        return string.Join("|", fields.Where(x => !IsSystemField(x.FieldCode)).Select(x => $"{x.Id}:{x.Sort}:{x.FieldCode}:{x.FieldName}"));
-    }
-
-    private static bool IsSystemField(string fieldCode)
-    {
-        return string.Equals(fieldCode, "batch_no", StringComparison.OrdinalIgnoreCase) ||
-               string.Equals(fieldCode, "serial_no", StringComparison.OrdinalIgnoreCase);
+        return string.Join("|", fields.Where(x => !TemplateSystemFields.IsSystemField(x.FieldCode)).Select(x => $"{x.Id}:{x.Sort}:{x.FieldCode}:{x.FieldName}"));
     }
 
     private static int GetSystemFieldSort(string fieldCode)
     {
-        if (string.Equals(fieldCode, "batch_no", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(fieldCode, TemplateSystemFields.BatchNo, StringComparison.OrdinalIgnoreCase))
             return 0;
-        if (string.Equals(fieldCode, "serial_no", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(fieldCode, TemplateSystemFields.SerialNo, StringComparison.OrdinalIgnoreCase))
             return 1;
         return 2;
     }
 
     private static string GetSystemFieldHeader(string fieldCode)
     {
-        if (string.Equals(fieldCode, "batch_no", StringComparison.OrdinalIgnoreCase))
-            return "批次号";
-        if (string.Equals(fieldCode, "serial_no", StringComparison.OrdinalIgnoreCase))
-            return "序列号";
-        return fieldCode;
+        return TemplateSystemFields.GetDisplayName(fieldCode);
     }
+
+    private static List<string> NormalizeSystemKeys(IEnumerable<string> systemKeys)
+        => systemKeys.Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(GetSystemFieldSort).ToList();
 
     private void BuildRowGridColumns(
         IReadOnlyList<LabelTemplateField> fields,
@@ -399,7 +393,7 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
             });
         }
 
-        var activeFields = fields.Where(x => !x.IsDeleted && !IsSystemField(x.FieldCode)).ToList();
+        var activeFields = fields.Where(x => !x.IsDeleted && !TemplateSystemFields.IsSystemField(x.FieldCode)).ToList();
 
         foreach (var field in activeFields)
         {
@@ -535,13 +529,13 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
         if (job == null) return;
 
         var template = await AppDb.Db.Queryable<LabelTemplate>().InSingleAsync(job.TemplateId);
-        if (template != null && template.IsSerialNumber == true)
+        if (template != null && template.TemplateMode == LabelTemplateMode.Serialized)
         {
             var jobRow = await AppDb.Db.Queryable<LabelPrintJobRow>().InSingleAsync(row.Id);
             if (jobRow == null) return;
 
             var list = Enumerable.Range(0, printCopies).Select(_ => jobRow).ToList();
-            var sn = row.Data.TryGetValue("serial_no", out var sVal) ? sVal : "未知";
+            var sn = row.Data.TryGetValue(TemplateSystemFields.SerialNo, out var sVal) ? sVal : "未知";
 
             await ExecuteHistoryPrintAsync(
                 sender,

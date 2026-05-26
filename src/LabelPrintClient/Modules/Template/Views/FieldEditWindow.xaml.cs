@@ -77,6 +77,12 @@ public partial class FieldEditWindow : Window
             return;
         }
 
+        if (TemplateSystemFields.IsSystemField(code))
+        {
+            AppMessageBox.Show("该字段编码为系统固定字段，请通过模板模式自动维护。", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
         if (!TryReadNullableInt(MinLengthBox.Text, "最小长度", out var minLength) ||
             !TryReadNullableInt(MaxLengthBox.Text, "最大长度", out var maxLength) ||
             !TryReadNullableDecimal(MinValueBox.Text, "最小数值", out var minValue) ||

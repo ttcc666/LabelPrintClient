@@ -41,7 +41,7 @@
                                                Margin="0,2,8,0" 
                                                VerticalAlignment="Top"/>
                     <TextBlock Grid.Column="1" 
-                               Text="该批号不会出现在 Excel 模板中，打印时会作为 batch_no 写入标签数据。" 
+                               Text="该批号不会出现在 Excel 模板中，打印时会作为 $batch_no 写入标签数据。" 
                                TextWrapping="Wrap" 
                                FontSize="12" 
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}" 

@@ -99,7 +99,7 @@ public class LabelPrintService
         {
             await Task.Run(() => PrintJobRows(context.Template, context.Fields, jobRows, printerName, cancellationToken, progress, "开始提交打印任务"), cancellationToken)
                 .ConfigureAwait(false);
-            await MarkPrintedAsync(printJob, context.Rows, copyCount).ConfigureAwait(false);
+            await MarkPrintedAsync(printJob, context.Template, context.Rows, jobRows, copyCount).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -152,11 +152,58 @@ public class LabelPrintService
         if (jobRows.Count == 0)
             throw new InvalidOperationException("当前失败任务没有可重试的打印明细。");
 
+        var retryTemplates = await AppDb.Db.Queryable<LabelTemplate>()
+            .Where(x => x.Id == job.TemplateId)
+            .Take(1)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+        var template = retryTemplates.FirstOrDefault()
+            ?? throw new InvalidOperationException("模板不存在。");
+
+        if (template.TemplateMode == LabelTemplateMode.Batch)
+        {
+            var retryBatches = await AppDb.Db.Queryable<LabelImportBatch>()
+                .Where(x => x.Id == job.BatchId)
+                .Take(1)
+                .ToListAsync(cancellationToken)
+                .ConfigureAwait(false);
+            var batch = retryBatches.FirstOrDefault()
+                ?? throw new InvalidOperationException("导入批次不存在。");
+            var retryRows = await LoadImportRowsForJobRowsAsync(jobRows, cancellationToken).ConfigureAwait(false);
+            var copyCounts = jobRows
+                .GroupBy(x => x.ImportRowId)
+                .ToDictionary(x => x.Key, x => x.Count());
+            var regeneratedRows = new List<LabelPrintJobRow>();
+            foreach (var row in retryRows)
+            {
+                regeneratedRows.AddRange(await BuildPrintJobRowsAsync(
+                    job.Id,
+                    template,
+                    batch,
+                    new[] { row },
+                    copyCounts.TryGetValue(row.Id, out var count) ? count : 1,
+                    cancellationToken).ConfigureAwait(false));
+            }
+
+            ValidateRegeneratedRetryRows(jobRows, retryRows, regeneratedRows);
+
+            await ExecuteTransactionAsync(async () =>
+            {
+                await AppDb.Db.Deleteable<LabelPrintJobRow>()
+                    .Where(x => x.PrintJobId == job.Id)
+                    .ExecuteCommandAsync()
+                    .ConfigureAwait(false);
+                await AppDb.Db.Insertable(regeneratedRows).ExecuteCommandAsync().ConfigureAwait(false);
+            }).ConfigureAwait(false);
+
+            jobRows = regeneratedRows;
+        }
+
         try
         {
             await PrintHistoryRowsAsync(job.TemplateId, jobRows, printerName, cancellationToken, progress)
                 .ConfigureAwait(false);
-            await MarkRetryPrintedAsync(job, jobRows).ConfigureAwait(false);
+            await MarkRetryPrintedAsync(job, template, jobRows).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -328,25 +375,23 @@ public class LabelPrintService
             for (var copyIndex = 0; copyIndex < copyCount; copyIndex++)
             {
                 var rowDataJson = row.RowDataJson;
-                if (template.IsSerialNumber == true)
+                if (template.TemplateMode == LabelTemplateMode.Serialized)
                 {
                     var serialNo = await SerialNumberService.GenerateNextAsync(template, row, now, cancellationToken)
                         .ConfigureAwait(false);
-                    var dict = JsonHelper.Deserialize<Dictionary<string, string>>(row.RowDataJson) ?? new Dictionary<string, string>();
-                    dict["serial_no"] = serialNo;
+                    var dict = DeserializeRowData(row.RowDataJson);
+                    SetSystemValue(dict, TemplateSystemFields.SerialNo, serialNo);
                     rowDataJson = JsonHelper.Serialize(dict);
                 }
-                else
+                else if (template.TemplateMode == LabelTemplateMode.Batch)
                 {
-                    var dict = JsonHelper.Deserialize<Dictionary<string, string>>(row.RowDataJson) ?? new Dictionary<string, string>();
-                    if (!dict.TryGetValue("batch_no", out var bNo) || string.IsNullOrWhiteSpace(bNo))
-                    {
-                        if (!string.IsNullOrWhiteSpace(batch.BatchNo))
-                        {
-                            dict["batch_no"] = batch.BatchNo;
-                            rowDataJson = JsonHelper.Serialize(dict);
-                        }
-                    }
+                    var dict = DeserializeRowData(row.RowDataJson);
+                    var batchNo = ReadSystemValue(dict, TemplateSystemFields.BatchNo);
+                    if (string.IsNullOrWhiteSpace(batchNo))
+                        batchNo = SerialNumberService.PreviewBatch(template.BatchNumberPattern, now, dict);
+
+                    SetSystemValue(dict, TemplateSystemFields.BatchNo, batchNo);
+                    rowDataJson = JsonHelper.Serialize(dict);
                 }
 
                 jobRows.Add(new LabelPrintJobRow
@@ -372,30 +417,29 @@ public class LabelPrintService
         var now = DateTime.Now;
         foreach (var row in context.Rows)
         {
-            var currentSerial = context.Template.IsSerialNumber == true
+            var currentSerial = context.Template.TemplateMode == LabelTemplateMode.Serialized
                 ? await SerialNumberService.GetCurrentValueAsync(context.Template, row, now, cancellationToken).ConfigureAwait(false)
                 : 0;
             for (var copyIndex = 0; copyIndex < copyCount; copyIndex++)
             {
                 var rowDataJson = row.RowDataJson;
-                if (context.Template.IsSerialNumber == true)
+                if (context.Template.TemplateMode == LabelTemplateMode.Serialized)
                 {
                     var pattern = SerialNumberService.NormalizePattern(context.Template.SerialNumberPattern, context.Template.SerialNumberPrefix);
-                    var dict = JsonHelper.Deserialize<Dictionary<string, string>>(row.RowDataJson) ?? new Dictionary<string, string>();
-                    dict["serial_no"] = SerialNumberService.Preview(pattern, now, ++currentSerial, dict);
+                    var dict = DeserializeRowData(row.RowDataJson);
+                    var serialNo = SerialNumberService.Preview(pattern, now, ++currentSerial, dict);
+                    SetSystemValue(dict, TemplateSystemFields.SerialNo, serialNo);
                     rowDataJson = JsonHelper.Serialize(dict);
                 }
-                else
+                else if (context.Template.TemplateMode == LabelTemplateMode.Batch)
                 {
-                    var dict = JsonHelper.Deserialize<Dictionary<string, string>>(row.RowDataJson) ?? new Dictionary<string, string>();
-                    if (!dict.TryGetValue("batch_no", out var bNo) || string.IsNullOrWhiteSpace(bNo))
-                    {
-                        if (!string.IsNullOrWhiteSpace(context.Batch.BatchNo))
-                        {
-                            dict["batch_no"] = context.Batch.BatchNo;
-                            rowDataJson = JsonHelper.Serialize(dict);
-                        }
-                    }
+                    var dict = DeserializeRowData(row.RowDataJson);
+                    var batchNo = ReadSystemValue(dict, TemplateSystemFields.BatchNo);
+                    if (string.IsNullOrWhiteSpace(batchNo))
+                        batchNo = SerialNumberService.PreviewBatch(context.Template.BatchNumberPattern, now, dict);
+
+                    SetSystemValue(dict, TemplateSystemFields.BatchNo, batchNo);
+                    rowDataJson = JsonHelper.Serialize(dict);
                 }
 
                 jobRows.Add(new LabelPrintJobRow
@@ -417,7 +461,7 @@ public class LabelPrintService
         IReadOnlyList<LabelTemplateField> fields,
         LabelPrintJobRow jobRow)
     {
-        var dict = JsonHelper.Deserialize<Dictionary<string, string>>(jobRow.RowDataJson) ?? new Dictionary<string, string>();
+        var dict = DeserializeRowData(jobRow.RowDataJson);
         var table = new DataTable(dataSourceName);
         foreach (var field in fields)
         {
@@ -470,8 +514,16 @@ public class LabelPrintService
             ?? throw new InvalidOperationException("打印任务不存在。");
     }
 
-    private static async Task MarkPrintedAsync(LabelPrintJob printJob, List<LabelImportRow> rows, int copyCount)
+    private static async Task MarkPrintedAsync(
+        LabelPrintJob printJob,
+        LabelTemplate template,
+        List<LabelImportRow> rows,
+        IReadOnlyList<LabelPrintJobRow> jobRows,
+        int copyCount)
     {
+        if (template.TemplateMode == LabelTemplateMode.Batch)
+            LockBatchNumbers(rows, jobRows);
+
         foreach (var row in rows)
         {
             row.IsPrinted = true;
@@ -489,7 +541,10 @@ public class LabelPrintService
         }).ConfigureAwait(false);
     }
 
-    private static async Task MarkRetryPrintedAsync(LabelPrintJob printJob, IReadOnlyList<LabelPrintJobRow> jobRows)
+    private static async Task MarkRetryPrintedAsync(
+        LabelPrintJob printJob,
+        LabelTemplate template,
+        IReadOnlyList<LabelPrintJobRow> jobRows)
     {
         var rowCounts = jobRows
             .GroupBy(x => x.ImportRowId)
@@ -499,6 +554,9 @@ public class LabelPrintService
             .Where(x => rowIds.Contains(x.Id))
             .ToListAsync()
             .ConfigureAwait(false);
+
+        if (template.TemplateMode == LabelTemplateMode.Batch)
+            LockBatchNumbers(rows, jobRows);
 
         foreach (var row in rows)
         {
@@ -565,5 +623,87 @@ public class LabelPrintService
     private static async Task ExecuteTransactionAsync(Func<Task> operation)
     {
         await AppDb.UseTranAsync(operation).ConfigureAwait(false);
+    }
+
+    private static async Task<List<LabelImportRow>> LoadImportRowsForJobRowsAsync(
+        IReadOnlyList<LabelPrintJobRow> jobRows,
+        CancellationToken cancellationToken)
+    {
+        var rowIds = jobRows
+            .Select(x => x.ImportRowId)
+            .Distinct()
+            .ToList();
+        return await AppDb.Db.Queryable<LabelImportRow>()
+            .Where(x => rowIds.Contains(x.Id))
+            .OrderBy(x => x.RowIndex)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    private static void ValidateRegeneratedRetryRows(
+        IReadOnlyList<LabelPrintJobRow> originalRows,
+        IReadOnlyList<LabelImportRow> retryRows,
+        IReadOnlyList<LabelPrintJobRow> regeneratedRows)
+    {
+        var expectedRowIds = originalRows
+            .Select(x => x.ImportRowId)
+            .Distinct()
+            .ToHashSet();
+        var actualRowIds = retryRows
+            .Select(x => x.Id)
+            .ToHashSet();
+
+        if (!expectedRowIds.SetEquals(actualRowIds))
+            throw new InvalidOperationException("批次重试失败：部分原始导入行已不存在，无法重新生成完整打印明细。");
+
+        if (regeneratedRows.Count != originalRows.Count)
+            throw new InvalidOperationException("批次重试失败：重新生成的打印明细数量与原失败明细不一致。");
+    }
+
+    private static void LockBatchNumbers(
+        IEnumerable<LabelImportRow> rows,
+        IReadOnlyList<LabelPrintJobRow> jobRows)
+    {
+        var firstBatchByRow = jobRows
+            .GroupBy(x => x.ImportRowId)
+            .ToDictionary(
+                x => x.Key,
+                x => ReadSystemValue(DeserializeRowData(x.First().RowDataJson), TemplateSystemFields.BatchNo));
+
+        foreach (var row in rows)
+        {
+            var dict = DeserializeRowData(row.RowDataJson);
+            var existing = ReadSystemValue(dict, TemplateSystemFields.BatchNo);
+            if (string.IsNullOrWhiteSpace(existing) &&
+                firstBatchByRow.TryGetValue(row.Id, out var batchNo) &&
+                !string.IsNullOrWhiteSpace(batchNo))
+            {
+                SetSystemValue(dict, TemplateSystemFields.BatchNo, batchNo);
+                row.RowDataJson = JsonHelper.Serialize(dict);
+                row.SearchText = SearchTextBuilder.FromDictionary(dict);
+            }
+        }
+    }
+
+    private static Dictionary<string, string> DeserializeRowData(string? rowDataJson)
+    {
+        return JsonHelper.Deserialize<Dictionary<string, string>>(rowDataJson ?? "{}") ?? new Dictionary<string, string>();
+    }
+
+    private static string? ReadSystemValue(
+        IReadOnlyDictionary<string, string> data,
+        string primaryKey)
+    {
+        if (data.TryGetValue(primaryKey, out var primaryValue) && !string.IsNullOrWhiteSpace(primaryValue))
+            return primaryValue;
+        return null;
+    }
+
+    private static void SetSystemValue(
+        IDictionary<string, string> data,
+        string primaryKey,
+        string value)
+    {
+        data[primaryKey] = value;
     }
 }

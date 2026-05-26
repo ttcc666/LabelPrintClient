@@ -486,6 +486,7 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
             _rowTotalPages = totalPages;
             _rowCurrentPage = currentPage;
 
+            var visibleFields = GetVisibleRowFields(template, fields);
             var pageRows = await Task.Run(() => dbRows.Select(x => new ImportRowGridItem
             {
                 Id = x.Id,
@@ -495,10 +496,10 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
                 PrintCount = x.PrintCount,
                 ErrorMessage = x.ErrorMessage,
                 IsSelected = false,
-                Data = GridRowDataHelper.Deserialize(x.RowDataJson, fields.Where(f => !IsSystemField(f.FieldCode)))
+                Data = GridRowDataHelper.Deserialize(x.RowDataJson, visibleFields)
             }).ToList(), token);
 
-            BuildRowGridColumnsIfNeeded(fields);
+            BuildRowGridColumnsIfNeeded(template, fields);
             ReplaceRows(pageRows);
             RowGrid.ItemsSource = _rows;
             UpdateRowEmptyState(batch);
@@ -517,7 +518,7 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         }
     }
 
-    private void BuildRowGridColumns(IReadOnlyList<LabelTemplateField> fields)
+    private void BuildRowGridColumns(LabelTemplate template, IReadOnlyList<LabelTemplateField> fields)
     {
         RowGrid.Columns.Clear();
         var centerCellStyle = FindAppStyle("AppDataGridCenterCellStyle");
@@ -555,11 +556,13 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         });
         RowGrid.Columns.Add(new DataGridTextColumn { Header = "打印次数", Binding = new System.Windows.Data.Binding(nameof(ImportRowGridItem.PrintCount)), Width = 90, IsReadOnly = true });
 
-        foreach (var field in fields.Where(x => !IsSystemField(x.FieldCode)))
+        foreach (var field in GetVisibleRowFields(template, fields))
         {
             RowGrid.Columns.Add(new DataGridTextColumn
             {
-                Header = field.FieldName,
+                Header = TemplateSystemFields.IsSystemField(field.FieldCode)
+                    ? TemplateSystemFields.GetDisplayName(field.FieldCode)
+                    : field.FieldName,
                 Binding = new System.Windows.Data.Binding($"Data[{field.FieldCode}]"),
                 Width = 150,
                 IsReadOnly = true
@@ -609,24 +612,31 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         return (Style)System.Windows.Application.Current.FindResource(resourceKey);
     }
 
-    private void BuildRowGridColumnsIfNeeded(IReadOnlyList<LabelTemplateField> fields)
+    private void BuildRowGridColumnsIfNeeded(LabelTemplate template, IReadOnlyList<LabelTemplateField> fields)
     {
-        var signature = BuildFieldSignature(fields);
+        var signature = BuildFieldSignature(template, fields);
         if (string.Equals(_rowGridColumnSignature, signature, StringComparison.Ordinal))
             return;
 
         _rowGridColumnSignature = signature;
-        BuildRowGridColumns(fields);
+        BuildRowGridColumns(template, fields);
     }
 
-    private static string BuildFieldSignature(IEnumerable<LabelTemplateField> fields)
+    private static string BuildFieldSignature(LabelTemplate template, IEnumerable<LabelTemplateField> fields)
     {
-        return string.Join("|", fields.Where(x => !IsSystemField(x.FieldCode)).Select(x => $"{x.Id}:{x.Sort}:{x.FieldCode}:{x.FieldName}"));
+        return string.Join("|", GetVisibleRowFields(template, fields).Select(x => $"{x.Id}:{x.Sort}:{x.FieldCode}:{x.FieldName}"));
     }
 
-    private static bool IsSystemField(string fieldCode)
+    private static List<LabelTemplateField> GetVisibleRowFields(
+        LabelTemplate template,
+        IEnumerable<LabelTemplateField> fields)
     {
-        return string.Equals(fieldCode, "serial_no", StringComparison.OrdinalIgnoreCase);
+        return fields
+            .Where(x => !TemplateSystemFields.IsSystemField(x.FieldCode) ||
+                        (template.TemplateMode == LabelTemplateMode.Batch &&
+                         string.Equals(x.FieldCode, TemplateSystemFields.BatchNo, StringComparison.OrdinalIgnoreCase)))
+            .OrderBy(x => x.Sort)
+            .ToList();
     }
 
     private DataTemplate BuildRowActionTemplate()
@@ -983,7 +993,7 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
 
             try
             {
-                if (template.IsSerialNumber == true)
+                if (template.TemplateMode == LabelTemplateMode.Serialized)
                 {
                     // 序列号模板：物理原号补打
                     var targetRows = reprintWin.SelectedJobRows;

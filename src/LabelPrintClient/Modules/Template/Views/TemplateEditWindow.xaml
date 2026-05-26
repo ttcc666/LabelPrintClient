@@ -5,7 +5,7 @@
         xmlns:hc="https://handyorg.github.io/handycontrol"
         Title="模板维护"
         Width="540"
-        Height="540"
+        Height="600"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
         Background="{DynamicResource SecondaryRegionBrush}" Foreground="{DynamicResource PrimaryTextBrush}">
@@ -36,18 +36,22 @@
                 </ComboBox>
             </StackPanel>
 
-            <!-- 序列号控制与规则配置卡片 -->
+            <!-- 模板模式与规则配置 -->
             <StackPanel Margin="0,0,0,14">
-                <CheckBox x:Name="IsSerialNumberBox" Content="序列号控制模式" IsChecked="False" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,0,6" Checked="SerialRule_Changed" Unchecked="SerialRule_Changed" />
-                
-                <!-- 精美规则配置卡片面板 -->
+                <TextBlock Text="模板模式" FontSize="12.5" FontWeight="SemiBold" Margin="0,0,0,6" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                <ComboBox x:Name="TemplateModeBox" SelectedIndex="0" SelectionChanged="Rule_Changed">
+                    <ComboBoxItem Content="普通" Tag="Normal" />
+                    <ComboBoxItem Content="批次" Tag="Batch" />
+                    <ComboBoxItem Content="序列化" Tag="Serialized" />
+                </ComboBox>
+
                 <Border CornerRadius="8" 
                         Background="#050066FF" 
                         BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
                         BorderThickness="1" 
                         Padding="14"
-                        Margin="0,4,0,0"
-                        IsEnabled="{Binding IsChecked, ElementName=IsSerialNumberBox}">
+                        Margin="0,12,0,0"
+                        x:Name="RulePanel">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
@@ -61,11 +65,11 @@
 
                         <!-- 规则配置 -->
                         <TextBlock Grid.Row="0" Grid.Column="0" Text="规则" FontSize="12.5" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                        <TextBox x:Name="SerialNumberPatternBox" Grid.Row="0" Grid.Column="1" Text="SN-{seq:0000}" MaxLength="200" Padding="8,6" TextChanged="SerialRule_Changed" />
+                        <TextBox x:Name="RulePatternBox" Grid.Row="0" Grid.Column="1" Text="BATCH-{yyyy}{MM}{dd}" MaxLength="200" Padding="8,6" TextChanged="Rule_Changed" />
 
                         <!-- 重置周期 -->
-                        <TextBlock Grid.Row="1" Grid.Column="0" Text="重置周期" FontSize="12.5" VerticalAlignment="Center" Margin="0,12,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                        <ComboBox x:Name="SerialResetPeriodBox" Grid.Row="1" Grid.Column="1" Margin="0,12,0,0" SelectedIndex="0" SelectionChanged="SerialRule_Changed">
+                        <TextBlock x:Name="ResetPeriodLabel" Grid.Row="1" Grid.Column="0" Text="重置周期" FontSize="12.5" VerticalAlignment="Center" Margin="0,12,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                        <ComboBox x:Name="SerialResetPeriodBox" Grid.Row="1" Grid.Column="1" Margin="0,12,0,0" SelectedIndex="0" SelectionChanged="Rule_Changed">
                             <ComboBoxItem Content="永不重置 (Never)" Tag="Never" />
                             <ComboBoxItem Content="每天重置 (Daily)" Tag="Daily" />
                             <ComboBoxItem Content="每月重置 (Monthly)" Tag="Monthly" />
@@ -74,8 +78,8 @@
 
                         <!-- 变量提示与胶囊预览 -->
                         <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,10,0,0">
-                            <TextBlock Text="示例：SN-{yyyy}{MM}{dd}-{seq:0000}" FontSize="11" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                            <TextBlock Text="变量：{yyyy} {yy} {MM} {dd} {HH} {mm} {seq:0000}" FontSize="11" Margin="0,2,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                            <TextBlock x:Name="RuleExampleText" Text="示例：BATCH-{yyyy}{MM}{dd}" FontSize="11" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                            <TextBlock x:Name="RuleVariableText" Text="变量：{yyyy} {yy} {MM} {dd} {HH} {mm}，可引用字段编码" FontSize="11" Margin="0,2,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                             
                             <!-- 胶囊状的高颜值预览 Badge -->
                             <Border CornerRadius="12" 
@@ -85,7 +89,7 @@
                                     Margin="0,8,0,0">
                                 <StackPanel Orientation="Horizontal">
                                     <iconPacks:PackIconMaterial Kind="Eye" Foreground="{DynamicResource PrimaryBrush}" Width="12" Height="12" Margin="0,0,6,0" VerticalAlignment="Center" />
-                                    <TextBlock x:Name="SerialPreviewText" Text="预览：SN-0001" FontSize="11.5" Foreground="{DynamicResource PrimaryBrush}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                    <TextBlock x:Name="RulePreviewText" Text="预览：BATCH-20260526" FontSize="11.5" Foreground="{DynamicResource PrimaryBrush}" FontWeight="SemiBold" VerticalAlignment="Center" />
                                 </StackPanel>
                             </Border>
                         </StackPanel>
