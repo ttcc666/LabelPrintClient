@@ -36,30 +36,72 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <Border Grid.Row="0" Style="{StaticResource AppToolbarCardStyle}">
-            <Grid VerticalAlignment="Center">
+        <Border Grid.Row="0" Style="{StaticResource AppToolbarCardStyle}" Padding="8">
+            <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" MinWidth="240" />
+                    <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <Grid Grid.Column="0" Margin="0,0,16,0">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-                    <TextBlock Grid.Row="0" Style="{StaticResource AppPageTitleStyle}" Text="导入前预览" />
-                    <TextBlock x:Name="SummaryText"
-                               Grid.Row="1"
-                               Margin="0,4,0,0"
-                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                               TextTrimming="CharacterEllipsis" />
+                <!-- 自适应校验状态面板 -->
+                <Grid Grid.Column="0" Margin="0,0,16,0" VerticalAlignment="Center">
+                    <!-- 校验成功卡片 -->
+                    <Border x:Name="SuccessAlertCard" Background="#0A00CC66" BorderBrush="#4000CC66" BorderThickness="1" CornerRadius="8" Padding="12,8" Visibility="Collapsed">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                <iconPacks:PackIconMaterial Kind="CheckCircle" Foreground="#00CC66" Width="20" Height="20" Margin="0,0,12,0" VerticalAlignment="Center" />
+                                <TextBlock Style="{StaticResource AppPageTitleStyle}" Text="导入前预览" FontSize="16" Margin="0,0,16,0" VerticalAlignment="Center" />
+                                
+                                <!-- 指标胶囊 -->
+                                <Border CornerRadius="10" Padding="8,2" Background="#126B7280" BorderBrush="#206B7280" BorderThickness="1" Margin="0,0,8,0" VerticalAlignment="Center">
+                                    <TextBlock x:Name="SuccessFileNameText" FontSize="11" Foreground="#6B7280" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                </Border>
+                                <Border CornerRadius="10" Padding="8,2" Background="#122563EB" BorderBrush="#202563EB" BorderThickness="1" Margin="0,0,8,0" VerticalAlignment="Center">
+                                    <TextBlock x:Name="SuccessTotalText" FontSize="11" Foreground="#2563EB" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                </Border>
+                                <Border CornerRadius="10" Padding="8,2" Background="#1200CC66" BorderBrush="#2000CC66" BorderThickness="1" Margin="0,0,8,0" VerticalAlignment="Center">
+                                    <TextBlock x:Name="SuccessValidText" FontSize="11" Foreground="#00CC66" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                </Border>
+                            </StackPanel>
+                            <TextBlock Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="#00CC66" FontSize="12" FontWeight="SemiBold" Text="Excel 数据校验通过，确认后即可写入系统。" />
+                        </Grid>
+                    </Border>
+
+                    <!-- 校验错误卡片 -->
+                    <Border x:Name="ErrorAlertCard" Background="#0AC42B1C" BorderBrush="#40C42B1C" BorderThickness="1" CornerRadius="8" Padding="12,8" Visibility="Collapsed">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                <iconPacks:PackIconMaterial Kind="AlertCircle" Foreground="#C42B1C" Width="20" Height="20" Margin="0,0,12,0" VerticalAlignment="Center" />
+                                <TextBlock Style="{StaticResource AppPageTitleStyle}" Text="导入前预览" FontSize="16" Margin="0,0,16,0" VerticalAlignment="Center" />
+                                
+                                <!-- 指标胶囊 -->
+                                <Border CornerRadius="10" Padding="8,2" Background="#126B7280" BorderBrush="#206B7280" BorderThickness="1" Margin="0,0,8,0" VerticalAlignment="Center">
+                                    <TextBlock x:Name="ErrorFileNameText" FontSize="11" Foreground="#6B7280" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                </Border>
+                                <Border CornerRadius="10" Padding="8,2" Background="#122563EB" BorderBrush="#202563EB" BorderThickness="1" Margin="0,0,8,0" VerticalAlignment="Center">
+                                    <TextBlock x:Name="ErrorTotalText" FontSize="11" Foreground="#2563EB" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                </Border>
+                                <Border CornerRadius="10" Padding="8,2" Background="#12C42B1C" BorderBrush="#20C42B1C" BorderThickness="1" Margin="0,0,8,0" VerticalAlignment="Center">
+                                    <TextBlock x:Name="ErrorInvalidText" FontSize="11" Foreground="#C42B1C" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                </Border>
+                            </StackPanel>
+                            <TextBlock Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="#C42B1C" FontSize="12" FontWeight="SemiBold" Text="存在错误数据行，需修正 Excel 文件后方能确认导入。" />
+                        </Grid>
+                    </Border>
                 </Grid>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right">
                     <TextBlock Style="{StaticResource AppFormLabelStyle}" Text="关键词" Margin="0,0,6,0" VerticalAlignment="Center" />
                     <TextBox x:Name="PreviewSearchBox"
-                             Width="160"
+                             Width="130"
                              Margin="0,0,8,0"
                              KeyDown="PreviewSearchBox_KeyDown" />
                     <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="ApplyFilter_Click" Margin="0,0,8,0">
@@ -75,10 +117,10 @@
                         </StackPanel>
                     </Button>
                     <CheckBox x:Name="OnlyErrorRowsBox"
-                              Content="只看错误"
-                              VerticalAlignment="Center"
-                              Checked="OnlyErrorRowsBox_Changed"
-                              Unchecked="OnlyErrorRowsBox_Changed" />
+                               Content="只看错误"
+                               VerticalAlignment="Center"
+                               Checked="OnlyErrorRowsBox_Changed"
+                               Unchecked="OnlyErrorRowsBox_Changed" />
                 </StackPanel>
             </Grid>
         </Border>
@@ -123,7 +165,7 @@
                         </StackPanel>
                     </Button>
                     <Button x:Name="ConfirmButton"
-                            Style="{StaticResource AppDialogPrimaryButtonStyle}"
+                            Style="{StaticResource AppPrimaryButtonStyle}"
                             Width="108"
                             Click="Confirm_Click">
                         <StackPanel Orientation="Horizontal">

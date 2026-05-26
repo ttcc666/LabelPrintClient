@@ -10,12 +10,38 @@
         MinHeight="520"
         WindowStartupLocation="CenterOwner">
     <Window.Resources>
-        <Style x:Key="HistoryActionButtonStyle" TargetType="Button" BasedOn="{StaticResource AppSecondaryButtonStyle}">
+        <Style x:Key="HistoryRestoreButtonStyle" TargetType="Button" BasedOn="{StaticResource AppSecondaryButtonStyle}">
             <Setter Property="Width" Value="34" />
             <Setter Property="MinWidth" Value="34" />
-            <Setter Property="Height" Value="28" />
+            <Setter Property="Height" Value="24" />
             <Setter Property="Padding" Value="0" />
             <Setter Property="Margin" Value="0,0,6,0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="#4034C759" />
+            <Setter Property="Foreground" Value="#34C759" />
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#1234C759" />
+                    <Setter Property="BorderBrush" Value="#34C759" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="HistoryCopyButtonStyle" TargetType="Button" BasedOn="{StaticResource AppSecondaryButtonStyle}">
+            <Setter Property="Width" Value="34" />
+            <Setter Property="MinWidth" Value="34" />
+            <Setter Property="Height" Value="24" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="#402563EB" />
+            <Setter Property="Foreground" Value="#2563EB" />
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#122563EB" />
+                    <Setter Property="BorderBrush" Value="#2563EB" />
+                </Trigger>
+            </Style.Triggers>
         </Style>
 
         <!-- 操作类型 Badge 模板 -->
@@ -97,18 +123,17 @@
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                    <Button Style="{StaticResource HistoryActionButtonStyle}"
+                                    <Button Style="{StaticResource HistoryRestoreButtonStyle}"
                                             ToolTip="恢复字段"
                                             IsEnabled="{Binding CanRestoreField}"
                                             Click="RestoreHistoryField_Click">
-                                        <iconPacks:PackIconMaterial Kind="BackupRestore" Width="15" Height="15" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                                        <iconPacks:PackIconMaterial Kind="BackupRestore" Width="14" Height="14" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" HorizontalAlignment="Center" />
                                     </Button>
-                                    <Button Style="{StaticResource HistoryActionButtonStyle}"
-                                            Margin="0"
+                                    <Button Style="{StaticResource HistoryCopyButtonStyle}"
                                             ToolTip="复制为新字段"
                                             IsEnabled="{Binding CanCopyAsField}"
                                             Click="CopyHistoryField_Click">
-                                        <iconPacks:PackIconMaterial Kind="ContentCopy" Width="15" Height="15" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                                        <iconPacks:PackIconMaterial Kind="ContentCopy" Width="14" Height="14" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" HorizontalAlignment="Center" />
                                     </Button>
                                 </StackPanel>
                             </DataTemplate>

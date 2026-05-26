@@ -28,7 +28,24 @@ public partial class ImportPreviewWindow : Window
 
         InitializeComponent();
         PreviewGrid.RowHeight = double.NaN;
-        SummaryText.Text = $"{preview.ExcelFileName} · 共 {preview.TotalRows} 行，有效 {preview.ValidRows} 行，错误 {preview.InvalidRows} 行";
+
+        if (preview.InvalidRows == 0)
+        {
+            SuccessAlertCard.Visibility = Visibility.Visible;
+            ErrorAlertCard.Visibility = Visibility.Collapsed;
+            SuccessFileNameText.Text = preview.ExcelFileName;
+            SuccessTotalText.Text = $"共 {preview.TotalRows} 行";
+            SuccessValidText.Text = $"有效 {preview.ValidRows} 行";
+        }
+        else
+        {
+            SuccessAlertCard.Visibility = Visibility.Collapsed;
+            ErrorAlertCard.Visibility = Visibility.Visible;
+            ErrorFileNameText.Text = preview.ExcelFileName;
+            ErrorTotalText.Text = $"共 {preview.TotalRows} 行";
+            ErrorInvalidText.Text = $"错误 {preview.InvalidRows} 行";
+        }
+
         ConfirmButton.IsEnabled = preview.InvalidRows == 0;
         ImportHintText.Text = preview.InvalidRows == 0
             ? "确认后才会写入导入批次和明细数据。"

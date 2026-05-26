@@ -7,11 +7,11 @@ using System.Windows.Media;
 using LabelPrintClient.Database;
 using LabelPrintClient.Infrastructure;
 using LabelPrintClient.Modules.PrintCenter.Models;
+using LabelPrintClient.Modules.PrintHistory.Services;
 using LabelPrintClient.Modules.Template.Models;
 using LabelPrintClient.Modules.PrintCenter.Services;
 using LabelPrintClient.Modules.PrintCenter.ViewModels;
 using LabelPrintClient.Services;
-using SqlSugar;
 
 namespace LabelPrintClient.Modules.PrintHistory.Views;
 
@@ -25,6 +25,7 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
     private readonly ObservableCollection<PrintJobRowGridItem> _rows = new();
     private CancellationTokenSource? _jobLoadCts;
     private CancellationTokenSource? _rowLoadCts;
+    private readonly PrintHistoryQueryService _queryService = new();
     private int _jobCurrentPage = 1;
     private int _jobPageSize = DefaultJobPageSize;
     private int _jobTotalRows;
@@ -111,42 +112,14 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
 
         try
         {
-            var jobQuery = AppDb.Db.Queryable<LabelPrintJob>();
-            if (!string.IsNullOrWhiteSpace(status))
-                jobQuery = jobQuery.Where(x => x.Status == status);
-            if (!string.IsNullOrWhiteSpace(keyword))
-            {
-                jobQuery = jobQuery.Where(x =>
-                    x.TemplateName.Contains(keyword) ||
-                    (x.PrinterName != null && x.PrinterName.Contains(keyword)) ||
-                    (x.OperatorName != null && x.OperatorName.Contains(keyword)) ||
-                    (x.ErrorMessage != null && x.ErrorMessage.Contains(keyword)));
-            }
-
-            RefAsync<int> totalRowsRef = 0;
             var currentPage = Math.Max(1, _jobCurrentPage);
-            var dbJobs = await jobQuery
-                    .OrderByDescending(x => x.CreateTime)
-                    .OrderByDescending(x => x.Id)
-                    .ToPageListAsync(currentPage, _jobPageSize, totalRowsRef);
-            var totalRows = totalRowsRef.Value;
-            var totalPages = Math.Max(1, (totalRows + _jobPageSize - 1) / _jobPageSize);
+            var result = await _queryService.QueryJobsAsync(status, keyword, currentPage, _jobPageSize, token);
 
-            if (currentPage > totalPages)
+            if (currentPage > result.TotalPages)
             {
-                currentPage = totalPages;
-                totalRowsRef = 0;
-                dbJobs = await jobQuery
-                    .OrderByDescending(x => x.CreateTime)
-                    .OrderByDescending(x => x.Id)
-                    .ToPageListAsync(currentPage, _jobPageSize, totalRowsRef);
-                totalRows = totalRowsRef.Value;
-                totalPages = Math.Max(1, (totalRows + _jobPageSize - 1) / _jobPageSize);
+                currentPage = result.TotalPages;
+                result = await _queryService.QueryJobsAsync(status, keyword, currentPage, _jobPageSize, token);
             }
-
-            var pageJobs = dbJobs
-                .Select(PrintJobGridItem.From)
-                .ToList();
 
             if (token.IsCancellationRequested ||
                 GetSelectedStatus() != status ||
@@ -155,12 +128,12 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
                 return;
             }
 
-            _jobTotalRows = totalRows;
-            _jobTotalPages = totalPages;
-            _jobCurrentPage = currentPage;
+            _jobTotalRows = result.TotalRows;
+            _jobTotalPages = result.TotalPages;
+            _jobCurrentPage = result.Page;
 
             _jobs.Clear();
-            foreach (var item in pageJobs)
+            foreach (var item in result.Items)
             {
                 _jobs.Add(item);
             }
@@ -220,79 +193,14 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
 
         try
         {
-            var fields = await AppDb.Db.Queryable<LabelTemplateField>()
-                .Where(x => x.TemplateId == job.TemplateId)
-                .OrderBy(x => x.Sort)
-                .ToListAsync();
-
-            var rowQuery = AppDb.Db.Queryable<LabelPrintJobRow>()
-                .Where(x => x.PrintJobId == job.Id);
-            if (!string.IsNullOrWhiteSpace(keyword))
-            {
-                if (int.TryParse(keyword, out var rowIndex))
-                    rowQuery = rowQuery.Where(x =>
-                        x.RowIndex == rowIndex ||
-                        (x.SearchText != null && x.SearchText.Contains(keyword)));
-                else
-                    rowQuery = rowQuery.Where(x =>
-                        (x.SearchText != null && x.SearchText.Contains(keyword)));
-            }
-
-            RefAsync<int> totalRowsRef = 0;
             var currentPage = Math.Max(1, _rowCurrentPage);
-            var dbRows = await rowQuery
-                    .OrderBy(x => x.RowIndex)
-                    .ToPageListAsync(currentPage, _rowPageSize, totalRowsRef);
-            var totalRows = totalRowsRef.Value;
-            var totalPages = Math.Max(1, (totalRows + _rowPageSize - 1) / _rowPageSize);
+            var rowLoadResult = await _queryService.QueryRowsAsync(job.Id, job.TemplateId, keyword, currentPage, _rowPageSize, token);
 
-            if (currentPage > totalPages)
+            if (currentPage > rowLoadResult.Rows.TotalPages)
             {
-                currentPage = totalPages;
-                totalRowsRef = 0;
-                dbRows = await rowQuery
-                    .OrderBy(x => x.RowIndex)
-                    .ToPageListAsync(currentPage, _rowPageSize, totalRowsRef);
-                totalRows = totalRowsRef.Value;
-                totalPages = Math.Max(1, (totalRows + _rowPageSize - 1) / _rowPageSize);
+                currentPage = rowLoadResult.Rows.TotalPages;
+                rowLoadResult = await _queryService.QueryRowsAsync(job.Id, job.TemplateId, keyword, currentPage, _rowPageSize, token);
             }
-
-            var rowLoadResult = await Task.Run(() =>
-            {
-                var rows = dbRows.Select(x => new PrintJobRowGridItem
-                {
-                    Id = x.Id,
-                    ImportRowId = x.ImportRowId,
-                    RowIndex = x.RowIndex,
-                    Data = GridRowDataHelper.Deserialize(x.RowDataJson)
-                })
-                .ToList();
-
-                var activeFields = fields.Where(f => !f.IsDeleted && !TemplateSystemFields.IsSystemField(f.FieldCode)).ToList();
-
-                GridRowDataHelper.EnsureFieldKeys(rows.Select(x => x.Data), activeFields);
-                var activeCodes = activeFields
-                    .Select(x => x.FieldCode)
-                    .Where(x => !string.IsNullOrWhiteSpace(x))
-                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
-                var extraKeys = rows
-                    .SelectMany(x => x.Data.Keys)
-                    .Where(x => !activeCodes.Contains(x))
-                    .Where(x => !TemplateSystemFields.IsSystemField(x))
-                    .Distinct(StringComparer.OrdinalIgnoreCase)
-                    .OrderBy(x => x)
-                    .ToList();
-                var systemKeys = rows
-                    .SelectMany(x => x.Data.Keys)
-                    .Where(TemplateSystemFields.IsSystemField)
-                    .Distinct(StringComparer.OrdinalIgnoreCase)
-                    .OrderBy(GetSystemFieldSort)
-                    .ToList();
-                systemKeys = NormalizeSystemKeys(systemKeys);
-                GridRowDataHelper.EnsureKeys(rows.Select(x => x.Data), extraKeys);
-                GridRowDataHelper.EnsureKeys(rows.Select(x => x.Data), systemKeys);
-                return (Rows: rows, ExtraKeys: extraKeys, SystemKeys: systemKeys);
-            }, token);
 
             if (token.IsCancellationRequested ||
                 SelectedJob?.Id != job.Id ||
@@ -301,13 +209,13 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
                 return;
             }
 
-            _rowTotalRows = totalRows;
-            _rowTotalPages = totalPages;
-            _rowCurrentPage = currentPage;
+            _rowTotalRows = rowLoadResult.Rows.TotalRows;
+            _rowTotalPages = rowLoadResult.Rows.TotalPages;
+            _rowCurrentPage = rowLoadResult.Rows.Page;
 
-            BuildRowGridColumnsIfNeeded(fields, rowLoadResult.ExtraKeys, rowLoadResult.SystemKeys);
+            BuildRowGridColumnsIfNeeded(rowLoadResult.Fields, rowLoadResult.ExtraKeys, rowLoadResult.SystemKeys);
             _rows.Clear();
-            foreach (var item in rowLoadResult.Rows)
+            foreach (var item in rowLoadResult.Rows.Items)
             {
                 _rows.Add(item);
             }
@@ -351,22 +259,10 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
         return string.Join("|", fields.Where(x => !TemplateSystemFields.IsSystemField(x.FieldCode)).Select(x => $"{x.Id}:{x.Sort}:{x.FieldCode}:{x.FieldName}"));
     }
 
-    private static int GetSystemFieldSort(string fieldCode)
-    {
-        if (string.Equals(fieldCode, TemplateSystemFields.BatchNo, StringComparison.OrdinalIgnoreCase))
-            return 0;
-        if (string.Equals(fieldCode, TemplateSystemFields.SerialNo, StringComparison.OrdinalIgnoreCase))
-            return 1;
-        return 2;
-    }
-
     private static string GetSystemFieldHeader(string fieldCode)
     {
         return TemplateSystemFields.GetDisplayName(fieldCode);
     }
-
-    private static List<string> NormalizeSystemKeys(IEnumerable<string> systemKeys)
-        => systemKeys.Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(GetSystemFieldSort).ToList();
 
     private void BuildRowGridColumns(
         IReadOnlyList<LabelTemplateField> fields,

@@ -21,8 +21,8 @@
 
         <!-- 配置区域 -->
         <StackPanel Grid.Row="1" Margin="0,0,0,8">
-            <!-- 产品信息静态展示 -->
-            <Border Style="{StaticResource AppDataCardStyle}" Padding="16" Margin="0,0,0,16">
+            <!-- 产品肖像名片卡片 -->
+            <Border BorderThickness="4,0,0,0" BorderBrush="{DynamicResource PrimaryBrush}" Background="#060066FF" CornerRadius="0,6,6,0" Padding="16,12" Margin="0,0,0,16">
                 <StackPanel>
                     <TextBlock x:Name="ProductInfoText" Text="正在加载产品数据..." TextWrapping="Wrap" FontWeight="SemiBold" FontSize="14" Foreground="{DynamicResource PrimaryTextBrush}" Margin="0,0,0,6" />
                     <TextBlock x:Name="BatchInfoText" Text="批次号：-" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
@@ -59,7 +59,7 @@
 
         <!-- 底部按钮 -->
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
-            <Button Width="110" Style="{StaticResource AppDialogPrimaryButtonStyle}" Click="Ok_Click" Margin="0,0,10,0">
+            <Button Width="110" Style="{StaticResource AppPrimaryButtonStyle}" Click="Ok_Click" Margin="0,0,10,0">
                 <StackPanel Orientation="Horizontal">
                     <iconPacks:PackIconMaterial Kind="Printer" Width="14" Height="14" Margin="0,0,6,0" VerticalAlignment="Center" />
                     <TextBlock Text="开始补打" VerticalAlignment="Center" />

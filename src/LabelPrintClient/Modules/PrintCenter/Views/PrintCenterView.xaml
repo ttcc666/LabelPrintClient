@@ -111,7 +111,7 @@
                             <TextBlock Text="下载 Excel 模板" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
-                    <Button Style="{StaticResource ButtonPrimary}" Click="ImportExcel_Click" Margin="0,0,20,0">
+                    <Button Style="{StaticResource AppPrimaryButtonStyle}" Click="ImportExcel_Click" Margin="0,0,20,0">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="MicrosoftExcel" Margin="0,0,6,0" VerticalAlignment="Center" />
                             <TextBlock Text="导入 Excel" VerticalAlignment="Center" />
@@ -192,15 +192,27 @@
                                 <DataGridTemplateColumn Header="操作" Width="Auto">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <Button  Style="{StaticResource ButtonDanger}"
-                                                       Height="28"
-
-                                                       Click="VoidBatch_Click">
-        <StackPanel Orientation="Horizontal">
-            <iconPacks:PackIconMaterial Kind="Cancel" Margin="0,0,6,0" VerticalAlignment="Center" />
-            <TextBlock Text="作废" VerticalAlignment="Center" />
-        </StackPanel>
-    </Button>
+                                            <Button Click="VoidBatch_Click" Height="24" Padding="6,0">
+                                                <Button.Style>
+                                                    <Style TargetType="Button" BasedOn="{StaticResource AppSecondaryButtonStyle}">
+                                                        <Setter Property="Height" Value="24" />
+                                                        <Setter Property="Background" Value="Transparent" />
+                                                        <Setter Property="BorderBrush" Value="#40C42B1C" />
+                                                        <Setter Property="Foreground" Value="#C42B1C" />
+                                                        <Setter Property="MinWidth" Value="54" />
+                                                        <Style.Triggers>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter Property="Background" Value="#12C42B1C" />
+                                                                <Setter Property="BorderBrush" Value="#C42B1C" />
+                                                            </Trigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Button.Style>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <iconPacks:PackIconMaterial Kind="Cancel" Width="10" Height="10" Margin="0,0,4,0" VerticalAlignment="Center" />
+                                                    <TextBlock Text="作废" FontSize="11" VerticalAlignment="Center" />
+                                                </StackPanel>
+                                            </Button>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
@@ -413,12 +425,12 @@
             <TextBlock Text="批量预览" VerticalAlignment="Center" />
         </StackPanel>
     </Button>
-                    <Button  Style="{StaticResource ButtonPrimary}" Click="PrintSelected_Click">
-        <StackPanel Orientation="Horizontal">
-            <iconPacks:PackIconMaterial Kind="Printer" Margin="0,0,6,0" VerticalAlignment="Center" />
-            <TextBlock Text="批量打印" VerticalAlignment="Center" />
-        </StackPanel>
-    </Button>
+                    <Button Style="{StaticResource AppPrimaryButtonStyle}" Click="PrintSelected_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <iconPacks:PackIconMaterial Kind="Printer" Margin="0,0,6,0" VerticalAlignment="Center" />
+                            <TextBlock Text="批量打印" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
                 </WrapPanel>
             </Grid>
         </Border>

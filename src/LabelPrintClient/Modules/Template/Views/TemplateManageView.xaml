@@ -50,6 +50,34 @@
                 </DataTrigger>
             </DataTemplate.Triggers>
         </DataTemplate>
+
+        <!-- 模板打印模式胶囊 Badge 模板 -->
+        <DataTemplate x:Key="TemplateModeBadgeTemplate">
+            <Border x:Name="BadgeBorder" CornerRadius="12" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="8,3" Background="#12708090" BorderBrush="#40708090" BorderThickness="1">
+                <StackPanel Orientation="Horizontal">
+                    <iconPacks:PackIconMaterial x:Name="BadgeIcon" Kind="FileOutline" Foreground="SlateGray" Width="11" Height="11" Margin="0,0,4,0" VerticalAlignment="Center" />
+                    <TextBlock x:Name="BadgeText" Text="普通" FontSize="11" Foreground="SlateGray" FontWeight="SemiBold" VerticalAlignment="Center" />
+                </StackPanel>
+            </Border>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding TemplateMode}" Value="Batch">
+                    <Setter TargetName="BadgeBorder" Property="Background" Value="#1216803C" />
+                    <Setter TargetName="BadgeBorder" Property="BorderBrush" Value="#4016803C" />
+                    <Setter TargetName="BadgeIcon" Property="Kind" Value="LayersOutline" />
+                    <Setter TargetName="BadgeIcon" Property="Foreground" Value="#16803C" />
+                    <Setter TargetName="BadgeText" Property="Text" Value="批次" />
+                    <Setter TargetName="BadgeText" Property="Foreground" Value="#16803C" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding TemplateMode}" Value="Serialized">
+                    <Setter TargetName="BadgeBorder" Property="Background" Value="#127C3AED" />
+                    <Setter TargetName="BadgeBorder" Property="BorderBrush" Value="#407C3AED" />
+                    <Setter TargetName="BadgeIcon" Property="Kind" Value="Numeric" />
+                    <Setter TargetName="BadgeIcon" Property="Foreground" Value="#7C3AED" />
+                    <Setter TargetName="BadgeText" Property="Text" Value="序列化" />
+                    <Setter TargetName="BadgeText" Property="Foreground" Value="#7C3AED" />
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
     </UserControl.Resources>
 
     <Grid Margin="12">
@@ -268,7 +296,13 @@
                               VerticalScrollBarVisibility="Auto">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="名称" Binding="{Binding Name}" Width="130" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
-                            <DataGridTextColumn Header="模式" Binding="{Binding TemplateModeText}" Width="72" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
+                            <DataGridTemplateColumn Header="模式" Width="82" SortMemberPath="TemplateMode">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <ContentControl Content="{Binding}" ContentTemplate="{StaticResource TemplateModeBadgeTemplate}" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
                             <!-- 存储介质 Badge 胶囊列 -->
                             <DataGridTemplateColumn Header="存储" Width="96">
                                 <DataGridTemplateColumn.CellTemplate>

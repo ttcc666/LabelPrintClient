@@ -18,11 +18,13 @@ public class LabelPrintService
 
     private readonly AppSettings _settings;
     private readonly ILabelTemplateStorageService _templateStorage;
+    private readonly ILabelPrintExecutor _printExecutor;
 
-    public LabelPrintService(AppSettings settings)
+    public LabelPrintService(AppSettings settings, ILabelPrintExecutor? printExecutor = null)
     {
         _settings = settings;
         _templateStorage = LabelTemplateStorageFactory.Create(settings.RunMode);
+        _printExecutor = printExecutor ?? new StimulsoftLabelPrintExecutor(_templateStorage);
     }
 
     public async Task PreviewSelectedRowsAsync(
@@ -97,7 +99,7 @@ public class LabelPrintService
 
         try
         {
-            await Task.Run(() => PrintJobRows(context.Template, context.Fields, jobRows, printerName, cancellationToken, progress, "开始提交打印任务"), cancellationToken)
+            await _printExecutor.PrintAsync(context.Template, context.Fields, jobRows, printerName, "开始提交打印任务", cancellationToken, progress)
                 .ConfigureAwait(false);
             await MarkPrintedAsync(printJob, context.Template, context.Rows, jobRows, copyCount).ConfigureAwait(false);
         }
@@ -598,26 +600,8 @@ public class LabelPrintService
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
-        var settings = CreatePrinterSettings(printerName);
-        var templateBytes = CaptureReportTemplate(template);
-        var total = jobRows.Count;
-        var completed = 0;
-        progress?.Report(new BackgroundTaskProgress(completed, total, "开始提交历史重打任务"));
-
-        await Task.Run(() =>
-        {
-            foreach (var jobRow in jobRows)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-
-                var table = BuildDataTableFromJobRow(template.DataSourceName, fields, jobRow);
-                var report = BuildRenderedReport(templateBytes, template.DataSourceName, table);
-                report.Print(false, settings);
-
-                completed++;
-                progress?.Report(new BackgroundTaskProgress(completed, total, "已提交历史重打明细"));
-            }
-        }, cancellationToken).ConfigureAwait(false);
+        await _printExecutor.PrintAsync(template, fields, jobRows, printerName, "开始提交历史重打任务", cancellationToken, progress)
+            .ConfigureAwait(false);
     }
 
     private static async Task ExecuteTransactionAsync(Func<Task> operation)
@@ -705,5 +689,65 @@ public class LabelPrintService
         string value)
     {
         data[primaryKey] = value;
+    }
+
+    private sealed class StimulsoftLabelPrintExecutor : ILabelPrintExecutor
+    {
+        private readonly ILabelTemplateStorageService _templateStorage;
+
+        public StimulsoftLabelPrintExecutor(ILabelTemplateStorageService templateStorage)
+        {
+            _templateStorage = templateStorage;
+        }
+
+        public async Task PrintAsync(
+            LabelTemplate template,
+            IReadOnlyList<LabelTemplateField> fields,
+            IReadOnlyList<LabelPrintJobRow> jobRows,
+            string? printerName,
+            string startMessage,
+            CancellationToken cancellationToken = default,
+            IProgress<BackgroundTaskProgress>? progress = null)
+        {
+            await Task.Run(() => PrintJobRows(template, fields, jobRows, printerName, cancellationToken, progress, startMessage), cancellationToken)
+                .ConfigureAwait(false);
+        }
+
+        private void PrintJobRows(
+            LabelTemplate template,
+            IReadOnlyList<LabelTemplateField> fields,
+            IReadOnlyList<LabelPrintJobRow> jobRows,
+            string? printerName,
+            CancellationToken cancellationToken,
+            IProgress<BackgroundTaskProgress>? progress,
+            string startMessage)
+        {
+            var settings = CreatePrinterSettings(printerName);
+            var templateBytes = CaptureReportTemplate(template);
+            var total = jobRows.Count;
+            var completed = 0;
+            var progressReportInterval = Math.Max(1, (int)Math.Ceiling(total / 100.0));
+            progress?.Report(new BackgroundTaskProgress(completed, total, startMessage));
+
+            foreach (var jobRow in jobRows)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                var dataTable = BuildDataTableFromJobRow(template.DataSourceName, fields, jobRow);
+                var report = BuildRenderedReport(templateBytes, template.DataSourceName, dataTable);
+                report.Print(false, settings);
+                completed++;
+                if (ShouldReportProgress(completed, total, progressReportInterval))
+                    progress?.Report(new BackgroundTaskProgress(completed, total, "已提交打印明细"));
+            }
+        }
+
+        private byte[] CaptureReportTemplate(LabelTemplate template)
+        {
+            var report = _templateStorage.LoadReport(template);
+            using var ms = new MemoryStream();
+            report.Save(ms);
+            return ms.ToArray();
+        }
     }
 }

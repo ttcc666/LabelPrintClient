@@ -64,7 +64,7 @@
                 </StackPanel>
 
                 <StackPanel Grid.Column="5" Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,0,0">
-                    <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="JobFilter_Click" Margin="0,0,8,0">
+                    <Button Style="{StaticResource AppPrimaryButtonStyle}" Click="JobFilter_Click" Margin="0,0,8,0">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="Magnify" Margin="0,0,6,0" VerticalAlignment="Center" />
                             <TextBlock Text="查询" VerticalAlignment="Center" />
@@ -122,10 +122,25 @@
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                                <Button Style="{StaticResource AppSecondaryButtonStyle}" Height="28" Click="RetryJob_Click">
+                                                <Button Click="RetryJob_Click" Height="24" Padding="6,0">
+                                                    <Button.Style>
+                                                        <Style TargetType="Button" BasedOn="{StaticResource AppSecondaryButtonStyle}">
+                                                            <Setter Property="Height" Value="24" />
+                                                            <Setter Property="Background" Value="Transparent" />
+                                                            <Setter Property="BorderBrush" Value="#402563EB" />
+                                                            <Setter Property="Foreground" Value="#2563EB" />
+                                                            <Setter Property="MinWidth" Value="54" />
+                                                            <Style.Triggers>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter Property="Background" Value="#122563EB" />
+                                                                    <Setter Property="BorderBrush" Value="#2563EB" />
+                                                                </Trigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Button.Style>
                                                     <StackPanel Orientation="Horizontal">
-                                                        <iconPacks:PackIconMaterial Kind="Reload" Margin="0,0,6,0" VerticalAlignment="Center" />
-                                                        <TextBlock Text="重试" VerticalAlignment="Center" />
+                                                        <iconPacks:PackIconMaterial Kind="Reload" Width="10" Height="10" Margin="0,0,4,0" VerticalAlignment="Center" />
+                                                        <TextBlock Text="重试" FontSize="11" VerticalAlignment="Center" />
                                                     </StackPanel>
                                                 </Button>
                                             </StackPanel>

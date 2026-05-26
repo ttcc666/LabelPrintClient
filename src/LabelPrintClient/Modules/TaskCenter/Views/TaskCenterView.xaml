@@ -9,7 +9,6 @@
         <Style x:Key="TaskProgressBarStyle" TargetType="ProgressBar">
             <Setter Property="Height" Value="8" />
             <Setter Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}" />
-            <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}" />
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="Template">
                 <Setter.Value>
@@ -20,8 +19,14 @@
                                     CornerRadius="4" />
                             <Border x:Name="PART_Indicator"
                                     HorizontalAlignment="Left"
-                                    Background="{TemplateBinding Foreground}"
-                                    CornerRadius="4" />
+                                    CornerRadius="4">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                        <GradientStop Color="#FF3A5CE5" Offset="0" />
+                                        <GradientStop Color="#FF00D2FF" Offset="1" />
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                            </Border>
                         </Grid>
                     </ControlTemplate>
                 </Setter.Value>
@@ -127,7 +132,62 @@
                               HorizontalScrollBarVisibility="Auto"
                               VerticalScrollBarVisibility="Auto">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="类型" Binding="{Binding KindText}" Width="70" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
+                            <DataGridTemplateColumn Header="类型" Width="82" SortMemberPath="Kind">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Border x:Name="KindBadge" CornerRadius="11" HorizontalAlignment="Left" VerticalAlignment="Center" Padding="8,2.5" BorderThickness="1">
+                                            <StackPanel Orientation="Horizontal">
+                                                <iconPacks:PackIconMaterial x:Name="KindIcon" Kind="HelpCircleOutline" Width="11" Height="11" Margin="0,0,4,0" VerticalAlignment="Center" />
+                                                <TextBlock x:Name="KindText" Text="{Binding KindText}" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                            </StackPanel>
+                                        </Border>
+                                        <DataTemplate.Triggers>
+                                            <DataTrigger Binding="{Binding Kind}" Value="Import">
+                                                <Setter TargetName="KindBadge" Property="Background" Value="#122563EB" />
+                                                <Setter TargetName="KindBadge" Property="BorderBrush" Value="#402563EB" />
+                                                <Setter TargetName="KindIcon" Property="Kind" Value="FileImportOutline" />
+                                                <Setter TargetName="KindIcon" Property="Foreground" Value="#2563EB" />
+                                                <Setter TargetName="KindText" Property="Foreground" Value="#2563EB" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Kind}" Value="Export">
+                                                <Setter TargetName="KindBadge" Property="Background" Value="#1216803C" />
+                                                <Setter TargetName="KindBadge" Property="BorderBrush" Value="#4016803C" />
+                                                <Setter TargetName="KindIcon" Property="Kind" Value="FileExportOutline" />
+                                                <Setter TargetName="KindIcon" Property="Foreground" Value="#16803C" />
+                                                <Setter TargetName="KindText" Property="Foreground" Value="#16803C" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Kind}" Value="Preview">
+                                                <Setter TargetName="KindBadge" Property="Background" Value="#127C3AED" />
+                                                <Setter TargetName="KindBadge" Property="BorderBrush" Value="#407C3AED" />
+                                                <Setter TargetName="KindIcon" Property="Kind" Value="EyeOutline" />
+                                                <Setter TargetName="KindIcon" Property="Foreground" Value="#7C3AED" />
+                                                <Setter TargetName="KindText" Property="Foreground" Value="#7C3AED" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Kind}" Value="Design">
+                                                <Setter TargetName="KindBadge" Property="Background" Value="#12B45309" />
+                                                <Setter TargetName="KindBadge" Property="BorderBrush" Value="#40B45309" />
+                                                <Setter TargetName="KindIcon" Property="Kind" Value="PaletteOutline" />
+                                                <Setter TargetName="KindIcon" Property="Foreground" Value="#B45309" />
+                                                <Setter TargetName="KindText" Property="Foreground" Value="#B45309" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Kind}" Value="Print">
+                                                <Setter TargetName="KindBadge" Property="Background" Value="#1200CC66" />
+                                                <Setter TargetName="KindBadge" Property="BorderBrush" Value="#4000CC66" />
+                                                <Setter TargetName="KindIcon" Property="Kind" Value="Printer" />
+                                                <Setter TargetName="KindIcon" Property="Foreground" Value="#00CC66" />
+                                                <Setter TargetName="KindText" Property="Foreground" Value="#00CC66" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Kind}" Value="Upload">
+                                                <Setter TargetName="KindBadge" Property="Background" Value="#120284C7" />
+                                                <Setter TargetName="KindBadge" Property="BorderBrush" Value="#400284C7" />
+                                                <Setter TargetName="KindIcon" Property="Kind" Value="CloudUploadOutline" />
+                                                <Setter TargetName="KindIcon" Property="Foreground" Value="#0284C7" />
+                                                <Setter TargetName="KindText" Property="Foreground" Value="#0284C7" />
+                                            </DataTrigger>
+                                        </DataTemplate.Triggers>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
                             <DataGridTemplateColumn Header="状态" Width="96" SortMemberPath="Status">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
