@@ -18,6 +18,7 @@ public partial class TemplateEditWindow : Window
     public new LabelTemplate Template { get; private set; }
     public bool ResetSerialCounter { get; private set; }
     public bool ClearLockedBatchNumbers { get; private set; }
+    public bool TemplateModeChanged { get; private set; }
 
     public TemplateEditWindow(LabelTemplate? template = null, IEnumerable<string>? allowedFields = null)
     {
@@ -137,7 +138,7 @@ public partial class TemplateEditWindow : Window
             return;
         }
 
-        var newPeriod = mode == LabelTemplateMode.Serialized ? ReadSerialResetPeriod() : SerialResetPeriod.Never;
+        var newPeriod = mode == LabelTemplateMode.Serialized ? ReadSerialResetPeriod() : Template.SerialResetPeriod;
         var serialRuleChanged = _originalMode == LabelTemplateMode.Serialized &&
                                 (mode != LabelTemplateMode.Serialized ||
                                  !string.Equals(_originalSerialPattern, pattern, StringComparison.Ordinal) ||
@@ -177,13 +178,17 @@ public partial class TemplateEditWindow : Window
         Template.Name = name;
         Template.IsEnabled = IsEnabledBox.IsChecked == true;
         Template.TemplateMode = mode;
+        TemplateModeChanged = _originalMode != mode;
         Template.IsSerialNumber = mode == LabelTemplateMode.Serialized;
-        Template.BatchNumberPattern = mode == LabelTemplateMode.Batch
-            ? normalizedBatchPattern
-            : null;
-        Template.SerialNumberPattern = mode == LabelTemplateMode.Serialized
-            ? SerialNumberService.NormalizePattern(pattern, null)
-            : null;
+        if (mode == LabelTemplateMode.Batch)
+            Template.BatchNumberPattern = normalizedBatchPattern;
+        else if (string.IsNullOrWhiteSpace(Template.BatchNumberPattern))
+            Template.BatchNumberPattern = SerialNumberService.DefaultBatchPattern;
+
+        if (mode == LabelTemplateMode.Serialized)
+            Template.SerialNumberPattern = SerialNumberService.NormalizePattern(pattern, null);
+        else if (string.IsNullOrWhiteSpace(Template.SerialNumberPattern))
+            Template.SerialNumberPattern = SerialNumberService.DefaultPattern;
         Template.SerialNumberPrefix = null;
         Template.SerialResetPeriod = newPeriod;
 

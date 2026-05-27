@@ -14,7 +14,7 @@ public class ViewConstructionSmokeTests
 {
     [Fact]
     [Trait("Category", "UiSmoke")]
-    public async Task ModuleViews_CanBeConstructedOnStaThread()
+    public async Task ModuleViewsAndEditWindows_CanBeConstructedOnStaThread()
     {
         using var database = TestDatabase.Create();
 
@@ -31,19 +31,8 @@ public class ViewConstructionSmokeTests
             };
 
             Assert.All(views, Assert.NotNull);
-        });
-    }
 
-    [Fact]
-    [Trait("Category", "UiSmoke")]
-    public async Task EditWindows_CanBeConstructedOnStaThread()
-    {
-        using var database = TestDatabase.Create();
-
-        await StaThreadRunner.RunAsync(() =>
-        {
-            EnsureApplicationResources();
-            var windows = new object[]
+            var windows = new Window[]
             {
                 new CategoryEditWindow(),
                 new FieldEditWindow(),
@@ -52,6 +41,10 @@ public class ViewConstructionSmokeTests
             };
 
             Assert.All(windows, Assert.NotNull);
+            foreach (var window in windows)
+                window.Close();
+
+            Application.Current?.Shutdown();
         });
 
         AppDb.Close();

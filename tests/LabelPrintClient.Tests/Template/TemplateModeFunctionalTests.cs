@@ -1,4 +1,6 @@
 using LabelPrintClient.Database;
+using LabelPrintClient.Infrastructure;
+using LabelPrintClient.Modules.PrintCenter.Models;
 using LabelPrintClient.Modules.Template.Models;
 using LabelPrintClient.Modules.Template.Services;
 using LabelPrintClient.Tests.Infrastructure;
@@ -110,5 +112,143 @@ public class TemplateModeFunctionalTests
         Assert.Equal("string", restored.FieldType);
         Assert.Equal("批号", restored.FieldName);
         Assert.Equal(5, restored.Sort);
+    }
+
+    [Fact]
+    [Trait("Category", "Functional")]
+    public async Task SwitchingAcrossNormalBatchSerialized_MaintainsExpectedSystemFieldsAndBatchBindings()
+    {
+        using var database = TestDatabase.Create();
+        var category = await TestSeed.CategoryAsync();
+        var template = await TestSeed.TemplateAsync(category.Id, LabelTemplateMode.Normal);
+        await TestSeed.FieldAsync(template.Id, "ProductCode", "产品编码", 1);
+
+        await TemplateSystemFieldService.EnsureModeFieldsAsync(template);
+        await AssertActiveSystemFieldsAsync(template.Id);
+
+        template.TemplateMode = LabelTemplateMode.Batch;
+        template.BatchNumberPattern = "BATCH-{ProductCode}";
+        await TemplateSystemFieldService.EnsureModeFieldsAsync(template);
+        await AssertActiveSystemFieldsAsync(template.Id, TemplateSystemFields.BatchNo);
+
+        var batch = await TestSeed.ImportBatchAsync(template);
+        var importRow = await TestSeed.ImportRowAsync(batch, 1, new Dictionary<string, string>
+        {
+            ["ProductCode"] = "P001",
+            [TemplateSystemFields.BatchNo] = "BATCH-P001"
+        });
+        importRow.IsPrinted = true;
+        importRow.PrintCount = 1;
+        await AppDb.Db.Updateable(importRow).ExecuteCommandAsync();
+        var job = await TestSeed.FailedPrintJobAsync(template, batch);
+        job.Status = "Printed";
+        await AppDb.Db.Updateable(job).ExecuteCommandAsync();
+        var jobRow = await TestSeed.PrintJobRowAsync(job, importRow, new Dictionary<string, string>
+        {
+            ["ProductCode"] = "P001",
+            [TemplateSystemFields.BatchNo] = "BATCH-HISTORY"
+        });
+
+        template.TemplateMode = LabelTemplateMode.Serialized;
+        template.BatchNumberPattern = null;
+        template.SerialNumberPattern = "SN-{seq:0000}";
+        await TemplateSystemFieldService.EnsureModeFieldsAsync(template);
+        var clearedCount = await TemplateBatchBindingService.ClearLockedBatchNumbersAsync(template.Id);
+        await AssertActiveSystemFieldsAsync(template.Id, TemplateSystemFields.SerialNo);
+
+        var switchedImportRow = await AppDb.Db.Queryable<LabelImportRow>().InSingleAsync(importRow.Id);
+        var switchedImportData = JsonHelper.Deserialize<Dictionary<string, string>>(switchedImportRow.RowDataJson)!;
+        var savedJobRow = await AppDb.Db.Queryable<LabelPrintJobRow>().InSingleAsync(jobRow.Id);
+        var historyData = JsonHelper.Deserialize<Dictionary<string, string>>(savedJobRow.RowDataJson)!;
+
+        Assert.Equal(1, clearedCount);
+        Assert.DoesNotContain(TemplateSystemFields.BatchNo, switchedImportData.Keys);
+        Assert.Equal("BATCH-HISTORY", historyData[TemplateSystemFields.BatchNo]);
+
+        template.TemplateMode = LabelTemplateMode.Normal;
+        template.SerialNumberPattern = null;
+        await TemplateSystemFieldService.EnsureModeFieldsAsync(template);
+        await AssertActiveSystemFieldsAsync(template.Id);
+
+        template.TemplateMode = LabelTemplateMode.Batch;
+        template.BatchNumberPattern = "BATCH-NEW-{ProductCode}";
+        await TemplateSystemFieldService.EnsureModeFieldsAsync(template);
+        await AssertActiveSystemFieldsAsync(template.Id, TemplateSystemFields.BatchNo);
+
+        var batchField = await AppDb.Db.Queryable<LabelTemplateField>()
+            .Where(x => x.TemplateId == template.Id && x.FieldCode == TemplateSystemFields.BatchNo)
+            .SingleAsync();
+        var serialField = await AppDb.Db.Queryable<LabelTemplateField>()
+            .Where(x => x.TemplateId == template.Id && x.FieldCode == TemplateSystemFields.SerialNo)
+            .SingleAsync();
+
+        Assert.False(batchField.IsDeleted);
+        Assert.True(serialField.IsDeleted);
+    }
+
+    [Fact]
+    [Trait("Category", "Functional")]
+    public async Task SwitchingAwayFromBatchAndBack_PreservesBatchRule()
+    {
+        using var database = TestDatabase.Create();
+        var category = await TestSeed.CategoryAsync();
+        var template = await TestSeed.TemplateAsync(
+            category.Id,
+            LabelTemplateMode.Batch,
+            batchPattern: "LOT-{ProductCode}-{yyyy}{MM}{dd}");
+
+        template.TemplateMode = LabelTemplateMode.Normal;
+        await AppDb.Db.Updateable(template).ExecuteCommandAsync();
+        await TemplateSystemFieldService.EnsureModeFieldsAsync(template);
+
+        template.TemplateMode = LabelTemplateMode.Batch;
+        await AppDb.Db.Updateable(template).ExecuteCommandAsync();
+        await TemplateSystemFieldService.EnsureModeFieldsAsync(template);
+
+        var savedTemplate = await AppDb.Db.Queryable<LabelTemplate>().InSingleAsync(template.Id);
+
+        Assert.Equal("LOT-{ProductCode}-{yyyy}{MM}{dd}", savedTemplate.BatchNumberPattern);
+    }
+
+    [Fact]
+    [Trait("Category", "Functional")]
+    public async Task SwitchingAwayFromSerializedAndBack_PreservesSerialRuleAndResetPeriod()
+    {
+        using var database = TestDatabase.Create();
+        var category = await TestSeed.CategoryAsync();
+        var template = await TestSeed.TemplateAsync(
+            category.Id,
+            LabelTemplateMode.Serialized,
+            serialPattern: "SER-{ProductCode}-{seq:000}");
+        template.SerialResetPeriod = SerialResetPeriod.Monthly;
+        await AppDb.Db.Updateable(template).ExecuteCommandAsync();
+
+        template.TemplateMode = LabelTemplateMode.Normal;
+        await AppDb.Db.Updateable(template).ExecuteCommandAsync();
+        await TemplateSystemFieldService.EnsureModeFieldsAsync(template);
+
+        template.TemplateMode = LabelTemplateMode.Serialized;
+        await AppDb.Db.Updateable(template).ExecuteCommandAsync();
+        await TemplateSystemFieldService.EnsureModeFieldsAsync(template);
+
+        var savedTemplate = await AppDb.Db.Queryable<LabelTemplate>().InSingleAsync(template.Id);
+
+        Assert.Equal("SER-{ProductCode}-{seq:000}", savedTemplate.SerialNumberPattern);
+        Assert.Equal(SerialResetPeriod.Monthly, savedTemplate.SerialResetPeriod);
+    }
+
+    private static async Task AssertActiveSystemFieldsAsync(long templateId, params string[] expectedCodes)
+    {
+        var activeSystemCodes = await AppDb.Db.Queryable<LabelTemplateField>()
+            .Where(x => x.TemplateId == templateId && !x.IsDeleted)
+            .ToListAsync();
+        activeSystemCodes = activeSystemCodes
+            .Where(x => TemplateSystemFields.IsManagedSystemField(x.FieldCode))
+            .OrderBy(x => x.FieldCode)
+            .ToList();
+
+        Assert.Equal(
+            expectedCodes.OrderBy(x => x).ToList(),
+            activeSystemCodes.Select(x => x.FieldCode).ToList());
     }
 }

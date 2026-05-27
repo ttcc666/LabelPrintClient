@@ -458,6 +458,15 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
             await TemplateSystemFieldService.EnsureModeFieldsAsync(edited);
         });
 
+        if (win.TemplateModeChanged)
+        {
+            AppMessageBox.Show(
+                "模板模式已变更，系统固定字段可能已调整。请及时打开模板设计器更新 MRT 模板中的字段绑定，避免打印时仍引用旧字段。",
+                "更新模板提醒",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+        }
+
         await LoadTemplatesAsync();
     }
 
