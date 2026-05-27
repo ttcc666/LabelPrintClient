@@ -10,6 +10,7 @@ using LabelPrintClient.Modules.Template.Views;
 using LabelPrintClient.Services;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 
 namespace LabelPrintClient;
 
@@ -74,6 +75,12 @@ public partial class MainWindow : HandyControl.Controls.Window
         }
 
         System.Windows.Application.Current.Shutdown();
+    }
+
+    private void ToastHost_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        HandyControl.Controls.Growl.Clear(AppMessageBox.ToastToken);
+        e.Handled = true;
     }
 
     private void UpdateCurrentUserText()

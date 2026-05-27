@@ -338,6 +338,7 @@ public class LabelPrintService
     private static void RegisterReportData(StiReport report, string dataSourceName, DataTable dataTable)
     {
         report.Dictionary.Databases.Clear();
+        report.Dictionary.DataSources.Clear();
         report.RegData(dataSourceName, dataTable);
         report.Dictionary.Synchronize();
     }
@@ -464,21 +465,11 @@ public class LabelPrintService
         IReadOnlyList<LabelTemplateField> fields,
         LabelPrintJobRow jobRow)
     {
-        var dict = DeserializeRowData(jobRow.RowDataJson);
-        var table = new DataTable(dataSourceName);
-        foreach (var field in fields)
+        var row = new LabelImportRow
         {
-            if (!table.Columns.Contains(field.FieldCode))
-                table.Columns.Add(field.FieldCode, typeof(string));
-        }
-
-        var dataRow = table.NewRow();
-        foreach (var field in fields)
-        {
-            dataRow[field.FieldCode] = dict.TryGetValue(field.FieldCode, out var value) ? value : string.Empty;
-        }
-        table.Rows.Add(dataRow);
-        return table;
+            RowDataJson = jobRow.RowDataJson
+        };
+        return DataTableBuilder.Build([row], fields, dataSourceName);
     }
 
     private static PrinterSettings CreatePrinterSettings(string? printerName)

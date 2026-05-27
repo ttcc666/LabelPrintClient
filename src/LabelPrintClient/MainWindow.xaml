@@ -293,6 +293,7 @@
                     HorizontalAlignment="Right"
                     VerticalAlignment="Top"
                     Panel.ZIndex="1000"
-                    IsHitTestVisible="False" />
+                    Background="Transparent"
+                    MouseRightButtonUp="ToastHost_MouseRightButtonUp" />
     </Grid>
 </hc:Window>

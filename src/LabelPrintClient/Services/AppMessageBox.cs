@@ -1,10 +1,12 @@
 using System.Windows;
+using HandyControl.Data;
 
 namespace LabelPrintClient.Services;
 
 public static class AppMessageBox
 {
     public const string ToastToken = "AppToast";
+    private const int ToastWaitTimeSeconds = 5;
 
     public static MessageBoxResult Show(
         string messageBoxText,
@@ -64,32 +66,32 @@ public static class AppMessageBox
 
             if (icon == MessageBoxImage.Error)
             {
-                HandyControl.Controls.Growl.Error(messageBoxText, ToastToken);
+                HandyControl.Controls.Growl.Error(CreateGrowlInfo(messageBoxText, InfoType.Error));
                 return MessageBoxResult.OK;
             }
             if (icon == MessageBoxImage.Warning)
             {
-                HandyControl.Controls.Growl.Warning(messageBoxText, ToastToken);
+                HandyControl.Controls.Growl.Warning(CreateGrowlInfo(messageBoxText, InfoType.Warning));
                 return MessageBoxResult.OK;
             }
             if (icon == MessageBoxImage.Information)
             {
                 if (isSuccess)
-                    HandyControl.Controls.Growl.Success(messageBoxText, ToastToken);
+                    HandyControl.Controls.Growl.Success(CreateGrowlInfo(messageBoxText, InfoType.Success));
                 else
-                    HandyControl.Controls.Growl.Info(messageBoxText, ToastToken);
+                    HandyControl.Controls.Growl.Info(CreateGrowlInfo(messageBoxText, InfoType.Info));
                 return MessageBoxResult.OK;
             }
 
             // 默认根据内容推断
             if (isSuccess)
-                HandyControl.Controls.Growl.Success(messageBoxText, ToastToken);
+                HandyControl.Controls.Growl.Success(CreateGrowlInfo(messageBoxText, InfoType.Success));
             else if (caption.Contains("错误") || messageBoxText.Contains("失败"))
-                HandyControl.Controls.Growl.Error(messageBoxText, ToastToken);
+                HandyControl.Controls.Growl.Error(CreateGrowlInfo(messageBoxText, InfoType.Error));
             else if (caption.Contains("警告"))
-                HandyControl.Controls.Growl.Warning(messageBoxText, ToastToken);
+                HandyControl.Controls.Growl.Warning(CreateGrowlInfo(messageBoxText, InfoType.Warning));
             else
-                HandyControl.Controls.Growl.Info(messageBoxText, ToastToken);
+                HandyControl.Controls.Growl.Info(CreateGrowlInfo(messageBoxText, InfoType.Info));
 
             return MessageBoxResult.OK;
         }
@@ -120,5 +122,19 @@ public static class AppMessageBox
         return windows.FirstOrDefault(x => x.IsActive)
             ?? (app.MainWindow?.IsVisible == true ? app.MainWindow : null)
             ?? windows.FirstOrDefault();
+    }
+
+    private static GrowlInfo CreateGrowlInfo(string message, InfoType type)
+    {
+        return new GrowlInfo
+        {
+            Message = message,
+            Type = type,
+            Token = ToastToken,
+            ShowDateTime = true,
+            ShowCloseButton = true,
+            StaysOpen = false,
+            WaitTime = ToastWaitTimeSeconds
+        };
     }
 }
