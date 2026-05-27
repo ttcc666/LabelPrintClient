@@ -450,6 +450,11 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
                     .ExecuteCommandAsync();
             }
 
+            if (win.ClearLockedBatchNumbers)
+            {
+                await TemplateBatchBindingService.ClearLockedBatchNumbersAsync(edited.Id);
+            }
+
             await TemplateSystemFieldService.EnsureModeFieldsAsync(edited);
         });
 

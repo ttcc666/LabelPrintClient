@@ -12,10 +12,12 @@ public partial class TemplateEditWindow : Window
     private readonly IEnumerable<string>? _allowedFields;
     private readonly LabelTemplateMode _originalMode;
     private readonly string _originalSerialPattern;
+    private readonly string _originalBatchPattern;
     private readonly SerialResetPeriod _originalSerialResetPeriod;
 
     public new LabelTemplate Template { get; private set; }
     public bool ResetSerialCounter { get; private set; }
+    public bool ClearLockedBatchNumbers { get; private set; }
 
     public TemplateEditWindow(LabelTemplate? template = null, IEnumerable<string>? allowedFields = null)
     {
@@ -27,6 +29,7 @@ public partial class TemplateEditWindow : Window
             Template = CopyTemplate(template);
             _originalMode = Template.TemplateMode;
             _originalSerialPattern = Template.SerialNumberPattern ?? string.Empty;
+            _originalBatchPattern = Template.BatchNumberPattern ?? string.Empty;
             _originalSerialResetPeriod = Template.SerialResetPeriod;
 
             TitleText.Text = "编辑模板";
@@ -50,6 +53,7 @@ public partial class TemplateEditWindow : Window
             };
             _originalMode = Template.TemplateMode;
             _originalSerialPattern = Template.SerialNumberPattern ?? string.Empty;
+            _originalBatchPattern = Template.BatchNumberPattern ?? string.Empty;
             _originalSerialResetPeriod = Template.SerialResetPeriod;
 
             TitleText.Text = "新增模板";
@@ -138,6 +142,15 @@ public partial class TemplateEditWindow : Window
                                 (mode != LabelTemplateMode.Serialized ||
                                  !string.Equals(_originalSerialPattern, pattern, StringComparison.Ordinal) ||
                                  _originalSerialResetPeriod != newPeriod);
+        var normalizedBatchPattern = mode == LabelTemplateMode.Batch
+            ? SerialNumberService.NormalizeBatchPattern(pattern)
+            : string.Empty;
+        var batchRuleChanged = _originalMode == LabelTemplateMode.Batch &&
+                               (mode != LabelTemplateMode.Batch ||
+                                !string.Equals(
+                                    SerialNumberService.NormalizeBatchPattern(_originalBatchPattern),
+                                    normalizedBatchPattern,
+                                    StringComparison.Ordinal));
 
         if (serialRuleChanged)
         {
@@ -150,12 +163,23 @@ public partial class TemplateEditWindow : Window
             ResetSerialCounter = confirmResult == MessageBoxResult.Yes;
         }
 
+        if (batchRuleChanged)
+        {
+            var confirmResult = AppMessageBox.Show(
+                "检测到您修改了批次号生成规则，是否需要清空当前导入数据中已打印绑定的批次号？\n\n点击【是】将清空导入行已锁定的批次号，下次再次打印时会按新规则重新生成；\n点击【否】将保留当前已锁定的批次号。",
+                "清空批次号确认",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+
+            ClearLockedBatchNumbers = confirmResult == MessageBoxResult.Yes;
+        }
+
         Template.Name = name;
         Template.IsEnabled = IsEnabledBox.IsChecked == true;
         Template.TemplateMode = mode;
         Template.IsSerialNumber = mode == LabelTemplateMode.Serialized;
         Template.BatchNumberPattern = mode == LabelTemplateMode.Batch
-            ? SerialNumberService.NormalizeBatchPattern(pattern)
+            ? normalizedBatchPattern
             : null;
         Template.SerialNumberPattern = mode == LabelTemplateMode.Serialized
             ? SerialNumberService.NormalizePattern(pattern, null)
