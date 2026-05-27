@@ -18,7 +18,7 @@ public partial class BatchNoInputWindow : Window
         var batchNo = BatchNoBox.Text.Trim();
         if (string.IsNullOrWhiteSpace(batchNo))
         {
-            AppMessageBox.Show("批号不能为空，请输入本次导入批号。", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppMessageBox.Show(AppLanguageService.GetString("BatchNo.Required"), AppLanguageService.GetString("Common.Prompt"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 

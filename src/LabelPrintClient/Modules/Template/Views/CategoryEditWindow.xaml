@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
         xmlns:hc="https://handyorg.github.io/handycontrol"
-        Title="分类维护"
+        Title="{DynamicResource Category.EditTitle}"
         Width="400"
         Height="250"
         WindowStartupLocation="CenterOwner"
@@ -17,16 +17,16 @@
         </Grid.RowDefinitions>
 
         <!-- 标题 -->
-        <TextBlock x:Name="TitleText" Grid.Row="0" Style="{StaticResource AppPageTitleStyle}" Text="新增分类" Margin="0,0,0,16" />
+        <TextBlock x:Name="TitleText" Grid.Row="0" Style="{StaticResource AppPageTitleStyle}" Text="{DynamicResource Category.AddTitle}" Margin="0,0,0,16" />
 
         <!-- 表单 -->
         <StackPanel Grid.Row="1">
             <StackPanel Margin="0,0,0,12">
-                <TextBlock Text="分类名称" Margin="0,0,0,6" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                <TextBlock Text="{DynamicResource Category.Name}" Margin="0,0,0,6" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                 <TextBox x:Name="NameBox" MaxLength="50" />
             </StackPanel>
 
-            <CheckBox x:Name="IsEnabledBox" Content="启用该分类" IsChecked="True" VerticalAlignment="Center" />
+            <CheckBox x:Name="IsEnabledBox" Content="{DynamicResource Category.Enable}" IsChecked="True" VerticalAlignment="Center" />
         </StackPanel>
 
         <!-- 底部按钮 -->
@@ -34,13 +34,13 @@
             <Button Style="{StaticResource AppPrimaryButtonStyle}" Click="Ok_Click" Margin="0,0,10,0">
                 <StackPanel Orientation="Horizontal">
                     <iconPacks:PackIconMaterial Kind="Check" Width="14" Height="14" Margin="0,0,6,0" VerticalAlignment="Center" />
-                    <TextBlock Text="确定" VerticalAlignment="Center" />
+                    <TextBlock Text="{DynamicResource Common.Ok}" VerticalAlignment="Center" />
                 </StackPanel>
             </Button>
             <Button Style="{StaticResource AppDialogCancelButtonStyle}" Click="Cancel_Click">
                 <StackPanel Orientation="Horizontal">
                     <iconPacks:PackIconMaterial Kind="Close" Width="14" Height="14" Margin="0,0,6,0" VerticalAlignment="Center" />
-                    <TextBlock Text="取消" VerticalAlignment="Center" />
+                    <TextBlock Text="{DynamicResource Common.Cancel}" VerticalAlignment="Center" />
                 </StackPanel>
             </Button>
         </StackPanel>

@@ -95,6 +95,7 @@ public static class AppThemeService
             dicts.Add(new ResourceDictionary { Source = new Uri($"pack://application:,,,/HandyControl;component/Themes/{skinStr}.xaml", UriKind.Absolute) });
             dicts.Add(new ResourceDictionary { Source = new Uri("pack://application:,,,/HandyControl;component/Themes/Theme.xaml", UriKind.Absolute) });
             dicts.Add(new ResourceDictionary { Source = new Uri(ModernStyleResource, UriKind.Absolute) });
+            AppLanguageService.ApplyResources(App.Settings.Language);
         }
         catch (Exception ex)
         {

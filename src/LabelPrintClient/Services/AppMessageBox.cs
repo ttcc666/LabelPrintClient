@@ -26,30 +26,35 @@ public static class AppMessageBox
 
     public static bool Confirm(
         string messageBoxText,
-        string caption = "确认",
+        string? caption = null,
         MessageBoxImage icon = MessageBoxImage.Warning)
     {
-        return Show(messageBoxText, caption, MessageBoxButton.YesNo, icon) == MessageBoxResult.Yes;
+        var title = caption ?? AppLanguageService.GetString("Common.Confirm");
+        return Show(messageBoxText, title, MessageBoxButton.YesNo, icon) == MessageBoxResult.Yes;
     }
 
-    public static MessageBoxResult Info(string messageBoxText, string caption = "提示")
+    public static MessageBoxResult Info(string messageBoxText, string? caption = null)
     {
-        return Show(messageBoxText, caption, MessageBoxButton.OK, MessageBoxImage.Information);
+        var title = caption ?? AppLanguageService.GetString("Common.Prompt");
+        return Show(messageBoxText, title, MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
-    public static MessageBoxResult Success(string messageBoxText, string caption = "成功")
+    public static MessageBoxResult Success(string messageBoxText, string? caption = null)
     {
-        return Show(messageBoxText, caption, MessageBoxButton.OK, MessageBoxImage.Information);
+        var title = caption ?? AppLanguageService.GetString("Common.Success");
+        return Show(messageBoxText, title, MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
-    public static MessageBoxResult Warning(string messageBoxText, string caption = "提示")
+    public static MessageBoxResult Warning(string messageBoxText, string? caption = null)
     {
-        return Show(messageBoxText, caption, MessageBoxButton.OK, MessageBoxImage.Warning);
+        var title = caption ?? AppLanguageService.GetString("Common.Warning");
+        return Show(messageBoxText, title, MessageBoxButton.OK, MessageBoxImage.Warning);
     }
 
-    public static MessageBoxResult Error(string messageBoxText, string caption = "错误")
+    public static MessageBoxResult Error(string messageBoxText, string? caption = null)
     {
-        return Show(messageBoxText, caption, MessageBoxButton.OK, MessageBoxImage.Error);
+        var title = caption ?? AppLanguageService.GetString("Common.Error");
+        return Show(messageBoxText, title, MessageBoxButton.OK, MessageBoxImage.Error);
     }
 
     private static MessageBoxResult ShowCore(
@@ -62,7 +67,9 @@ public static class AppMessageBox
         // 对于只需点击确定、仅作提示用途的消息，使用更加美观和非侵入式的 Growl (Toast) 弹出框
         if (button == MessageBoxButton.OK)
         {
-            var isSuccess = caption.Contains("成功") || messageBoxText.Contains("成功");
+            var isSuccess = caption.Contains("成功") || messageBoxText.Contains("成功") ||
+                            caption.IndexOf("Success", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                            messageBoxText.IndexOf("Success", System.StringComparison.OrdinalIgnoreCase) >= 0;
 
             if (icon == MessageBoxImage.Error)
             {
@@ -86,9 +93,9 @@ public static class AppMessageBox
             // 默认根据内容推断
             if (isSuccess)
                 HandyControl.Controls.Growl.Success(CreateGrowlInfo(messageBoxText, InfoType.Success));
-            else if (caption.Contains("错误") || messageBoxText.Contains("失败"))
+            else if (caption.Contains("错误") || messageBoxText.Contains("失败") || caption.Contains("Error") || messageBoxText.Contains("Fail"))
                 HandyControl.Controls.Growl.Error(CreateGrowlInfo(messageBoxText, InfoType.Error));
-            else if (caption.Contains("警告"))
+            else if (caption.Contains("警告") || caption.Contains("Warning"))
                 HandyControl.Controls.Growl.Warning(CreateGrowlInfo(messageBoxText, InfoType.Warning));
             else
                 HandyControl.Controls.Growl.Info(CreateGrowlInfo(messageBoxText, InfoType.Info));

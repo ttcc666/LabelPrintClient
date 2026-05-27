@@ -3,124 +3,217 @@
            xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
            xmlns:hc="https://handyorg.github.io/handycontrol"
            xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
-           Title="初始化系统管理员"
-           Width="480"
-           Height="510"
-           MinHeight="480"
+           Title="{DynamicResource Auth.InitialAdminWindowTitle}"
+           Width="490"
+           Height="520"
+           MinHeight="490"
            WindowStartupLocation="CenterScreen"
            ResizeMode="CanResize"
-           Background="{DynamicResource SecondaryRegionBrush}"
            Foreground="{DynamicResource PrimaryTextBrush}">
+
+    <hc:Window.Background>
+        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#FFF2F5FA" Offset="0.0"/>
+            <GradientStop Color="#FFFFFFFF" Offset="0.6"/>
+            <GradientStop Color="#FFEAF0FB" Offset="1.0"/>
+        </LinearGradientBrush>
+    </hc:Window.Background>
+
+    <hc:Window.Resources>
+        <!-- 创建按钮高级科技感渐变 + 悬浮外发光 -->
+        <Style x:Key="LoginPrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource AppDialogPrimaryButtonStyle}">
+            <Setter Property="Background">
+                <Setter.Value>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                        <GradientStop Color="#FF4D7FFF" Offset="0"/>
+                        <GradientStop Color="#FF0055FF" Offset="1"/>
+                    </LinearGradientBrush>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect BlurRadius="4" ShadowDepth="1.5" Color="#0055FF" Opacity="0.0" />
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Trigger.EnterActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="(Button.Effect).(DropShadowEffect.Opacity)" To="0.35" Duration="0:0:0.2"/>
+                                <DoubleAnimation Storyboard.TargetProperty="(Button.Effect).(DropShadowEffect.BlurRadius)" To="10" Duration="0:0:0.2"/>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </Trigger.EnterActions>
+                    <Trigger.ExitActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="(Button.Effect).(DropShadowEffect.Opacity)" To="0.0" Duration="0:0:0.2"/>
+                                <DoubleAnimation Storyboard.TargetProperty="(Button.Effect).(DropShadowEffect.BlurRadius)" To="4" Duration="0:0:0.2"/>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </Trigger.ExitActions>
+                    <Setter Property="Background">
+                        <Setter.Value>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                <GradientStop Color="#FF6692FF" Offset="0"/>
+                                <GradientStop Color="#FF1A66FF" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Setter.Value>
+                    </Setter>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background">
+                        <Setter.Value>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                <GradientStop Color="#FF3366DD" Offset="0"/>
+                                <GradientStop Color="#FF0044CC" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Setter.Value>
+                    </Setter>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- 退出按钮圆角与悬浮动画 -->
+        <Style x:Key="LoginCancelButtonStyle" TargetType="Button" BasedOn="{StaticResource AppDialogCancelButtonStyle}">
+            <Setter Property="Height" Value="36"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#0F808080"/>
+                    <Setter Property="BorderBrush" Value="#40808080"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </hc:Window.Resources>
+
     <Grid>
-    <Grid Margin="24">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-            <RowDefinition Height="Auto" />
-        </Grid.RowDefinitions>
+        <Grid Margin="24">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
 
-        <!-- 顶部标题区 -->
-        <DockPanel Grid.Row="0" Margin="0,0,0,16">
-            <Border Width="44" Height="44" CornerRadius="8" Background="#0F0066FF" Margin="0,0,12,0" VerticalAlignment="Center">
-                <iconPacks:PackIconMaterial Kind="ShieldAccount" Width="22" Height="22" Foreground="{DynamicResource PrimaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
-            </Border>
-            <StackPanel VerticalAlignment="Center">
-                <TextBlock Text="初始化管理员账号"
-                           Style="{StaticResource AppPageTitleStyle}"
-                           FontSize="16"
-                           Margin="0,0,0,4" />
-                <TextBlock Text="创建系统首个管理员，以便开始配置系统权限与策略"
-                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                           FontSize="11" />
-            </StackPanel>
-        </DockPanel>
-
-        <!-- 表单与说明条 -->
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0,0,0,12">
-            <StackPanel>
-                <!-- 安全提示横幅 -->
-                <Border CornerRadius="8" 
-                        Background="#0D0066FF" 
-                        BorderThickness="1,0,0,0" 
-                        BorderBrush="{DynamicResource PrimaryBrush}" 
-                        Padding="12" 
-                        Margin="0,0,0,16">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <iconPacks:PackIconMaterial Kind="InformationOutline" 
-                                                   Foreground="{DynamicResource PrimaryBrush}" 
-                                                   Width="16" 
-                                                   Height="16" 
-                                                   Margin="0,2,8,0" 
-                                                   VerticalAlignment="Top"/>
-                        <TextBlock Grid.Column="1" 
-                                   Text="当前系统中尚未创建任何管理账号，请在此设定您的首个超级管理员。该用户将自动拥有所有系统及打印管理权限。" 
-                                   TextWrapping="Wrap" 
-                                   FontSize="12" 
-                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
-                                   LineHeight="18" />
-                    </Grid>
+            <!-- 顶部标题区 -->
+            <DockPanel Grid.Row="0" Margin="0,0,0,18">
+                <Border Width="46" Height="46" CornerRadius="10" Margin="0,0,12,0" VerticalAlignment="Center">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#1D0066FF" Offset="0"/>
+                            <GradientStop Color="#090066FF" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Border.Background>
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="8" ShadowDepth="1" Color="#0066FF" Opacity="0.12" />
+                    </Border.Effect>
+                    <iconPacks:PackIconMaterial Kind="ShieldAccount" Width="22" Height="22" Foreground="{DynamicResource PrimaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                 </Border>
-
-                <!-- 账号输入 -->
-                <StackPanel Margin="0,0,0,12">
-                    <TextBlock Text="用户名" Style="{StaticResource AppFormLabelStyle}" Margin="0,0,0,6" FontWeight="SemiBold" />
-                    <TextBox x:Name="UserNameBox" Text="admin" Padding="10,8" hc:InfoElement.Placeholder="请输入管理员用户名" />
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="{DynamicResource Auth.InitialAdminTitle}"
+                               Style="{StaticResource AppPageTitleStyle}"
+                               FontSize="17"
+                               FontWeight="Bold"
+                               Margin="0,0,0,3" />
+                    <TextBlock Text="{DynamicResource Auth.InitialAdminHint}"
+                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                               FontSize="11" />
                 </StackPanel>
+            </DockPanel>
 
-                <!-- 显示名输入 -->
-                <StackPanel Margin="0,0,0,12">
-                    <TextBlock Text="显示名 (别名)" Style="{StaticResource AppFormLabelStyle}" Margin="0,0,0,6" FontWeight="SemiBold" />
-                    <TextBox x:Name="DisplayNameBox" Text="管理员" Padding="10,8" hc:InfoElement.Placeholder="请输入便于识别的显示姓名" />
+            <!-- 表单与说明条 -->
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0,0,0,12">
+                <StackPanel>
+                    <!-- 安全提示横幅 -->
+                    <Border CornerRadius="8" 
+                            BorderThickness="1,0,0,0" 
+                            BorderBrush="{DynamicResource PrimaryBrush}" 
+                            Padding="12" 
+                            Margin="0,0,0,16">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Color="#120066FF" Offset="0"/>
+                                <GradientStop Color="#050066FF" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Border.Background>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <iconPacks:PackIconMaterial Kind="InformationOutline" 
+                                                       Foreground="{DynamicResource PrimaryBrush}" 
+                                                       Width="16" 
+                                                       Height="16" 
+                                                       Margin="0,2,8,0" 
+                                                       VerticalAlignment="Top"/>
+                            <TextBlock Grid.Column="1" 
+                                       Text="{DynamicResource Auth.InitialAdminBanner}" 
+                                       TextWrapping="Wrap" 
+                                       FontSize="12" 
+                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
+                                       LineHeight="18" />
+                        </Grid>
+                    </Border>
+
+                    <!-- 账号输入 -->
+                    <StackPanel Margin="0,0,0,14">
+                        <TextBlock Text="{DynamicResource Auth.UserName}" Style="{StaticResource AppFormLabelStyle}" Margin="0,0,0,6" FontWeight="SemiBold" />
+                        <TextBox x:Name="UserNameBox" Text="admin" Padding="10,8" hc:InfoElement.Placeholder="{DynamicResource Auth.AdminUserNamePlaceholder}" />
+                    </StackPanel>
+
+                    <!-- 显示名输入 -->
+                    <StackPanel Margin="0,0,0,14">
+                        <TextBlock Text="{DynamicResource Auth.DisplayName}" Style="{StaticResource AppFormLabelStyle}" Margin="0,0,0,6" FontWeight="SemiBold" />
+                        <TextBox x:Name="DisplayNameBox" Text="{DynamicResource Auth.DefaultAdminDisplayName}" Padding="10,8" hc:InfoElement.Placeholder="{DynamicResource Auth.DisplayNamePlaceholder}" />
+                    </StackPanel>
+
+                    <!-- 密码输入 -->
+                    <StackPanel Margin="0,0,0,14">
+                        <TextBlock Text="{DynamicResource Auth.LoginPassword}" Style="{StaticResource AppFormLabelStyle}" Margin="0,0,0,6" FontWeight="SemiBold" />
+                        <PasswordBox x:Name="PasswordBox" Padding="10,8" hc:InfoElement.Placeholder="{DynamicResource Auth.PasswordRulePlaceholder}" />
+                    </StackPanel>
+
+                    <!-- 确认密码输入 -->
+                    <StackPanel Margin="0,0,0,6">
+                        <TextBlock Text="{DynamicResource Auth.ConfirmPassword}" Style="{StaticResource AppFormLabelStyle}" Margin="0,0,0,6" FontWeight="SemiBold" />
+                        <PasswordBox x:Name="ConfirmPasswordBox" Padding="10,8" hc:InfoElement.Placeholder="{DynamicResource Auth.ConfirmPasswordPlaceholder}" />
+                    </StackPanel>
+
+                    <!-- 错误信息反馈 -->
+                    <TextBlock x:Name="ErrorText"
+                               Foreground="{DynamicResource AppDangerBrush}"
+                               FontSize="11"
+                               Margin="0,8,0,0"
+                               TextWrapping="Wrap" />
                 </StackPanel>
+            </ScrollViewer>
 
-                <!-- 密码输入 -->
-                <StackPanel Margin="0,0,0,12">
-                    <TextBlock Text="登录密码" Style="{StaticResource AppFormLabelStyle}" Margin="0,0,0,6" FontWeight="SemiBold" />
-                    <PasswordBox x:Name="PasswordBox" Padding="10,8" hc:InfoElement.Placeholder="密码至少包含6位字符" />
-                </StackPanel>
-
-                <!-- 确认密码输入 -->
-                <StackPanel Margin="0,0,0,6">
-                    <TextBlock Text="确认密码" Style="{StaticResource AppFormLabelStyle}" Margin="0,0,0,6" FontWeight="SemiBold" />
-                    <PasswordBox x:Name="ConfirmPasswordBox" Padding="10,8" hc:InfoElement.Placeholder="请再次输入密码以确保输入无误" />
-                </StackPanel>
-
-                <!-- 错误信息反馈 -->
-                <TextBlock x:Name="ErrorText"
-                           Foreground="{DynamicResource AppDangerBrush}"
-                           FontSize="12"
-                           Margin="0,8,0,0"
-                           TextWrapping="Wrap" />
+            <!-- 底部按钮区 -->
+            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
+                <Button Width="105" Style="{StaticResource LoginCancelButtonStyle}" Click="Cancel_Click" Margin="0,0,12,0">
+                    <StackPanel Orientation="Horizontal">
+                        <iconPacks:PackIconMaterial Kind="Close" Width="14" Height="14" Margin="0,0,6,0" VerticalAlignment="Center" />
+                        <TextBlock Text="{DynamicResource Common.Exit}" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+                <Button Width="135" Style="{StaticResource LoginPrimaryButtonStyle}" Click="Create_Click">
+                    <StackPanel Orientation="Horizontal">
+                        <iconPacks:PackIconMaterial Kind="AccountCheck" Width="14" Height="14" Margin="0,0,6,0" VerticalAlignment="Center" />
+                        <TextBlock Text="{DynamicResource Auth.CreateAdmin}" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
             </StackPanel>
-        </ScrollViewer>
+        </Grid>
 
-        <!-- 底部按钮区 -->
-        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
-            <Button Width="100" Style="{StaticResource AppDialogCancelButtonStyle}" Click="Cancel_Click" Margin="0,0,12,0">
-                <StackPanel Orientation="Horizontal">
-                    <iconPacks:PackIconMaterial Kind="Close" Width="14" Height="14" Margin="0,0,6,0" VerticalAlignment="Center" />
-                    <TextBlock Text="退出" VerticalAlignment="Center" />
-                </StackPanel>
-            </Button>
-            <Button Width="130" Style="{StaticResource AppDialogPrimaryButtonStyle}" Click="Create_Click">
-                <StackPanel Orientation="Horizontal">
-                    <iconPacks:PackIconMaterial Kind="AccountCheck" Width="14" Height="14" Margin="0,0,6,0" VerticalAlignment="Center" />
-                    <TextBlock Text="创建管理员" VerticalAlignment="Center" />
-                </StackPanel>
-            </Button>
-        </StackPanel>
-    </Grid>
-
-    <StackPanel x:Name="ToastHost"
-                Width="340"
-                Margin="0,34,14,0"
-                HorizontalAlignment="Right"
-                VerticalAlignment="Top"
-                Panel.ZIndex="1000"
-                IsHitTestVisible="False" />
+        <StackPanel x:Name="ToastHost"
+                    Width="340"
+                    Margin="0,34,14,0"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Top"
+                    Panel.ZIndex="1000"
+                    IsHitTestVisible="False" />
     </Grid>
 </hc:Window>

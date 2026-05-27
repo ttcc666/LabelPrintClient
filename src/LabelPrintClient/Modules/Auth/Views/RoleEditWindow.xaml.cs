@@ -24,7 +24,7 @@ public partial class RoleEditWindow : HandyControl.Controls.Window
                 Sort = role.Sort,
                 CreateTime = role.CreateTime
             };
-        TitleText.Text = _isNew ? "新增角色" : "编辑角色";
+        TitleText.Text = AppLanguageService.GetString(_isNew ? "Account.RoleAddTitle" : "Account.RoleEditActionTitle");
         CodeBox.Text = Role.Code;
         CodeBox.IsEnabled = _isNew && !Role.IsSystem;
         NameBox.Text = Role.Name;
@@ -39,7 +39,7 @@ public partial class RoleEditWindow : HandyControl.Controls.Window
         var name = NameBox.Text.Trim();
         if (string.IsNullOrWhiteSpace(code) || string.IsNullOrWhiteSpace(name))
         {
-            AppMessageBox.Show("角色编码和名称不能为空。");
+            AppMessageBox.Show(AppLanguageService.GetString("Account.RoleCodeNameRequired"));
             return;
         }
 

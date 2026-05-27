@@ -1,5 +1,6 @@
 ﻿using LabelPrintClient.Modules.PrintCenter.Models;
 using LabelPrintClient.Modules.Template.Models;
+using LabelPrintClient.Services;
 
 namespace LabelPrintClient.Modules.PrintCenter.ViewModels;
 
@@ -17,16 +18,18 @@ public class PrintJobGridItem
 
     public string? PrinterName { get; set; }
 
-    public string PrinterNameText => string.IsNullOrWhiteSpace(PrinterName) ? "默认打印机" : PrinterName;
+    public string PrinterNameText => string.IsNullOrWhiteSpace(PrinterName)
+        ? AppLanguageService.GetString("Settings.SystemDefaultPrinter")
+        : PrinterName;
 
     public string Status { get; set; } = string.Empty;
 
     public string StatusText => Status switch
     {
-        "Printed" => "已打印",
-        "Failed" => "失败",
-        "Printing" => "打印中",
-        "Preview" => "预览",
+        "Printed" => AppLanguageService.GetString("PrintHistory.StatusPrinted"),
+        "Failed" => AppLanguageService.GetString("PrintHistory.StatusFailed"),
+        "Printing" => AppLanguageService.GetString("PrintHistory.StatusPrinting"),
+        "Preview" => AppLanguageService.GetString("PrintHistory.StatusPreview"),
         _ => Status
     };
 

@@ -21,7 +21,7 @@ public partial class CategoryEditWindow : Window
                 Sort = category.Sort,
                 IsEnabled = category.IsEnabled
             };
-            TitleText.Text = "编辑分类";
+            TitleText.Text = AppLanguageService.GetString("Category.EditActionTitle");
             NameBox.Text = Category.Name;
             IsEnabledBox.IsChecked = Category.IsEnabled;
         }
@@ -31,7 +31,7 @@ public partial class CategoryEditWindow : Window
             {
                 IsEnabled = true
             };
-            TitleText.Text = "新增分类";
+            TitleText.Text = AppLanguageService.GetString("Category.AddTitle");
         }
     }
 
@@ -40,7 +40,7 @@ public partial class CategoryEditWindow : Window
         var name = NameBox.Text.Trim();
         if (string.IsNullOrWhiteSpace(name))
         {
-            AppMessageBox.Show("请输入分类名称。", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppMessageBox.Show(AppLanguageService.GetString("Category.NameRequired"), AppLanguageService.GetString("Common.Prompt"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 

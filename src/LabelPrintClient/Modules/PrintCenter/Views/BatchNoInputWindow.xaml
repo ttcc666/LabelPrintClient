@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
         xmlns:hc="https://handyorg.github.io/handycontrol"
-        Title="输入批号"
+        Title="{DynamicResource BatchNo.Title}"
         Width="460"
         Height="310"
         WindowStartupLocation="CenterOwner"
@@ -18,7 +18,7 @@
         </Grid.RowDefinitions>
 
         <!-- 标题 -->
-        <TextBlock Grid.Row="0" Style="{StaticResource AppPageTitleStyle}" Text="输入本次导入批号" Margin="0,0,0,16" />
+        <TextBlock Grid.Row="0" Style="{StaticResource AppPageTitleStyle}" Text="{DynamicResource BatchNo.InputTitle}" Margin="0,0,0,16" />
 
         <!-- 主体区域 -->
         <StackPanel Grid.Row="1">
@@ -41,7 +41,7 @@
                                                Margin="0,2,8,0" 
                                                VerticalAlignment="Top"/>
                     <TextBlock Grid.Column="1" 
-                               Text="该批号不会出现在 Excel 模板中，打印时会作为 $batch_no 写入标签数据。" 
+                               Text="{DynamicResource BatchNo.Hint}" 
                                TextWrapping="Wrap" 
                                FontSize="12" 
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
@@ -51,11 +51,11 @@
 
             <!-- 输入框控件 -->
             <StackPanel Margin="0,0,0,8">
-                <TextBlock Text="批号名称" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,6" Foreground="{DynamicResource PrimaryTextBrush}" />
+                <TextBlock Text="{DynamicResource BatchNo.Name}" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,6" Foreground="{DynamicResource PrimaryTextBrush}" />
                 <TextBox x:Name="BatchNoBox" 
                          MaxLength="100" 
                          Padding="10,8" 
-                         hc:InfoElement.Placeholder="请输入批号，例如 2025001" />
+                         hc:InfoElement.Placeholder="{DynamicResource BatchNo.Placeholder}" />
             </StackPanel>
         </StackPanel>
 
@@ -64,13 +64,13 @@
             <Button Width="100" Style="{StaticResource AppDialogPrimaryButtonStyle}" Click="Ok_Click" Margin="0,0,12,0">
                 <StackPanel Orientation="Horizontal">
                     <iconPacks:PackIconMaterial Kind="Check" Width="14" Height="14" Margin="0,0,6,0" VerticalAlignment="Center" />
-                    <TextBlock Text="确定" VerticalAlignment="Center" />
+                    <TextBlock Text="{DynamicResource Common.Ok}" VerticalAlignment="Center" />
                 </StackPanel>
             </Button>
             <Button Width="90" Style="{StaticResource AppDialogCancelButtonStyle}" Click="Cancel_Click">
                 <StackPanel Orientation="Horizontal">
                     <iconPacks:PackIconMaterial Kind="Close" Width="14" Height="14" Margin="0,0,6,0" VerticalAlignment="Center" />
-                    <TextBlock Text="取消" VerticalAlignment="Center" />
+                    <TextBlock Text="{DynamicResource Common.Cancel}" VerticalAlignment="Center" />
                 </StackPanel>
             </Button>
         </StackPanel>

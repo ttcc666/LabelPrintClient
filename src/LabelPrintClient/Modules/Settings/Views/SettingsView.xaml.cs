@@ -14,7 +14,7 @@ namespace LabelPrintClient.Modules.Settings.Views;
 public partial class SettingsView : System.Windows.Controls.UserControl
 {
     private const int MaxPrintCopies = 999;
-    private const string SystemDefaultPrinterText = "使用系统默认打印机";
+    private static string SystemDefaultPrinterText => AppLanguageService.GetString("Settings.SystemDefaultPrinter");
 
     public SettingsView()
     {
@@ -38,7 +38,7 @@ public partial class SettingsView : System.Windows.Controls.UserControl
 
         using var dialog = new WinForms.FolderBrowserDialog
         {
-            Description = "选择本地模板保存目录",
+            Description = AppLanguageService.GetString("Settings.SelectTemplateFolder"),
             UseDescriptionForTitle = true,
             SelectedPath = ResolveInitialFolder(LocalTemplateFolderBox.Text)
         };
@@ -55,7 +55,7 @@ public partial class SettingsView : System.Windows.Controls.UserControl
 
         var dialog = new Microsoft.Win32.SaveFileDialog
         {
-            Filter = "备份文件|*.zip",
+            Filter = AppLanguageService.GetString("Settings.BackupFileFilter"),
             FileName = SqliteBackupService.GetDefaultBackupFileName()
         };
         if (dialog.ShowDialog() != true)
@@ -63,13 +63,13 @@ public partial class SettingsView : System.Windows.Controls.UserControl
 
         var success = await RunBackupOperationAsync(
             sender,
-            "正在备份数据...",
+            AppLanguageService.GetString("Settings.BackupRunning"),
             async token => await SqliteBackupService.CreateBackupAsync(dialog.FileName, App.Settings, token));
         if (!success)
             return;
 
-        StatusText.Text = $"备份完成：{dialog.FileName}";
-        AppMessageBox.Show($"备份完成：\n{dialog.FileName}", "数据备份", MessageBoxButton.OK, MessageBoxImage.Information);
+        StatusText.Text = AppLanguageService.Format("Settings.BackupCompletedStatus", dialog.FileName);
+        AppMessageBox.Show(AppLanguageService.Format("Settings.BackupCompletedMessage", dialog.FileName), AppLanguageService.GetString("Settings.BackupTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
     private async void RestoreData_Click(object sender, RoutedEventArgs e)
@@ -78,13 +78,13 @@ public partial class SettingsView : System.Windows.Controls.UserControl
 
         var dialog = new Microsoft.Win32.OpenFileDialog
         {
-            Filter = "备份文件|*.zip|所有文件|*.*"
+            Filter = AppLanguageService.GetString("Settings.BackupOpenFileFilter")
         };
         if (dialog.ShowDialog() != true)
             return;
 
-        if (AppMessageBox.Show("恢复备份会覆盖当前 SQLite 数据库、配置文件和本地模板目录。恢复前会自动生成一份 pre-restore 备份。\n确定继续？",
-                "确认恢复",
+        if (AppMessageBox.Show(AppLanguageService.GetString("Settings.RestoreConfirmMessage"),
+                AppLanguageService.GetString("Settings.RestoreConfirmTitle"),
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Warning) != MessageBoxResult.Yes)
         {
@@ -93,12 +93,12 @@ public partial class SettingsView : System.Windows.Controls.UserControl
 
         var result = await RunBackupOperationAsync(
             sender,
-            "正在恢复数据...",
+            AppLanguageService.GetString("Settings.RestoreRunning"),
             async token => await SqliteBackupService.RestoreAsync(dialog.FileName, App.Settings, token));
         if (result == null)
             return;
 
-        AppMessageBox.Show($"恢复完成，应用将重启。\n恢复前备份：\n{result.PreRestoreBackupPath}", "数据恢复", MessageBoxButton.OK, MessageBoxImage.Information);
+        AppMessageBox.Show(AppLanguageService.Format("Settings.RestoreCompletedMessage", result.PreRestoreBackupPath), AppLanguageService.GetString("Settings.RestoreTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
         RestartApplication();
     }
 
@@ -108,7 +108,7 @@ public partial class SettingsView : System.Windows.Controls.UserControl
 
         if (!TryBuildSettings(out var settings, out var errorMessage))
         {
-            AppMessageBox.Show(errorMessage, "配置校验失败", MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppMessageBox.Show(errorMessage, AppLanguageService.GetString("Settings.ValidationFailedTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -118,18 +118,25 @@ public partial class SettingsView : System.Windows.Controls.UserControl
 
             if (!AppThemeService.TryApplyAndSetRuntime(settings.ThemeMode, out var themeErrorMessage))
             {
-                StatusText.Text = $"配置已保存，但主题应用失败：{themeErrorMessage}";
-                AppMessageBox.Show($"配置已保存，但主题应用失败：{themeErrorMessage}", "主题切换", MessageBoxButton.OK, MessageBoxImage.Warning);
+                StatusText.Text = AppLanguageService.Format("Settings.ThemeSwitchFailed", themeErrorMessage);
+                AppMessageBox.Show(AppLanguageService.Format("Settings.ThemeSwitchFailed", themeErrorMessage), AppLanguageService.GetString("Settings.ThemeSwitch"), MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (!AppLanguageService.TryApplyAndSetRuntime(settings.Language, out var languageErrorMessage))
+            {
+                StatusText.Text = AppLanguageService.Format("Settings.LanguageSwitchFailed", languageErrorMessage);
+                AppMessageBox.Show(AppLanguageService.Format("Settings.LanguageSwitchFailed", languageErrorMessage), AppLanguageService.GetString("Settings.LanguageSwitch"), MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
             ApplyToRuntimeSettings(settings);
-            StatusText.Text = $"配置已保存：{DateTime.Now:HH:mm:ss}。主题已应用，其余运行配置重启后完全生效。";
-            AppMessageBox.Show("配置已保存。运行模式、数据库连接和模板目录相关配置需要重启应用后完全生效。", "保存成功", MessageBoxButton.OK, MessageBoxImage.Information);
+            StatusText.Text = AppLanguageService.Format("Settings.Saved", DateTime.Now);
+            AppMessageBox.Show(AppLanguageService.GetString("Settings.SavedMessage"), AppLanguageService.GetString("Settings.SaveSuccess"), MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (Exception ex)
         {
-            AppMessageBox.Show($"保存配置失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            AppMessageBox.Show(AppLanguageService.Format("Settings.SaveFailed", ex.Message), AppLanguageService.GetString("Common.Error"), MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -152,11 +159,11 @@ public partial class SettingsView : System.Windows.Controls.UserControl
             ConfigPathText.Text = AppConfigService.GetConfigPath();
             FillForm(AppConfigService.LoadOrCreateDefault());
             UpdateBackupState();
-            StatusText.Text = $"配置已加载：{DateTime.Now:HH:mm:ss}";
+            StatusText.Text = AppLanguageService.Format("Settings.Loaded", DateTime.Now);
         }
         catch (Exception ex)
         {
-            AppMessageBox.Show($"加载配置失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            AppMessageBox.Show(AppLanguageService.Format("Settings.LoadFailed", ex.Message), AppLanguageService.GetString("Common.Error"), MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -171,6 +178,7 @@ public partial class SettingsView : System.Windows.Controls.UserControl
         DefaultPrintCopiesBox.Text = Math.Clamp(settings.DefaultPrintCopies, 1, MaxPrintCopies).ToString();
         ConfirmBeforePrintBox.IsChecked = settings.ConfirmBeforePrint;
         SelectThemeMode(settings.ThemeMode);
+        SelectLanguage(settings.Language);
     }
 
     private bool TryBuildSettings(out AppSettings settings, out string errorMessage)
@@ -180,7 +188,7 @@ public partial class SettingsView : System.Windows.Controls.UserControl
 
         if (!TryGetSelectedRunMode(out var runMode))
         {
-            errorMessage = "请选择运行模式。";
+            errorMessage = AppLanguageService.GetString("Settings.RunModeRequired");
             return false;
         }
 
@@ -189,22 +197,23 @@ public partial class SettingsView : System.Windows.Controls.UserControl
         var localTemplateFolder = LocalTemplateFolderBox.Text.Trim();
         var defaultPrinterName = GetSelectedDefaultPrinterName();
         var themeMode = GetSelectedThemeMode();
+        var language = GetSelectedLanguage();
 
         if (runMode == AppRunMode.LocalSqlite && string.IsNullOrWhiteSpace(sqliteConnection))
         {
-            errorMessage = "本地 SQLite 模式下，SQLite 连接串不能为空。";
+            errorMessage = AppLanguageService.GetString("Settings.SqliteConnectionRequired");
             return false;
         }
 
         if (runMode == AppRunMode.LanPostgreSql && string.IsNullOrWhiteSpace(postgreSqlConnection))
         {
-            errorMessage = "局域网 PostgreSQL 模式下，PostgreSQL 连接串不能为空。";
+            errorMessage = AppLanguageService.GetString("Settings.PostgreSqlConnectionRequired");
             return false;
         }
 
         if (string.IsNullOrWhiteSpace(localTemplateFolder))
         {
-            errorMessage = "本地模板目录不能为空。";
+            errorMessage = AppLanguageService.GetString("Settings.TemplateFolderRequired");
             return false;
         }
 
@@ -212,7 +221,7 @@ public partial class SettingsView : System.Windows.Controls.UserControl
             defaultPrintCopies < 1 ||
             defaultPrintCopies > MaxPrintCopies)
         {
-            errorMessage = $"默认打印份数必须是 1 到 {MaxPrintCopies} 之间的整数。";
+            errorMessage = AppLanguageService.Format("Settings.PrintCopiesRange", MaxPrintCopies);
             return false;
         }
 
@@ -226,6 +235,7 @@ public partial class SettingsView : System.Windows.Controls.UserControl
         settings.ConfirmBeforePrint = ConfirmBeforePrintBox.IsChecked == true;
         settings.EnableSqlLogging = App.Settings.EnableSqlLogging;
         settings.ThemeMode = themeMode;
+        settings.Language = language;
         return true;
     }
 
@@ -316,6 +326,31 @@ public partial class SettingsView : System.Windows.Controls.UserControl
         return AppThemeMode.System;
     }
 
+    private void SelectLanguage(AppLanguage language)
+    {
+        foreach (var item in LanguageBox.Items.OfType<ComboBoxItem>())
+        {
+            if (string.Equals(item.Tag?.ToString(), language.ToString(), StringComparison.OrdinalIgnoreCase))
+            {
+                LanguageBox.SelectedItem = item;
+                return;
+            }
+        }
+
+        LanguageBox.SelectedIndex = 0;
+    }
+
+    private AppLanguage GetSelectedLanguage()
+    {
+        if (LanguageBox.SelectedItem is ComboBoxItem item &&
+            Enum.TryParse<AppLanguage>(item.Tag?.ToString(), out var language))
+        {
+            return language;
+        }
+
+        return AppLanguage.ZhCn;
+    }
+
     private static void ApplyToRuntimeSettings(AppSettings settings)
     {
         App.Settings.RunMode = settings.RunMode;
@@ -328,6 +363,7 @@ public partial class SettingsView : System.Windows.Controls.UserControl
         App.Settings.ConfirmBeforePrint = settings.ConfirmBeforePrint;
         App.Settings.EnableSqlLogging = settings.EnableSqlLogging;
         App.Settings.ThemeMode = settings.ThemeMode;
+        App.Settings.Language = settings.Language;
     }
 
     private void UpdateBackupState()
@@ -336,8 +372,8 @@ public partial class SettingsView : System.Windows.Controls.UserControl
         BackupDataButton.IsEnabled = isLocalSqlite;
         RestoreDataButton.IsEnabled = isLocalSqlite;
         BackupModeText.Text = isLocalSqlite
-            ? "当前运行模式支持备份恢复。备份包包含 SQLite 数据库、appsettings.json 和本地模板目录。"
-            : "一键备份恢复仅支持 LocalSqlite 模式。";
+            ? AppLanguageService.GetString("Settings.BackupSupported")
+            : AppLanguageService.GetString("Settings.BackupUnsupported");
     }
 
     private async Task TestConnectionAsync(object sender, AppRunMode runMode, string connectionString, string displayName)
@@ -346,18 +382,18 @@ public partial class SettingsView : System.Windows.Controls.UserControl
         if (testButton != null)
             testButton.IsEnabled = false;
 
-        StatusText.Text = $"正在测试 {displayName} 连接...";
+        StatusText.Text = AppLanguageService.Format("Settings.TestingConnection", displayName);
 
         try
         {
             await ConnectionTestService.TestAsync(runMode, connectionString);
-            StatusText.Text = $"{displayName} 连接测试成功：{DateTime.Now:HH:mm:ss}";
-            AppMessageBox.Show($"{displayName} 连接测试成功。", "连接测试", MessageBoxButton.OK, MessageBoxImage.Information);
+            StatusText.Text = AppLanguageService.Format("Settings.ConnectionTestSuccessStatus", displayName, DateTime.Now);
+            AppMessageBox.Show(AppLanguageService.Format("Settings.ConnectionTestSuccessMessage", displayName), AppLanguageService.GetString("Settings.ConnectionTestTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (Exception ex)
         {
-            StatusText.Text = $"{displayName} 连接测试失败：{ex.Message}";
-            AppMessageBox.Show($"{displayName} 连接测试失败：{ex.Message}", "连接测试", MessageBoxButton.OK, MessageBoxImage.Error);
+            StatusText.Text = AppLanguageService.Format("Settings.ConnectionTestFailedStatus", displayName, ex.Message);
+            AppMessageBox.Show(AppLanguageService.Format("Settings.ConnectionTestFailedMessage", displayName, ex.Message), AppLanguageService.GetString("Settings.ConnectionTestTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
         }
         finally
         {
@@ -391,8 +427,8 @@ public partial class SettingsView : System.Windows.Controls.UserControl
         }
         catch (Exception ex)
         {
-            StatusText.Text = $"操作失败：{ex.Message}";
-            AppMessageBox.Show(ex.Message, "数据备份 / 恢复", MessageBoxButton.OK, MessageBoxImage.Error);
+            StatusText.Text = AppLanguageService.Format("Common.OperationFailed", ex.Message);
+            AppMessageBox.Show(ex.Message, AppLanguageService.GetString("Settings.BackupRestoreTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
             return null;
         }
         finally

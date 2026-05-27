@@ -1,5 +1,6 @@
 using System.Text.Json;
 using SqlSugar;
+using LabelPrintClient.Services;
 
 namespace LabelPrintClient.Modules.Template.Models;
 
@@ -40,9 +41,9 @@ public class LabelTemplateFieldHistory
     [SugarColumn(IsIgnore = true)]
     public string OperationTypeText => OperationType switch
     {
-        OperationUpdate => "变更",
-        OperationDelete => "删除",
-        OperationRestore => "恢复",
+        OperationUpdate => AppLanguageService.GetString("FieldHistory.Change"),
+        OperationDelete => AppLanguageService.GetString("FieldHistory.Delete"),
+        OperationRestore => AppLanguageService.GetString("FieldHistory.Restore"),
         _ => OperationType
     };
 

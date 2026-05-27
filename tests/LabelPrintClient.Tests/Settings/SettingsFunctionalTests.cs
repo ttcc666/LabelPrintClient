@@ -108,7 +108,8 @@ public class SettingsFunctionalTests
                 DefaultPrintCopies = 3,
                 ConfirmBeforePrint = false,
                 EnableSqlLogging = true,
-                ThemeMode = AppThemeMode.Dark
+                ThemeMode = AppThemeMode.Dark,
+                Language = AppLanguage.EnUs
             };
 
             AppConfigService.Save(settings);
@@ -123,6 +124,7 @@ public class SettingsFunctionalTests
             Assert.False(loaded.ConfirmBeforePrint);
             Assert.True(loaded.EnableSqlLogging);
             Assert.Equal(AppThemeMode.Dark, loaded.ThemeMode);
+            Assert.Equal(AppLanguage.EnUs, loaded.Language);
         }
         finally
         {

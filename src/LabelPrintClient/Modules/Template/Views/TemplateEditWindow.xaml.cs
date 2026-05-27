@@ -33,7 +33,7 @@ public partial class TemplateEditWindow : Window
             _originalBatchPattern = Template.BatchNumberPattern ?? string.Empty;
             _originalSerialResetPeriod = Template.SerialResetPeriod;
 
-            TitleText.Text = "编辑模板";
+            TitleText.Text = AppLanguageService.GetString("Template.EditActionTitle");
             NameBox.Text = Template.Name;
             IsEnabledBox.IsChecked = Template.IsEnabled;
             SelectTemplateMode(Template.TemplateMode);
@@ -57,7 +57,7 @@ public partial class TemplateEditWindow : Window
             _originalBatchPattern = Template.BatchNumberPattern ?? string.Empty;
             _originalSerialResetPeriod = Template.SerialResetPeriod;
 
-            TitleText.Text = "新增模板";
+            TitleText.Text = AppLanguageService.GetString("Template.AddTemplate");
             SelectTemplateMode(LabelTemplateMode.Normal);
             StorageTypeBox.SelectedIndex = App.Settings.RunMode == AppRunMode.LocalSqlite ? 0 : 1;
         }
@@ -118,7 +118,7 @@ public partial class TemplateEditWindow : Window
         var name = NameBox.Text.Trim();
         if (string.IsNullOrWhiteSpace(name))
         {
-            AppMessageBox.Show("请输入模板名称。", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppMessageBox.Show(AppLanguageService.GetString("Template.NameRequired"), AppLanguageService.GetString("Common.Prompt"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -127,14 +127,14 @@ public partial class TemplateEditWindow : Window
         if (mode == LabelTemplateMode.Batch &&
             !SerialNumberService.IsValidBatchPattern(pattern, _allowedFields, out var batchPatternError))
         {
-            AppMessageBox.Show(batchPatternError, "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppMessageBox.Show(batchPatternError, AppLanguageService.GetString("Common.Prompt"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
         if (mode == LabelTemplateMode.Serialized &&
             !SerialNumberService.IsValidPattern(pattern, _allowedFields, out var serialPatternError))
         {
-            AppMessageBox.Show(serialPatternError, "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppMessageBox.Show(serialPatternError, AppLanguageService.GetString("Common.Prompt"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -156,8 +156,8 @@ public partial class TemplateEditWindow : Window
         if (serialRuleChanged)
         {
             var confirmResult = AppMessageBox.Show(
-                "检测到您修改了序列号生成规则，是否需要将当前流水号计数器重置为初始状态 (从1开始)？\n\n点击【是】将计数重置为 0；\n点击【否】将继续保留并累加当前已有的流水计数。",
-                "重置流水号确认",
+                AppLanguageService.GetString("Template.ResetSerialConfirm"),
+                AppLanguageService.GetString("Template.ResetSerialConfirmTitle"),
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Question);
 
@@ -167,8 +167,8 @@ public partial class TemplateEditWindow : Window
         if (batchRuleChanged)
         {
             var confirmResult = AppMessageBox.Show(
-                "检测到您修改了批次号生成规则，是否需要清空当前导入数据中已打印绑定的批次号？\n\n点击【是】将清空导入行已锁定的批次号，下次再次打印时会按新规则重新生成；\n点击【否】将保留当前已锁定的批次号。",
-                "清空批次号确认",
+                AppLanguageService.GetString("Template.ClearBatchConfirm"),
+                AppLanguageService.GetString("Template.ClearBatchConfirmTitle"),
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Question);
 
@@ -242,21 +242,21 @@ public partial class TemplateEditWindow : Window
 
         if (mode == LabelTemplateMode.Batch)
         {
-            RuleExampleText.Text = "示例：BATCH-{yyyy}{MM}{dd}";
-            RuleVariableText.Text = "变量：{yyyy} {yy} {MM} {dd} {HH} {mm}，可引用字段编码";
+            RuleExampleText.Text = AppLanguageService.GetString("Template.RuleExampleBatch");
+            RuleVariableText.Text = AppLanguageService.GetString("Template.RuleVariablesBatch");
             RulePreviewText.Text = SerialNumberService.IsValidBatchPattern(RulePatternBox.Text.Trim(), _allowedFields, out var error)
-                ? $"预览：{SerialNumberService.PreviewBatch(RulePatternBox.Text.Trim(), DateTime.Now)}"
-                : $"预览：{error}";
+                ? AppLanguageService.Format("Template.Preview", SerialNumberService.PreviewBatch(RulePatternBox.Text.Trim(), DateTime.Now))
+                : AppLanguageService.Format("Template.Preview", error);
             return;
         }
 
         if (mode == LabelTemplateMode.Serialized)
         {
-            RuleExampleText.Text = "示例：SN-{yyyy}{MM}{dd}-{seq:0000}";
-            RuleVariableText.Text = "变量：{yyyy} {yy} {MM} {dd} {HH} {mm} {seq:0000}，可引用字段编码";
+            RuleExampleText.Text = AppLanguageService.GetString("Template.RuleExampleSerial");
+            RuleVariableText.Text = AppLanguageService.GetString("Template.RuleVariablesSerial");
             RulePreviewText.Text = SerialNumberService.IsValidPattern(RulePatternBox.Text.Trim(), _allowedFields, out var error)
-                ? $"预览：{SerialNumberService.Preview(RulePatternBox.Text.Trim(), DateTime.Now)}"
-                : $"预览：{error}";
+                ? AppLanguageService.Format("Template.Preview", SerialNumberService.Preview(RulePatternBox.Text.Trim(), DateTime.Now))
+                : AppLanguageService.Format("Template.Preview", error);
         }
     }
 

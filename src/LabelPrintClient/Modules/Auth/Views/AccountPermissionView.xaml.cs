@@ -18,6 +18,8 @@ public partial class AccountPermissionView : System.Windows.Controls.UserControl
     {
         InitializeComponent();
         Loaded += async (_, _) => await RefreshAllAsync();
+        Loaded += (_, _) => AppLanguageService.LanguageChanged += AppLanguageService_LanguageChanged;
+        Unloaded += (_, _) => AppLanguageService.LanguageChanged -= AppLanguageService_LanguageChanged;
     }
 
     private AuthUser? SelectedUser => UserGrid.SelectedItem as AuthUser;
@@ -93,13 +95,29 @@ public partial class AccountPermissionView : System.Windows.Controls.UserControl
     {
         var box = new System.Windows.Controls.CheckBox
         {
-            Content = $"{resource.Name}  [{resource.Key}]",
+            Content = $"{GetPermissionDisplayName(resource)}  [{resource.Key}]",
             Tag = resource.Key,
             Margin = isMenu ? new Thickness(0, 8, 0, 4) : new Thickness(22, 3, 0, 3),
             FontWeight = isMenu ? FontWeights.SemiBold : FontWeights.Normal
         };
         _permissionBoxes[resource.Key] = box;
         return box;
+    }
+
+    private void AppLanguageService_LanguageChanged(object? sender, LabelPrintClient.Config.AppLanguage language)
+    {
+        foreach (var resource in _resources)
+        {
+            if (_permissionBoxes.TryGetValue(resource.Key, out var box))
+                box.Content = $"{GetPermissionDisplayName(resource)}  [{resource.Key}]";
+        }
+    }
+
+    private static string GetPermissionDisplayName(AuthPermissionResource resource)
+    {
+        var key = $"Permission.{resource.Key}";
+        var value = AppLanguageService.GetString(key);
+        return string.Equals(value, key, StringComparison.Ordinal) ? resource.Name : value;
     }
 
     private async void UserGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -177,7 +195,7 @@ public partial class AccountPermissionView : System.Windows.Controls.UserControl
             .AnyAsync();
         if (duplicate)
         {
-            AppMessageBox.Show("用户名已存在。");
+            AppMessageBox.Show(AppLanguageService.GetString("Account.UserNameExists"));
             return;
         }
 
@@ -189,7 +207,7 @@ public partial class AccountPermissionView : System.Windows.Controls.UserControl
         win.User.CreateTime = DateTime.Now;
         await AppDb.Db.Insertable(win.User).ExecuteCommandAsync();
         await RefreshUsersAsync();
-        AppMessageBox.Success("用户已新增。");
+        AppMessageBox.Success(AppLanguageService.GetString("Account.UserCreated"));
     }
 
     private async void EditUser_Click(object sender, RoutedEventArgs e)
@@ -205,7 +223,7 @@ public partial class AccountPermissionView : System.Windows.Controls.UserControl
             .UpdateColumns(x => new { x.DisplayName, x.IsEnabled })
             .ExecuteCommandAsync();
         await RefreshUsersAsync();
-        AppMessageBox.Success("用户已保存。");
+        AppMessageBox.Success(AppLanguageService.GetString("Account.UserSaved"));
     }
 
     private async void ToggleUser_Click(object sender, RoutedEventArgs e)
@@ -216,14 +234,14 @@ public partial class AccountPermissionView : System.Windows.Controls.UserControl
 
         if (CurrentUserService.Current?.UserId == user.Id && user.IsEnabled)
         {
-            AppMessageBox.Show("不能禁用当前登录用户。");
+            AppMessageBox.Show(AppLanguageService.GetString("Account.CannotDisableCurrentUser"));
             return;
         }
 
         user.IsEnabled = !user.IsEnabled;
         await AppDb.Db.Updateable(user).UpdateColumns(x => new { x.IsEnabled }).ExecuteCommandAsync();
         await RefreshUsersAsync();
-        AppMessageBox.Success(user.IsEnabled ? "用户已启用。" : "用户已禁用。");
+        AppMessageBox.Success(AppLanguageService.GetString(user.IsEnabled ? "Account.UserEnabled" : "Account.UserDisabled"));
     }
 
     private async void ResetPassword_Click(object sender, RoutedEventArgs e)
@@ -242,7 +260,7 @@ public partial class AccountPermissionView : System.Windows.Controls.UserControl
         await AppDb.Db.Updateable(user)
             .UpdateColumns(x => new { x.PasswordHash, x.PasswordSalt, x.PasswordIterations })
             .ExecuteCommandAsync();
-        AppMessageBox.Success("密码已重置。");
+        AppMessageBox.Success(AppLanguageService.GetString("Account.PasswordReset"));
     }
 
     private async void AddRole_Click(object sender, RoutedEventArgs e)
@@ -257,7 +275,7 @@ public partial class AccountPermissionView : System.Windows.Controls.UserControl
             .AnyAsync();
         if (duplicate)
         {
-            AppMessageBox.Show("角色编码已存在。");
+            AppMessageBox.Show(AppLanguageService.GetString("Account.RoleCodeExists"));
             return;
         }
 
@@ -266,7 +284,7 @@ public partial class AccountPermissionView : System.Windows.Controls.UserControl
         win.Role.CreateTime = DateTime.Now;
         await AppDb.Db.Insertable(win.Role).ExecuteCommandAsync();
         await RefreshRolesAndPermissionsAsync();
-        AppMessageBox.Success("角色已新增。");
+        AppMessageBox.Success(AppLanguageService.GetString("Account.RoleCreated"));
     }
 
     private async void EditRole_Click(object sender, RoutedEventArgs e)
@@ -282,7 +300,7 @@ public partial class AccountPermissionView : System.Windows.Controls.UserControl
             .UpdateColumns(x => new { x.Name, x.IsEnabled })
             .ExecuteCommandAsync();
         await RefreshRolesAndPermissionsAsync();
-        AppMessageBox.Success("角色已保存。");
+        AppMessageBox.Success(AppLanguageService.GetString("Account.RoleSaved"));
     }
 
     private async void DeleteRole_Click(object sender, RoutedEventArgs e)
@@ -292,11 +310,11 @@ public partial class AccountPermissionView : System.Windows.Controls.UserControl
         if (role == null) return;
         if (role.IsSystem)
         {
-            AppMessageBox.Show("内置角色不能删除。");
+            AppMessageBox.Show(AppLanguageService.GetString("Account.SystemRoleCannotDelete"));
             return;
         }
 
-        if (AppMessageBox.Show($"确定删除角色 {role.Name}？", "确认删除", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+        if (AppMessageBox.Show(AppLanguageService.Format("Account.DeleteRoleConfirm", role.Name), AppLanguageService.GetString("Common.Confirm"), MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
             return;
 
         await AppDb.UseTranAsync(async () =>
@@ -306,7 +324,7 @@ public partial class AccountPermissionView : System.Windows.Controls.UserControl
             await AppDb.Db.Deleteable<AuthRole>().Where(x => x.Id == role.Id).ExecuteCommandAsync();
         });
         await RefreshRolesAndPermissionsAsync();
-        AppMessageBox.Success("角色已删除。");
+        AppMessageBox.Success(AppLanguageService.GetString("Account.RoleDeleted"));
     }
 
     private async void SaveUserRoles_Click(object sender, RoutedEventArgs e)
@@ -335,7 +353,7 @@ public partial class AccountPermissionView : System.Windows.Controls.UserControl
                 await AppDb.Db.Insertable(rows).ExecuteCommandAsync();
             }
         });
-        AppMessageBox.Success("用户角色已保存，用户重新登录后生效。");
+        AppMessageBox.Success(AppLanguageService.GetString("Account.UserRolesSaved"));
     }
 
     private async void SaveRolePermissions_Click(object sender, RoutedEventArgs e)
@@ -366,6 +384,6 @@ public partial class AccountPermissionView : System.Windows.Controls.UserControl
         });
 
         await PermissionBootstrapper.GrantAdministratorAllPermissionsAsync();
-        AppMessageBox.Success("角色权限已保存，用户重新登录后生效。");
+        AppMessageBox.Success(AppLanguageService.GetString("Account.RolePermissionsSaved"));
     }
 }

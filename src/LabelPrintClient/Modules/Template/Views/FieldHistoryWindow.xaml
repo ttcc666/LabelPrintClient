@@ -4,7 +4,7 @@
         xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
         xmlns:auth="clr-namespace:LabelPrintClient.Modules.Auth.Infrastructure"
         xmlns:hc="https://handyorg.github.io/handycontrol"
-        Title="字段变更履历"
+        Title="{DynamicResource FieldHistory.Title}"
         Width="1080"
         Height="640"
         MinWidth="980"
@@ -50,7 +50,7 @@
             <Border x:Name="BadgeBorder" CornerRadius="12" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="8,3" Background="#120066FF">
                 <StackPanel Orientation="Horizontal">
                     <iconPacks:PackIconMaterial x:Name="BadgeIcon" Kind="PencilOutline" Foreground="{DynamicResource PrimaryBrush}" Width="11" Height="11" Margin="0,0,4,0" VerticalAlignment="Center" />
-                    <TextBlock x:Name="BadgeText" Text="变更" FontSize="11" Foreground="{DynamicResource PrimaryBrush}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                    <TextBlock x:Name="BadgeText" Text="{DynamicResource FieldHistory.Change}" FontSize="11" Foreground="{DynamicResource PrimaryBrush}" FontWeight="SemiBold" VerticalAlignment="Center" />
                 </StackPanel>
             </Border>
             <DataTemplate.Triggers>
@@ -58,14 +58,14 @@
                     <Setter TargetName="BadgeBorder" Property="Background" Value="#12FF3B30" />
                     <Setter TargetName="BadgeIcon" Property="Kind" Value="TrashCanOutline" />
                     <Setter TargetName="BadgeIcon" Property="Foreground" Value="#FF3B30" />
-                    <Setter TargetName="BadgeText" Property="Text" Value="删除" />
+                    <Setter TargetName="BadgeText" Property="Text" Value="{DynamicResource FieldHistory.Delete}" />
                     <Setter TargetName="BadgeText" Property="Foreground" Value="#FF3B30" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding OperationType}" Value="Restore">
                     <Setter TargetName="BadgeBorder" Property="Background" Value="#1234C759" />
                     <Setter TargetName="BadgeIcon" Property="Kind" Value="BackupRestore" />
                     <Setter TargetName="BadgeIcon" Property="Foreground" Value="#34C759" />
-                    <Setter TargetName="BadgeText" Property="Text" Value="恢复" />
+                    <Setter TargetName="BadgeText" Property="Text" Value="{DynamicResource FieldHistory.Restore}" />
                     <Setter TargetName="BadgeText" Property="Foreground" Value="#34C759" />
                 </DataTrigger>
             </DataTemplate.Triggers>
@@ -81,7 +81,7 @@
         <Border Grid.Row="0" Style="{StaticResource AppToolbarCardStyle}">
             <DockPanel LastChildFill="False">
                 <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Style="{StaticResource AppPageTitleStyle}" Text="字段变更履历" Margin="0,0,16,0" />
+                    <TextBlock Style="{StaticResource AppPageTitleStyle}" Text="{DynamicResource FieldHistory.Title}" Margin="0,0,16,0" />
                     <TextBlock x:Name="TemplateNameText"
                                VerticalAlignment="Center"
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
@@ -92,7 +92,7 @@
                         Click="Refresh_Click">
                     <StackPanel Orientation="Horizontal">
                         <iconPacks:PackIconMaterial Kind="Refresh" Margin="0,0,6,0" VerticalAlignment="Center" />
-                        <TextBlock Text="刷新" VerticalAlignment="Center" />
+                        <TextBlock Text="{DynamicResource Common.Refresh}" VerticalAlignment="Center" />
                     </StackPanel>
                 </Button>
             </DockPanel>
@@ -105,34 +105,34 @@
                       HorizontalScrollBarVisibility="Auto"
                       VerticalScrollBarVisibility="Auto">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="时间"
+                    <DataGridTextColumn Header="{DynamicResource FieldHistory.Time}"
                                         Binding="{Binding CreateTime, StringFormat=\{0:yyyy-MM-dd HH:mm:ss\}}"
                                         Width="170"
                                         ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
-                    <DataGridTemplateColumn Header="操作" Width="82" MinWidth="82" SortMemberPath="OperationType">
+                    <DataGridTemplateColumn Header="{DynamicResource Common.Operation}" Width="82" MinWidth="82" SortMemberPath="OperationType">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <ContentControl Content="{Binding}" ContentTemplate="{StaticResource HistoryOperationBadgeTemplate}" />
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
-                    <DataGridTextColumn Header="字段名" Binding="{Binding FieldName}" Width="130" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
-                    <DataGridTextColumn Header="字段编码" Binding="{Binding FieldCode}" Width="130" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
-                    <DataGridTextColumn Header="变更内容" Binding="{Binding ChangeSummary}" Width="*" MinWidth="260" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
-                    <DataGridTextColumn Header="操作人" Binding="{Binding OperatorName}" Width="100" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
-                    <DataGridTemplateColumn Header="操作" Width="92" MinWidth="92">
+                    <DataGridTextColumn Header="{DynamicResource Field.Name}" Binding="{Binding FieldName}" Width="130" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
+                    <DataGridTextColumn Header="{DynamicResource Field.Code}" Binding="{Binding FieldCode}" Width="130" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
+                    <DataGridTextColumn Header="{DynamicResource FieldHistory.ChangeSummary}" Binding="{Binding ChangeSummary}" Width="*" MinWidth="260" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
+                    <DataGridTextColumn Header="{DynamicResource PrintCenter.Operator}" Binding="{Binding OperatorName}" Width="100" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
+                    <DataGridTemplateColumn Header="{DynamicResource Common.Operation}" Width="92" MinWidth="92">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                     <Button Style="{StaticResource HistoryRestoreButtonStyle}"
-                                            ToolTip="恢复字段"
+                                            ToolTip="{DynamicResource FieldHistory.RestoreField}"
                                             IsEnabled="{Binding CanRestoreField}"
                                             Click="RestoreHistoryField_Click"
                                             auth:PermissionAssist.PermissionKey="Button.Template.Field.Restore">
                                         <iconPacks:PackIconMaterial Kind="BackupRestore" Width="14" Height="14" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" HorizontalAlignment="Center" />
                                     </Button>
                                     <Button Style="{StaticResource HistoryCopyButtonStyle}"
-                                            ToolTip="复制为新字段"
+                                            ToolTip="{DynamicResource FieldHistory.CopyAsField}"
                                             IsEnabled="{Binding CanCopyAsField}"
                                             Click="CopyHistoryField_Click">
                                         <iconPacks:PackIconMaterial Kind="ContentCopy" Width="14" Height="14" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" HorizontalAlignment="Center" />
@@ -147,7 +147,7 @@
                 <Border Background="{DynamicResource RegionBrush}" Opacity="0.75" CornerRadius="6" />
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                     <hc:LoadingCircle Width="36" Height="36" Foreground="{DynamicResource PrimaryBrush}" />
-                    <TextBlock Text="正在加载字段履历..."
+                    <TextBlock Text="{DynamicResource FieldHistory.Loading}"
                                Margin="0,10,0,0"
                                HorizontalAlignment="Center"
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
@@ -167,7 +167,7 @@
                            VerticalAlignment="Center"
                            Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right">
-                    <TextBlock Text="每页" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                    <TextBlock Text="{DynamicResource Common.PageSize}" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                     <ComboBox x:Name="HistoryPageSizeBox"
                               Width="68"
                               SelectedIndex="1"

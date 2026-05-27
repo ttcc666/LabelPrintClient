@@ -1,4 +1,5 @@
 using SqlSugar;
+using LabelPrintClient.Services;
 
 namespace LabelPrintClient.Modules.Template.Models;
 
@@ -44,9 +45,9 @@ public class LabelTemplate
     [SugarColumn(IsIgnore = true)]
     public string TemplateModeText => TemplateMode switch
     {
-        LabelTemplateMode.Batch => "批次",
-        LabelTemplateMode.Serialized => "序列化",
-        _ => "普通"
+        LabelTemplateMode.Batch => AppLanguageService.GetString("Template.BatchMode"),
+        LabelTemplateMode.Serialized => AppLanguageService.GetString("Template.SerializedMode"),
+        _ => AppLanguageService.GetString("Template.Normal")
     };
 
     [SugarColumn(IsNullable = true)]

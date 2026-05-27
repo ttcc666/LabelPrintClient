@@ -1,4 +1,5 @@
 using SqlSugar;
+using LabelPrintClient.Services;
 
 namespace LabelPrintClient.Modules.Template.Models;
 
@@ -38,11 +39,11 @@ public class LabelTemplateField
         {
             return FieldType switch
             {
-                "string" => "文本",
-                "int" => "整数",
-                "decimal" => "小数",
-                "date" => "日期",
-                "bool" => "布尔",
+                "string" => AppLanguageService.GetString("Field.TypeStringShort"),
+                "int" => AppLanguageService.GetString("Field.TypeIntShort"),
+                "decimal" => AppLanguageService.GetString("Field.TypeDecimalShort"),
+                "date" => AppLanguageService.GetString("Field.TypeDateShort"),
+                "bool" => AppLanguageService.GetString("Field.TypeBoolShort"),
                 _ => FieldType
             };
         }
@@ -86,21 +87,21 @@ public class LabelTemplateField
             var rules = new List<string>();
 
             if (IsRequired)
-                rules.Add("必填");
+                rules.Add(AppLanguageService.GetString("Field.ValidationRequired"));
 
             if (MinLength.HasValue || MaxLength.HasValue)
-                rules.Add($"{MinLength?.ToString() ?? "0"}-{MaxLength?.ToString() ?? "∞"}字符");
+                rules.Add(AppLanguageService.Format("Field.ValidationChars", MinLength?.ToString() ?? "0", MaxLength?.ToString() ?? "∞"));
 
             if (!string.IsNullOrWhiteSpace(EnumOptions))
-                rules.Add("枚举");
+                rules.Add(AppLanguageService.GetString("Field.ValidationEnum"));
 
             if (MinValue.HasValue || MaxValue.HasValue)
                 rules.Add($"{MinValue?.ToString() ?? "-∞"}-{MaxValue?.ToString() ?? "∞"}");
 
             if (!string.IsNullOrWhiteSpace(RegexPattern))
-                rules.Add("正则");
+                rules.Add(AppLanguageService.GetString("Field.ValidationRegex"));
 
-            return rules.Count == 0 ? string.Empty : string.Join("；", rules);
+            return rules.Count == 0 ? string.Empty : string.Join(AppLanguageService.GetString("Common.ListSeparator"), rules);
         }
     }
 }

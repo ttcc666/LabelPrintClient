@@ -21,4 +21,6 @@ public class AppSettings
     public bool EnableSqlLogging { get; set; } = false;
 
     public AppThemeMode ThemeMode { get; set; } = AppThemeMode.System;
+
+    public AppLanguage Language { get; set; } = AppLanguage.ZhCn;
 }

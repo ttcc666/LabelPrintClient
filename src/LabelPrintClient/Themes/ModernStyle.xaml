@@ -433,37 +433,37 @@
         </Border>
         <DataTemplate.Triggers>
             <DataTrigger Binding="{Binding}" Value="Imported">
-                <Setter TargetName="BadgeText" Property="Text" Value="已导入" />
+                <Setter TargetName="BadgeText" Property="Text" Value="{DynamicResource PrintCenter.BatchStatusImported}" />
             </DataTrigger>
             <DataTrigger Binding="{Binding}" Value="PartError">
-                <Setter TargetName="BadgeText" Property="Text" Value="部分错误" />
+                <Setter TargetName="BadgeText" Property="Text" Value="{DynamicResource PrintCenter.BatchStatusPartError}" />
             </DataTrigger>
             <DataTrigger Binding="{Binding}" Value="Voided">
-                <Setter TargetName="BadgeText" Property="Text" Value="已作废" />
+                <Setter TargetName="BadgeText" Property="Text" Value="{DynamicResource PrintCenter.BatchStatusVoided}" />
             </DataTrigger>
             <DataTrigger Binding="{Binding}" Value="Printed">
-                <Setter TargetName="BadgeText" Property="Text" Value="已打印" />
+                <Setter TargetName="BadgeText" Property="Text" Value="{DynamicResource PrintHistory.StatusPrinted}" />
             </DataTrigger>
             <DataTrigger Binding="{Binding}" Value="Printing">
-                <Setter TargetName="BadgeText" Property="Text" Value="打印中" />
+                <Setter TargetName="BadgeText" Property="Text" Value="{DynamicResource PrintHistory.StatusPrinting}" />
             </DataTrigger>
             <DataTrigger Binding="{Binding}" Value="Preview">
-                <Setter TargetName="BadgeText" Property="Text" Value="预览" />
+                <Setter TargetName="BadgeText" Property="Text" Value="{DynamicResource PrintHistory.StatusPreview}" />
             </DataTrigger>
             <DataTrigger Binding="{Binding}" Value="Failed">
-                <Setter TargetName="BadgeText" Property="Text" Value="失败" />
+                <Setter TargetName="BadgeText" Property="Text" Value="{DynamicResource TaskCenter.Failed}" />
             </DataTrigger>
             <DataTrigger Binding="{Binding}" Value="Pending">
-                <Setter TargetName="BadgeText" Property="Text" Value="等待中" />
+                <Setter TargetName="BadgeText" Property="Text" Value="{DynamicResource TaskCenter.Pending}" />
             </DataTrigger>
             <DataTrigger Binding="{Binding}" Value="Running">
-                <Setter TargetName="BadgeText" Property="Text" Value="执行中" />
+                <Setter TargetName="BadgeText" Property="Text" Value="{DynamicResource TaskCenter.Running}" />
             </DataTrigger>
             <DataTrigger Binding="{Binding}" Value="Completed">
-                <Setter TargetName="BadgeText" Property="Text" Value="已完成" />
+                <Setter TargetName="BadgeText" Property="Text" Value="{DynamicResource TaskCenter.Completed}" />
             </DataTrigger>
             <DataTrigger Binding="{Binding}" Value="Canceled">
-                <Setter TargetName="BadgeText" Property="Text" Value="已取消" />
+                <Setter TargetName="BadgeText" Property="Text" Value="{DynamicResource TaskCenter.Canceled}" />
             </DataTrigger>
         </DataTemplate.Triggers>
     </DataTemplate>
@@ -496,7 +496,7 @@
         <Setter Property="ResizeDirection" Value="Rows" />
         <Setter Property="ResizeBehavior" Value="PreviousAndNext" />
         <Setter Property="ShowsPreview" Value="False" />
-        <Setter Property="ToolTip" Value="拖动调整上下表格高度" />
+        <Setter Property="ToolTip" Value="{DynamicResource Common.RowResizeSplitterToolTip}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="GridSplitter">

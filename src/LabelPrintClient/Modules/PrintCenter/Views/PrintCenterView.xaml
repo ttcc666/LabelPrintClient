@@ -15,7 +15,7 @@
             <Border x:Name="BadgeBorder" CornerRadius="12" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="8,3" Background="#12FF5722">
                 <StackPanel Orientation="Horizontal">
                     <iconPacks:PackIconMaterial x:Name="BadgeIcon" Kind="CloseCircle" Foreground="#FF5722" Width="11" Height="11" Margin="0,0,4,0" VerticalAlignment="Center" />
-                    <TextBlock x:Name="BadgeText" Text="无效" FontSize="11" Foreground="#FF5722" FontWeight="SemiBold" VerticalAlignment="Center" />
+                    <TextBlock x:Name="BadgeText" Text="{DynamicResource PrintCenter.Invalid}" FontSize="11" Foreground="#FF5722" FontWeight="SemiBold" VerticalAlignment="Center" />
                 </StackPanel>
             </Border>
             <DataTemplate.Triggers>
@@ -23,7 +23,7 @@
                     <Setter TargetName="BadgeBorder" Property="Background" Value="#1200CC66" />
                     <Setter TargetName="BadgeIcon" Property="Kind" Value="CheckCircle" />
                     <Setter TargetName="BadgeIcon" Property="Foreground" Value="#00CC66" />
-                    <Setter TargetName="BadgeText" Property="Text" Value="有效" />
+                    <Setter TargetName="BadgeText" Property="Text" Value="{DynamicResource PrintCenter.Valid}" />
                     <Setter TargetName="BadgeText" Property="Foreground" Value="#00CC66" />
                 </DataTrigger>
             </DataTemplate.Triggers>
@@ -34,7 +34,7 @@
             <Border x:Name="BadgeBorder" CornerRadius="12" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="8,3" Background="#12708090">
                 <StackPanel Orientation="Horizontal">
                     <iconPacks:PackIconMaterial x:Name="BadgeIcon" Kind="PrinterOff" Foreground="SlateGray" Width="11" Height="11" Margin="0,0,4,0" VerticalAlignment="Center" />
-                    <TextBlock x:Name="BadgeText" Text="未打印" FontSize="11" Foreground="SlateGray" FontWeight="SemiBold" VerticalAlignment="Center" />
+                    <TextBlock x:Name="BadgeText" Text="{DynamicResource PrintCenter.Unprinted}" FontSize="11" Foreground="SlateGray" FontWeight="SemiBold" VerticalAlignment="Center" />
                 </StackPanel>
             </Border>
             <DataTemplate.Triggers>
@@ -42,7 +42,7 @@
                     <Setter TargetName="BadgeBorder" Property="Background" Value="#120066FF" />
                     <Setter TargetName="BadgeIcon" Property="Kind" Value="PrinterCheck" />
                     <Setter TargetName="BadgeIcon" Property="Foreground" Value="{DynamicResource PrimaryBrush}" />
-                    <Setter TargetName="BadgeText" Property="Text" Value="已打印" />
+                    <Setter TargetName="BadgeText" Property="Text" Value="{DynamicResource PrintCenter.Printed}" />
                     <Setter TargetName="BadgeText" Property="Foreground" Value="{DynamicResource PrimaryBrush}" />
                 </DataTrigger>
             </DataTemplate.Triggers>
@@ -73,10 +73,10 @@
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
 
-                    <TextBlock Grid.Column="0" Style="{StaticResource AppPageTitleStyle}" Text="标签打印中心" Margin="0,0,16,0" />
+                    <TextBlock Grid.Column="0" Style="{StaticResource AppPageTitleStyle}" Text="{DynamicResource PrintCenter.Title}" Margin="0,0,16,0" />
 
                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,0">
-                        <TextBlock Style="{StaticResource FormLabelStyle}" Text="分类" />
+                        <TextBlock Style="{StaticResource FormLabelStyle}" Text="{DynamicResource PrintCenter.Category}" />
                         <ComboBox x:Name="CategoryBox" Width="140" DisplayMemberPath="Name"
                                   infra:SearchableComboBoxBehavior.IsEnabled="True"
                                   infra:SearchableComboBoxBehavior.SearchMemberPath="Name"
@@ -84,7 +84,7 @@
                     </StackPanel>
 
                     <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,0">
-                        <TextBlock Style="{StaticResource FormLabelStyle}" Text="模板" />
+                        <TextBlock Style="{StaticResource FormLabelStyle}" Text="{DynamicResource PrintCenter.Template}" />
                         <ComboBox x:Name="TemplateBox" Width="160" DisplayMemberPath="Name"
                                   infra:SearchableComboBoxBehavior.IsEnabled="True"
                                   infra:SearchableComboBoxBehavior.SearchMemberPath="Name"
@@ -92,7 +92,7 @@
                     </StackPanel>
 
                     <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock Style="{StaticResource FormLabelStyle}" Text="打印机" />
+                        <TextBlock Style="{StaticResource FormLabelStyle}" Text="{DynamicResource PrintCenter.Printer}" />
                         <ComboBox x:Name="PrinterNameBox" Width="190" VerticalAlignment="Center"
                                   infra:SearchableComboBoxBehavior.IsEnabled="True" />
                     </StackPanel>
@@ -100,7 +100,7 @@
                     <Button Grid.Column="4" Style="{StaticResource AppSecondaryButtonStyle}" Click="Refresh_Click" Margin="12,0,0,0" auth:PermissionAssist.PermissionKey="Button.PrintCenter.Refresh">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="Refresh" Margin="0,0,6,0" VerticalAlignment="Center" />
-                            <TextBlock Text="刷新" VerticalAlignment="Center" />
+                            <TextBlock Text="{DynamicResource Common.Refresh}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
                 </Grid>
@@ -109,18 +109,18 @@
                     <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="DownloadExcel_Click" Margin="0,0,8,0" auth:PermissionAssist.PermissionKey="Button.PrintCenter.DownloadExcel">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="Download" Margin="0,0,6,0" VerticalAlignment="Center" />
-                            <TextBlock Text="下载 Excel 模板" VerticalAlignment="Center" />
+                            <TextBlock Text="{DynamicResource PrintCenter.DownloadExcel}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
                     <Button Style="{StaticResource AppPrimaryButtonStyle}" Click="ImportExcel_Click" Margin="0,0,20,0" auth:PermissionAssist.PermissionKey="Button.PrintCenter.ImportExcel">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="MicrosoftExcel" Margin="0,0,6,0" VerticalAlignment="Center" />
-                            <TextBlock Text="导入 Excel" VerticalAlignment="Center" />
+                            <TextBlock Text="{DynamicResource PrintCenter.ImportExcel}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
-                    <CheckBox x:Name="OnlyInvalidBox" Content="只看错误" VerticalAlignment="Center" Margin="0,0,16,0"
+                    <CheckBox x:Name="OnlyInvalidBox" Content="{DynamicResource PrintCenter.OnlyInvalid}" VerticalAlignment="Center" Margin="0,0,16,0"
                               Checked="Filter_Changed" Unchecked="Filter_Changed" />
-                    <CheckBox x:Name="OnlyUnprintedBox" Content="只看未打印" VerticalAlignment="Center"
+                    <CheckBox x:Name="OnlyUnprintedBox" Content="{DynamicResource PrintCenter.OnlyUnprinted}" VerticalAlignment="Center"
                               Checked="Filter_Changed" Unchecked="Filter_Changed" />
                 </StackPanel>
             </Grid>
@@ -141,39 +141,39 @@
                 </Grid.RowDefinitions>
 
                 <DockPanel Grid.Row="0" Margin="0,0,0,8" LastChildFill="False">
-                    <TextBlock DockPanel.Dock="Left" Style="{StaticResource SectionTitleStyle}" Text="导入批次记录" Margin="4,0,16,0" />
+                    <TextBlock DockPanel.Dock="Left" Style="{StaticResource SectionTitleStyle}" Text="{DynamicResource PrintCenter.BatchRecords}" Margin="4,0,16,0" />
                     <WrapPanel DockPanel.Dock="Right" HorizontalAlignment="Right">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,8,0">
-                            <TextBlock Style="{StaticResource FormLabelStyle}" Text="关键词" />
+                            <TextBlock Style="{StaticResource FormLabelStyle}" Text="{DynamicResource Common.Keyword}" />
                             <TextBox x:Name="BatchSearchBox"
                                      Width="180"
                                      VerticalAlignment="Center"
                                      KeyDown="BatchSearchBox_KeyDown" />
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,8,0">
-                            <TextBlock Style="{StaticResource FormLabelStyle}" Text="状态" />
+                            <TextBlock Style="{StaticResource FormLabelStyle}" Text="{DynamicResource Common.Status}" />
                             <ComboBox x:Name="BatchStatusFilterBox"
                                       Width="110"
                                       SelectedIndex="0"
                                       SelectionChanged="BatchStatusFilterBox_SelectionChanged"
                                       VerticalAlignment="Center">
-                                <ComboBoxItem Content="正常批次" Tag="Active" />
-                                <ComboBoxItem Content="全部" Tag="All" />
-                                <ComboBoxItem Content="已导入" Tag="Imported" />
-                                <ComboBoxItem Content="部分错误" Tag="PartError" />
-                                <ComboBoxItem Content="已作废" Tag="Voided" />
+                                <ComboBoxItem Content="{DynamicResource PrintCenter.BatchStatusActive}" Tag="Active" />
+                                <ComboBoxItem Content="{DynamicResource Common.All}" Tag="All" />
+                                <ComboBoxItem Content="{DynamicResource PrintCenter.BatchStatusImported}" Tag="Imported" />
+                                <ComboBoxItem Content="{DynamicResource PrintCenter.BatchStatusPartError}" Tag="PartError" />
+                                <ComboBoxItem Content="{DynamicResource PrintCenter.BatchStatusVoided}" Tag="Voided" />
                             </ComboBox>
                         </StackPanel>
                         <Button  Style="{StaticResource AppSecondaryButtonStyle}" Click="BatchFilter_Click" Margin="0,0,8,0" auth:PermissionAssist.PermissionKey="Button.PrintCenter.BatchSearch">
         <StackPanel Orientation="Horizontal">
             <iconPacks:PackIconMaterial Kind="Magnify" Margin="0,0,6,0" VerticalAlignment="Center" />
-            <TextBlock Text="查询" VerticalAlignment="Center" />
+            <TextBlock Text="{DynamicResource Common.Search}" VerticalAlignment="Center" />
         </StackPanel>
     </Button>
                         <Button  Style="{StaticResource AppSecondaryButtonStyle}" Click="LoadBatches_Click" auth:PermissionAssist.PermissionKey="Button.PrintCenter.LoadBatches">
         <StackPanel Orientation="Horizontal">
             <iconPacks:PackIconMaterial Kind="Refresh" Margin="0,0,6,0" VerticalAlignment="Center" />
-            <TextBlock Text="刷新批次" VerticalAlignment="Center" />
+            <TextBlock Text="{DynamicResource PrintCenter.RefreshBatch}" VerticalAlignment="Center" />
         </StackPanel>
     </Button>
                     </WrapPanel>
@@ -190,7 +190,7 @@
                                      HorizontalScrollBarVisibility="Auto"
                                      VerticalScrollBarVisibility="Auto">
                             <DataGrid.Columns>
-                                <DataGridTemplateColumn Header="操作" Width="Auto">
+                                <DataGridTemplateColumn Header="{DynamicResource Common.Operation}" Width="Auto">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <Button Click="VoidBatch_Click" Height="24" Padding="6,0" auth:PermissionAssist.PermissionKey="Button.PrintCenter.VoidBatch">
@@ -211,25 +211,25 @@
                                                 </Button.Style>
                                                 <StackPanel Orientation="Horizontal">
                                                     <iconPacks:PackIconMaterial Kind="Cancel" Width="10" Height="10" Margin="0,0,4,0" VerticalAlignment="Center" />
-                                                    <TextBlock Text="作废" FontSize="11" VerticalAlignment="Center" />
+                                                    <TextBlock Text="{DynamicResource PrintCenter.Void}" FontSize="11" VerticalAlignment="Center" />
                                                 </StackPanel>
                                             </Button>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTextColumn Header="导入时间" Binding="{Binding ImportTime, StringFormat=\{0:yyyy-MM-dd HH:mm:ss\}}" Width="170" />
+                                <DataGridTextColumn Header="{DynamicResource PrintCenter.ImportTime}" Binding="{Binding ImportTime, StringFormat=\{0:yyyy-MM-dd HH:mm:ss\}}" Width="170" />
                                 <DataGridTextColumn Header="Excel" Binding="{Binding ExcelFileName}" Width="*" MinWidth="130" />
-                                <DataGridTextColumn Header="批次号" Binding="{Binding BatchNo}" Width="120" />
-                                <DataGridTemplateColumn Header="状态" Width="96" SortMemberPath="Status">
+                                <DataGridTextColumn Header="{DynamicResource PrintCenter.BatchNo}" Binding="{Binding BatchNo}" Width="120" />
+                                <DataGridTemplateColumn Header="{DynamicResource Common.Status}" Width="96" SortMemberPath="Status">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <ContentControl Content="{Binding Status}" ContentTemplate="{StaticResource AppStatusBadgeTemplate}" />
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTextColumn Header="总行数" Binding="{Binding TotalRows}" Width="80" />
-                                <DataGridTextColumn Header="错误行数" Binding="{Binding InvalidRows}" Width="80" />
-                                <DataGridTextColumn Header="操作人" Binding="{Binding OperatorName}" Width="100" />
+                                <DataGridTextColumn Header="{DynamicResource PrintCenter.TotalRows}" Binding="{Binding TotalRows}" Width="80" />
+                                <DataGridTextColumn Header="{DynamicResource PrintCenter.InvalidRows}" Binding="{Binding InvalidRows}" Width="80" />
+                                <DataGridTextColumn Header="{DynamicResource PrintCenter.Operator}" Binding="{Binding OperatorName}" Width="100" />
                             </DataGrid.Columns>
                         </DataGrid>
                         <StackPanel Grid.Row="0"
@@ -239,15 +239,15 @@
                                 <iconPacks:PackIconMaterial Kind="FormatListText" Style="{StaticResource AppEmptyStateIconStyle}" />
                             </Border>
                             <TextBlock x:Name="BatchEmptyText"
-                                       Text="暂无导入批次"
+                                       Text="{DynamicResource PrintCenter.EmptyBatchTitle}"
                                        Style="{StaticResource AppEmptyStateTitleStyle}"
                                        Visibility="Collapsed" />
-                            <TextBlock Text="选择模板后可导入 Excel，生成的批次会显示在这里。"
+                            <TextBlock Text="{DynamicResource PrintCenter.EmptyBatchHint}"
                                        Style="{StaticResource AppEmptyStateHintStyle}" />
                         </StackPanel>
                         <Border Grid.Row="1" Padding="0,8,0,0" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" Margin="8,8,8,8">
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                <TextBlock Text="每页" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                <TextBlock Text="{DynamicResource Common.PageSize}" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                                 <ComboBox x:Name="BatchPageSizeBox" Width="68" SelectedIndex="0" SelectionChanged="BatchPageSizeBox_SelectionChanged" Margin="0,0,16,0" VerticalAlignment="Center">
                                     <ComboBoxItem Content="20" />
                                     <ComboBoxItem Content="50" />
@@ -273,7 +273,7 @@
                             <Border Background="{DynamicResource RegionBrush}" Opacity="0.75" CornerRadius="6" />
                             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <hc:LoadingCircle Width="36" Height="36" Foreground="{DynamicResource PrimaryBrush}" />
-                                <TextBlock Text="正在读取批次记录..." Margin="0,10,0,0" HorizontalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" />
+                                <TextBlock Text="{DynamicResource PrintCenter.LoadingBatch}" Margin="0,10,0,0" HorizontalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" />
                             </StackPanel>
                         </Grid>
                     </Grid>
@@ -290,10 +290,10 @@
                 </Grid.RowDefinitions>
 
                 <DockPanel Grid.Row="0" Margin="0,0,0,8" LastChildFill="False">
-                    <TextBlock DockPanel.Dock="Left" Style="{StaticResource SectionTitleStyle}" Text="批次明细数据" Margin="4,0,16,0" />
+                    <TextBlock DockPanel.Dock="Left" Style="{StaticResource SectionTitleStyle}" Text="{DynamicResource PrintCenter.BatchDetails}" Margin="4,0,16,0" />
                     <WrapPanel DockPanel.Dock="Right" HorizontalAlignment="Right">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,8,0">
-                            <TextBlock Style="{StaticResource FormLabelStyle}" Text="关键词" />
+                            <TextBlock Style="{StaticResource FormLabelStyle}" Text="{DynamicResource Common.Keyword}" />
                             <TextBox x:Name="RowSearchBox"
                                      Width="180"
                                      VerticalAlignment="Center"
@@ -302,13 +302,13 @@
                         <Button  Style="{StaticResource AppSecondaryButtonStyle}" Click="RowFilter_Click" Margin="0,0,8,0" auth:PermissionAssist.PermissionKey="Button.PrintCenter.RowSearch">
         <StackPanel Orientation="Horizontal">
             <iconPacks:PackIconMaterial Kind="Magnify" Margin="0,0,6,0" VerticalAlignment="Center" />
-            <TextBlock Text="查询" VerticalAlignment="Center" />
+            <TextBlock Text="{DynamicResource Common.Search}" VerticalAlignment="Center" />
         </StackPanel>
     </Button>
                         <Button  Style="{StaticResource AppGhostButtonStyle}" Click="ClearRowFilter_Click" auth:PermissionAssist.PermissionKey="Button.PrintCenter.RowSearch">
         <StackPanel Orientation="Horizontal">
             <iconPacks:PackIconMaterial Kind="FilterRemoveOutline" Margin="0,0,6,0" VerticalAlignment="Center" />
-            <TextBlock Text="清空" VerticalAlignment="Center" />
+            <TextBlock Text="{DynamicResource Common.Clear}" VerticalAlignment="Center" />
         </StackPanel>
     </Button>
                     </WrapPanel>
@@ -334,15 +334,15 @@
                                 <iconPacks:PackIconMaterial Kind="MicrosoftExcel" Style="{StaticResource AppEmptyStateIconStyle}" />
                             </Border>
                             <TextBlock x:Name="RowEmptyText"
-                                       Text="请选择批次查看明细"
+                                       Text="{DynamicResource PrintCenter.EmptyRowsTitle}"
                                        Style="{StaticResource AppEmptyStateTitleStyle}"
                                        Visibility="Collapsed" />
-                            <TextBlock Text="选择导入批次后，可查看明细并勾选需要预览或打印的数据。"
+                            <TextBlock Text="{DynamicResource PrintCenter.EmptyRowsHint}"
                                        Style="{StaticResource AppEmptyStateHintStyle}" />
                         </StackPanel>
                         <Border Grid.Row="1" Padding="0,8,0,0" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" Margin="8,8,8,8">
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                <TextBlock Text="每页" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                <TextBlock Text="{DynamicResource Common.PageSize}" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                                 <ComboBox x:Name="PageSizeBox" Width="68" SelectedIndex="1" SelectionChanged="PageSizeBox_SelectionChanged" Margin="0,0,16,0" VerticalAlignment="Center">
                                     <ComboBoxItem Content="20" />
                                     <ComboBoxItem Content="50" />
@@ -369,7 +369,7 @@
                             <Border Background="{DynamicResource RegionBrush}" Opacity="0.75" CornerRadius="6" />
                             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <hc:LoadingCircle Width="36" Height="36" Foreground="{DynamicResource PrimaryBrush}" />
-                                <TextBlock Text="正在加载明细数据..." Margin="0,10,0,0" HorizontalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" />
+                                <TextBlock Text="{DynamicResource PrintCenter.LoadingRows}" Margin="0,10,0,0" HorizontalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" />
                             </StackPanel>
                         </Grid>
                     </Grid>
@@ -393,43 +393,43 @@
 
                 <WrapPanel Grid.Row="1" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,8,0,0">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
-                        <TextBlock Style="{StaticResource FormLabelStyle}" Text="份数" />
+                        <TextBlock Style="{StaticResource FormLabelStyle}" Text="{DynamicResource PrintCenter.Copies}" />
                         <TextBox x:Name="PrintCopiesBox" Width="72" Text="1" VerticalAlignment="Center" />
                     </StackPanel>
                     <Button  Style="{StaticResource AppSecondaryButtonStyle}" Click="SelectValidUnprinted_Click" Margin="0,0,8,0" auth:PermissionAssist.PermissionKey="Button.PrintCenter.SelectRows">
         <StackPanel Orientation="Horizontal">
             <iconPacks:PackIconMaterial Kind="CheckboxMarked" Margin="0,0,6,0" VerticalAlignment="Center" />
-            <TextBlock Text="全选有效未打印" VerticalAlignment="Center" />
+            <TextBlock Text="{DynamicResource PrintCenter.SelectValidUnprinted}" VerticalAlignment="Center" />
         </StackPanel>
     </Button>
                     <Button  Style="{StaticResource AppSecondaryButtonStyle}" Click="SelectValid_Click" Margin="0,0,8,0" auth:PermissionAssist.PermissionKey="Button.PrintCenter.SelectRows">
         <StackPanel Orientation="Horizontal">
             <iconPacks:PackIconMaterial Kind="CheckboxMultipleMarked" Margin="0,0,6,0" VerticalAlignment="Center" />
-            <TextBlock Text="全选有效行" VerticalAlignment="Center" />
+            <TextBlock Text="{DynamicResource PrintCenter.SelectValid}" VerticalAlignment="Center" />
         </StackPanel>
     </Button>
                     <Button  Style="{StaticResource AppGhostButtonStyle}" Click="ReverseSelect_Click" Margin="0,0,8,0" auth:PermissionAssist.PermissionKey="Button.PrintCenter.SelectRows">
         <StackPanel Orientation="Horizontal">
             <iconPacks:PackIconMaterial Kind="MinusBoxOutline" Margin="0,0,6,0" VerticalAlignment="Center" />
-            <TextBlock Text="反选" VerticalAlignment="Center" />
+            <TextBlock Text="{DynamicResource PrintCenter.ReverseSelect}" VerticalAlignment="Center" />
         </StackPanel>
     </Button>
                     <Button  Style="{StaticResource AppGhostButtonStyle}" Click="ClearSelect_Click" Margin="0,0,16,0" auth:PermissionAssist.PermissionKey="Button.PrintCenter.SelectRows">
         <StackPanel Orientation="Horizontal">
             <iconPacks:PackIconMaterial Kind="FilterRemoveOutline" Margin="0,0,6,0" VerticalAlignment="Center" />
-            <TextBlock Text="清空" VerticalAlignment="Center" />
+            <TextBlock Text="{DynamicResource Common.Clear}" VerticalAlignment="Center" />
         </StackPanel>
     </Button>
                     <Button  Style="{StaticResource AppSecondaryButtonStyle}" Click="PreviewSelected_Click" Margin="0,0,8,0" auth:PermissionAssist.PermissionKey="Button.PrintCenter.Preview">
         <StackPanel Orientation="Horizontal">
             <iconPacks:PackIconMaterial Kind="Eye" Margin="0,0,6,0" VerticalAlignment="Center" />
-            <TextBlock Text="批量预览" VerticalAlignment="Center" />
+            <TextBlock Text="{DynamicResource PrintCenter.BatchPreview}" VerticalAlignment="Center" />
         </StackPanel>
     </Button>
                     <Button Style="{StaticResource AppPrimaryButtonStyle}" Click="PrintSelected_Click" auth:PermissionAssist.PermissionKey="Button.PrintCenter.Print">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="Printer" Margin="0,0,6,0" VerticalAlignment="Center" />
-                            <TextBlock Text="批量打印" VerticalAlignment="Center" />
+                            <TextBlock Text="{DynamicResource PrintCenter.BatchPrint}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
                 </WrapPanel>

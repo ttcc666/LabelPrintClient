@@ -33,6 +33,9 @@ public partial class App : System.Windows.Application
             AppLogger.LogInfo("开始应用主题");
             AppThemeService.Apply(Settings.ThemeMode);
             AppLogger.LogInfo("主题应用完成");
+            AppLogger.LogInfo("开始应用语言");
+            AppLanguageService.Apply(Settings.Language);
+            AppLogger.LogInfo($"语言应用完成：{Settings.Language}");
             AppLogger.LogInfo("开始初始化数据库连接");
             AppDb.Init(Settings);
             AppLogger.LogInfo("数据库连接对象初始化完成");
@@ -59,7 +62,11 @@ public partial class App : System.Windows.Application
         catch (Exception ex)
         {
             AppLogger.LogError("系统初始化失败", ex);
-            AppMessageBox.Show($"系统初始化失败：{ex.Message}\n\n详情请查看应用程序根目录下 logs 文件夹中的日志文件。", "启动失败", MessageBoxButton.OK, MessageBoxImage.Error);
+            AppMessageBox.Show(
+                AppLanguageService.Format("App.StartupFailed", ex.Message),
+                AppLanguageService.GetString("App.StartupFailedTitle"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
             Shutdown();
         }
     }
@@ -97,8 +104,8 @@ public partial class App : System.Windows.Application
         // 调用自定义 AppMessageBox.Show 并选择 MessageBoxButton.YesNo。
         // 由于 YesNo 按钮不会进入 button == MessageBoxButton.OK 分支，因此它会完美唤起 HandyControl 高颜值扁平化的模态实体弹窗，而不是右上角的消息气泡（Growl/Toast）！
         var result = AppMessageBox.Show(
-            $"程序运行中发生异常：\n{e.Exception.Message}\n\n系统已尝试拦截此错误，详情请查看本地 logs 文件夹中的日志。\n\n是否尝试忽略此错误并继续运行？",
-            "系统运行异常",
+            AppLanguageService.Format("App.RuntimeException", e.Exception.Message),
+            AppLanguageService.GetString("App.RuntimeExceptionTitle"),
             MessageBoxButton.YesNo,
             MessageBoxImage.Warning);
 
@@ -138,8 +145,8 @@ public partial class App : System.Windows.Application
                         {
                             HandyControl.Controls.MessageBox.Show(
                                 owner,
-                                $"程序遭遇严重致命错误，即将关闭。\n错误信息：{(ex != null ? ex.Message : "未知异常")}\n\n详情请查看本地 logs 文件夹下的日志文件。",
-                                "系统致命错误",
+                                AppLanguageService.Format("App.FatalError", ex != null ? ex.Message : AppLanguageService.GetString("App.UnknownException")),
+                                AppLanguageService.GetString("App.FatalErrorTitle"),
                                 MessageBoxButton.OK,
                                 MessageBoxImage.Error);
                             return;
@@ -151,8 +158,8 @@ public partial class App : System.Windows.Application
                     try
                     {
                         HandyControl.Controls.MessageBox.Show(
-                            $"程序遭遇严重致命错误，即将关闭。\n错误信息：{(ex != null ? ex.Message : "未知异常")}\n\n详情请查看本地 logs 文件夹下的日志文件。",
-                            "系统致命错误",
+                            AppLanguageService.Format("App.FatalError", ex != null ? ex.Message : AppLanguageService.GetString("App.UnknownException")),
+                            AppLanguageService.GetString("App.FatalErrorTitle"),
                             MessageBoxButton.OK,
                             MessageBoxImage.Error);
                     }
@@ -160,8 +167,8 @@ public partial class App : System.Windows.Application
                     {
                         // 兜底降级使用系统原生弹窗
                         System.Windows.MessageBox.Show(
-                            $"程序遭遇严重致命错误，即将关闭。\n错误信息：{(ex != null ? ex.Message : "未知异常")}\n\n详情请查看本地 logs 文件夹下的日志文件。",
-                            "系统致命错误",
+                            AppLanguageService.Format("App.FatalError", ex != null ? ex.Message : AppLanguageService.GetString("App.UnknownException")),
+                            AppLanguageService.GetString("App.FatalErrorTitle"),
                             MessageBoxButton.OK,
                             MessageBoxImage.Error);
                     }
@@ -177,8 +184,8 @@ public partial class App : System.Windows.Application
         try
         {
             System.Windows.MessageBox.Show(
-                $"程序遭遇严重致命错误，即将关闭。\n错误信息：{(ex != null ? ex.Message : "未知异常")}\n\n详情请查看本地 logs 文件夹下的日志文件。",
-                "系统致命错误",
+                AppLanguageService.Format("App.FatalError", ex != null ? ex.Message : AppLanguageService.GetString("App.UnknownException")),
+                AppLanguageService.GetString("App.FatalErrorTitle"),
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
         }

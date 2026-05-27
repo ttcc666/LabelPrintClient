@@ -5,6 +5,8 @@ using LabelPrintClient.Modules.PrintHistory.Views;
 using LabelPrintClient.Modules.Settings.Views;
 using LabelPrintClient.Modules.TaskCenter.Views;
 using LabelPrintClient.Modules.Template.Views;
+using LabelPrintClient.Config;
+using LabelPrintClient.Services;
 using LabelPrintClient.Tests.Infrastructure;
 using System.Windows;
 
@@ -21,16 +23,8 @@ public class ViewConstructionSmokeTests
         await StaThreadRunner.RunAsync(() =>
         {
             EnsureApplicationResources();
-            var views = new object[]
-            {
-                new TemplateManageView(),
-                new PrintCenterView(),
-                new PrintHistoryView(),
-                new TaskCenterView(),
-                new SettingsView()
-            };
-
-            Assert.All(views, Assert.NotNull);
+            AssertConstructsModuleViews(AppLanguage.ZhCn);
+            AssertConstructsModuleViews(AppLanguage.EnUs);
 
             var windows = new Window[]
             {
@@ -68,5 +62,24 @@ public class ViewConstructionSmokeTests
         {
             Source = new Uri("pack://application:,,,/LabelPrintClient;component/Themes/ModernStyle.xaml", UriKind.Absolute)
         });
+        application.Resources.MergedDictionaries.Add(new ResourceDictionary
+        {
+            Source = new Uri("pack://application:,,,/LabelPrintClient;component/Resources/Strings.zh-CN.xaml", UriKind.Absolute)
+        });
+    }
+
+    private static void AssertConstructsModuleViews(AppLanguage language)
+    {
+        AppLanguageService.Apply(language);
+        var views = new object[]
+        {
+            new TemplateManageView(),
+            new PrintCenterView(),
+            new PrintHistoryView(),
+            new TaskCenterView(),
+            new SettingsView()
+        };
+
+        Assert.All(views, Assert.NotNull);
     }
 }

@@ -29,20 +29,20 @@
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
-                <TextBlock Grid.Column="0" Style="{StaticResource AppPageTitleStyle}" Text="打印记录" Margin="0,0,12,0" />
+                <TextBlock Grid.Column="0" Style="{StaticResource AppPageTitleStyle}" Text="{DynamicResource PrintHistory.Title}" Margin="0,0,12,0" />
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,0">
-                    <TextBlock Style="{StaticResource FormLabelStyle}" Text="状态" />
+                    <TextBlock Style="{StaticResource FormLabelStyle}" Text="{DynamicResource Common.Status}" />
                     <ComboBox x:Name="StatusFilterBox" Width="96" SelectedIndex="0" SelectionChanged="Filter_Changed" Margin="0">
-                        <ComboBoxItem Content="全部" />
-                        <ComboBoxItem Content="已打印" Tag="Printed" />
-                        <ComboBoxItem Content="失败" Tag="Failed" />
-                        <ComboBoxItem Content="打印中" Tag="Printing" />
+                        <ComboBoxItem Content="{DynamicResource PrintHistory.StatusAll}" />
+                        <ComboBoxItem Content="{DynamicResource PrintHistory.StatusPrinted}" Tag="Printed" />
+                        <ComboBoxItem Content="{DynamicResource PrintHistory.StatusFailed}" Tag="Failed" />
+                        <ComboBoxItem Content="{DynamicResource PrintHistory.StatusPrinting}" Tag="Printing" />
                     </ComboBox>
                 </StackPanel>
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,0">
-                    <TextBlock Style="{StaticResource FormLabelStyle}" Text="打印机" />
+                    <TextBlock Style="{StaticResource FormLabelStyle}" Text="{DynamicResource PrintCenter.Printer}" />
                     <ComboBox x:Name="PrinterNameBox"
                               Width="180"
                               infra:SearchableComboBoxBehavior.IsEnabled="True"
@@ -50,12 +50,12 @@
                 </StackPanel>
 
                 <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,0">
-                    <TextBlock Style="{StaticResource FormLabelStyle}" Text="份数" />
+                    <TextBlock Style="{StaticResource FormLabelStyle}" Text="{DynamicResource PrintCenter.Copies}" />
                     <TextBox x:Name="PrintCopiesBox" Width="56" Text="1" Margin="0" />
                 </StackPanel>
 
                 <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,8,0">
-                    <TextBlock Style="{StaticResource FormLabelStyle}" Text="关键词" />
+                    <TextBlock Style="{StaticResource FormLabelStyle}" Text="{DynamicResource Common.Keyword}" />
                     <TextBox x:Name="JobSearchBox"
                              MinWidth="80"
                              MaxWidth="130"
@@ -68,19 +68,19 @@
                     <Button Style="{StaticResource AppPrimaryButtonStyle}" Click="JobFilter_Click" Margin="0,0,8,0" auth:PermissionAssist.PermissionKey="Button.PrintHistory.Search">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="Magnify" Margin="0,0,6,0" VerticalAlignment="Center" />
-                            <TextBlock Text="查询" VerticalAlignment="Center" />
+                            <TextBlock Text="{DynamicResource Common.Search}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
                     <Button Style="{StaticResource AppGhostButtonStyle}" Click="ClearJobFilter_Click" Margin="0,0,8,0" auth:PermissionAssist.PermissionKey="Button.PrintHistory.Search">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="FilterRemoveOutline" Margin="0,0,6,0" VerticalAlignment="Center" />
-                            <TextBlock Text="清空" VerticalAlignment="Center" />
+                            <TextBlock Text="{DynamicResource Common.Clear}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
                     <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="Refresh_Click" Margin="0" auth:PermissionAssist.PermissionKey="Button.PrintHistory.Refresh">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="Refresh" Margin="0,0,6,0" VerticalAlignment="Center" />
-                            <TextBlock Text="刷新" VerticalAlignment="Center" />
+                            <TextBlock Text="{DynamicResource Common.Refresh}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
                 </StackPanel>
@@ -101,7 +101,7 @@
                 </Grid.RowDefinitions>
 
                 <Grid Grid.Row="0" Margin="0,0,0,8">
-                    <TextBlock Style="{StaticResource SectionTitleStyle}" Text="打印任务" Margin="4,0,0,0" />
+                    <TextBlock Style="{StaticResource SectionTitleStyle}" Text="{DynamicResource PrintHistory.PrintJobs}" Margin="4,0,0,0" />
                 </Grid>
 
                 <Border Grid.Row="1" Style="{StaticResource AppDataCardStyle}" VerticalAlignment="Stretch">
@@ -119,7 +119,7 @@
                                      HorizontalScrollBarVisibility="Auto"
                                      VerticalScrollBarVisibility="Auto">
                             <DataGrid.Columns>
-                                <DataGridTemplateColumn Header="操作" Width="Auto">
+                                <DataGridTemplateColumn Header="{DynamicResource Common.Operation}" Width="Auto">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
@@ -141,32 +141,32 @@
                                                     </Button.Style>
                                                     <StackPanel Orientation="Horizontal">
                                                         <iconPacks:PackIconMaterial Kind="Reload" Width="10" Height="10" Margin="0,0,4,0" VerticalAlignment="Center" />
-                                                        <TextBlock Text="重试" FontSize="11" VerticalAlignment="Center" />
+                                                        <TextBlock Text="{DynamicResource PrintHistory.Retry}" FontSize="11" VerticalAlignment="Center" />
                                                     </StackPanel>
                                                 </Button>
                                             </StackPanel>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTemplateColumn Header="状态" Width="96" SortMemberPath="Status">
+                                <DataGridTemplateColumn Header="{DynamicResource Common.Status}" Width="96" SortMemberPath="Status">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <ContentControl Content="{Binding StatusText}" ContentTemplate="{StaticResource AppStatusBadgeTemplate}" />
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTextColumn Header="创建时间" Binding="{Binding CreateTime, StringFormat=\{0:yyyy-MM-dd HH:mm:ss\}}" Width="170" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
-                                <DataGridTextColumn Header="打印时间" Binding="{Binding PrintTime, StringFormat=\{0:yyyy-MM-dd HH:mm:ss\}}" Width="170" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
-                                <DataGridTextColumn Header="模板名称" Binding="{Binding TemplateName}" Width="160" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
-                                <DataGridTextColumn Header="打印张数" Binding="{Binding SelectedRowCount}" Width="80" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
-                                <DataGridTextColumn Header="打印机" Binding="{Binding PrinterNameText}" Width="150" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
-                                <DataGridTextColumn Header="操作人" Binding="{Binding OperatorName}" Width="100" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
-                                <DataGridTextColumn Header="错误信息" Binding="{Binding ErrorMessage}" Width="*" MinWidth="180" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
+                                <DataGridTextColumn Header="{DynamicResource PrintHistory.CreateTime}" Binding="{Binding CreateTime, StringFormat=\{0:yyyy-MM-dd HH:mm:ss\}}" Width="170" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
+                                <DataGridTextColumn Header="{DynamicResource PrintHistory.PrintTime}" Binding="{Binding PrintTime, StringFormat=\{0:yyyy-MM-dd HH:mm:ss\}}" Width="170" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
+                                <DataGridTextColumn Header="{DynamicResource PrintHistory.TemplateName}" Binding="{Binding TemplateName}" Width="160" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
+                                <DataGridTextColumn Header="{DynamicResource PrintHistory.PrintCount}" Binding="{Binding SelectedRowCount}" Width="80" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
+                                <DataGridTextColumn Header="{DynamicResource PrintCenter.Printer}" Binding="{Binding PrinterNameText}" Width="150" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
+                                <DataGridTextColumn Header="{DynamicResource PrintCenter.Operator}" Binding="{Binding OperatorName}" Width="100" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
+                                <DataGridTextColumn Header="{DynamicResource PrintHistory.ErrorMessage}" Binding="{Binding ErrorMessage}" Width="*" MinWidth="180" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
                             </DataGrid.Columns>
                         </DataGrid>
                         <Border Grid.Row="1" Padding="0,8,0,0" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" Margin="8,8,8,8">
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                <TextBlock Text="每页" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                <TextBlock Text="{DynamicResource Common.PageSize}" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                                 <ComboBox x:Name="JobPageSizeBox" Width="68" SelectedIndex="1" SelectionChanged="JobPageSizeBox_SelectionChanged" Margin="0,0,16,0" VerticalAlignment="Center">
                                     <ComboBoxItem Content="10" />
                                     <ComboBoxItem Content="20" />
@@ -192,7 +192,7 @@
                             <Border Background="{DynamicResource RegionBrush}" Opacity="0.75" CornerRadius="6" />
                             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <hc:LoadingCircle Width="36" Height="36" Foreground="{DynamicResource PrimaryBrush}" />
-                                <TextBlock Text="正在读取打印任务..." Margin="0,10,0,0" HorizontalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" />
+                                <TextBlock Text="{DynamicResource PrintHistory.LoadingJob}" Margin="0,10,0,0" HorizontalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" />
                             </StackPanel>
                         </Grid>
                         <!-- 暂无打印任务空状态 -->
@@ -203,10 +203,10 @@
                                 <iconPacks:PackIconMaterial Kind="History" Style="{StaticResource AppEmptyStateIconStyle}" />
                             </Border>
                             <TextBlock x:Name="JobEmptyText"
-                                       Text="暂无打印任务"
+                                       Text="{DynamicResource PrintHistory.EmptyJobTitle}"
                                        Style="{StaticResource AppEmptyStateTitleStyle}"
                                        Visibility="Collapsed" />
-                            <TextBlock Text="完成预览、打印或重试后，任务记录会出现在这里。"
+                            <TextBlock Text="{DynamicResource PrintHistory.EmptyJobHint}"
                                        Style="{StaticResource AppEmptyStateHintStyle}" />
                         </StackPanel>
                     </Grid>
@@ -222,10 +222,10 @@
                 </Grid.RowDefinitions>
 
                 <DockPanel Grid.Row="0" Margin="0,0,0,8" LastChildFill="False">
-                    <TextBlock DockPanel.Dock="Left" Style="{StaticResource SectionTitleStyle}" Text="打印明细" Margin="4,0,16,0" />
+                    <TextBlock DockPanel.Dock="Left" Style="{StaticResource SectionTitleStyle}" Text="{DynamicResource PrintHistory.PrintDetails}" Margin="4,0,16,0" />
                     <WrapPanel DockPanel.Dock="Right" HorizontalAlignment="Right">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,8,0">
-                            <TextBlock Style="{StaticResource FormLabelStyle}" Text="关键词" />
+                            <TextBlock Style="{StaticResource FormLabelStyle}" Text="{DynamicResource Common.Keyword}" />
                             <TextBox x:Name="RowSearchBox"
                                      Width="180"
                                      VerticalAlignment="Center"
@@ -234,13 +234,13 @@
                         <Button  Style="{StaticResource AppSecondaryButtonStyle}" Click="RowFilter_Click" Margin="0,0,8,0" auth:PermissionAssist.PermissionKey="Button.PrintHistory.Search">
         <StackPanel Orientation="Horizontal">
             <iconPacks:PackIconMaterial Kind="Magnify" Margin="0,0,6,0" VerticalAlignment="Center" />
-            <TextBlock Text="查询" VerticalAlignment="Center" />
+            <TextBlock Text="{DynamicResource Common.Search}" VerticalAlignment="Center" />
         </StackPanel>
     </Button>
                         <Button  Style="{StaticResource AppGhostButtonStyle}" Click="ClearRowFilter_Click" auth:PermissionAssist.PermissionKey="Button.PrintHistory.Search">
         <StackPanel Orientation="Horizontal">
             <iconPacks:PackIconMaterial Kind="FilterRemoveOutline" Margin="0,0,6,0" VerticalAlignment="Center" />
-            <TextBlock Text="清空" VerticalAlignment="Center" />
+            <TextBlock Text="{DynamicResource Common.Clear}" VerticalAlignment="Center" />
         </StackPanel>
     </Button>
                     </WrapPanel>
@@ -266,15 +266,15 @@
                                 <iconPacks:PackIconMaterial Kind="FormatListText" Style="{StaticResource AppEmptyStateIconStyle}" />
                             </Border>
                             <TextBlock x:Name="RowEmptyText"
-                                       Text="请选择打印任务查看明细"
+                                       Text="{DynamicResource PrintHistory.EmptyRowsTitle}"
                                        Style="{StaticResource AppEmptyStateTitleStyle}"
                                        Visibility="Collapsed" />
-                            <TextBlock Text="选择打印任务后，可查看本次任务包含的历史打印行。"
+                            <TextBlock Text="{DynamicResource PrintHistory.EmptyRowsHint}"
                                        Style="{StaticResource AppEmptyStateHintStyle}" />
                         </StackPanel>
                         <Border Grid.Row="1" Padding="0,8,0,0" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" Margin="8,8,8,8">
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                <TextBlock Text="每页" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                <TextBlock Text="{DynamicResource Common.PageSize}" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                                 <ComboBox x:Name="RowPageSizeBox" Width="68" SelectedIndex="1" SelectionChanged="RowPageSizeBox_SelectionChanged" Margin="0,0,16,0" VerticalAlignment="Center">
                                     <ComboBoxItem Content="20" />
                                     <ComboBoxItem Content="50" />
@@ -301,7 +301,7 @@
                             <Border Background="{DynamicResource RegionBrush}" Opacity="0.75" CornerRadius="6" />
                             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <hc:LoadingCircle Width="36" Height="36" Foreground="{DynamicResource PrimaryBrush}" />
-                                <TextBlock Text="正在加载明细..." Margin="0,10,0,0" HorizontalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" />
+                                <TextBlock Text="{DynamicResource PrintHistory.LoadingRows}" Margin="0,10,0,0" HorizontalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" />
                             </StackPanel>
                         </Grid>
                     </Grid>

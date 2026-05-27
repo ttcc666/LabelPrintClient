@@ -25,19 +25,19 @@ public partial class InitialAdminWindow : HandyControl.Controls.Window
 
         if (string.IsNullOrWhiteSpace(userName))
         {
-            AppMessageBox.Warning("用户名不能为空。");
+            AppMessageBox.Warning(AppLanguageService.GetString("Account.UserNameRequired"));
             return;
         }
 
         if (password.Length < 6)
         {
-            AppMessageBox.Warning("密码至少 6 位。");
+            AppMessageBox.Warning(AppLanguageService.GetString("Account.PasswordTooShort"));
             return;
         }
 
         if (!string.Equals(password, ConfirmPasswordBox.Password, StringComparison.Ordinal))
         {
-            AppMessageBox.Warning("两次输入的密码不一致。");
+            AppMessageBox.Warning(AppLanguageService.GetString("Account.PasswordMismatch"));
             return;
         }
 
@@ -45,12 +45,12 @@ public partial class InitialAdminWindow : HandyControl.Controls.Window
         {
             await PermissionBootstrapper.CreateInitialAdministratorAsync(userName, displayName, password);
             await AuthService.LoginAsync(userName, password);
-            AppMessageBox.Success("系统管理员初始化成功！");
+            AppMessageBox.Success(AppLanguageService.GetString("Account.InitialAdminSuccess"));
             DialogResult = true;
         }
         catch (Exception ex)
         {
-            AppMessageBox.Error(ex.Message, "创建管理员失败");
+            AppMessageBox.Error(ex.Message, AppLanguageService.GetString("Account.CreateAdminFailed"));
         }
     }
 

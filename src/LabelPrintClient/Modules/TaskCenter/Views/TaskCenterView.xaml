@@ -54,36 +54,36 @@
 
                 <TextBlock Grid.Column="0"
                            Style="{StaticResource AppPageTitleStyle}"
-                           Text="任务中心"
+                           Text="{DynamicResource TaskCenter.Title}"
                            Margin="0,0,16,0" />
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,8,0">
-                    <TextBlock Style="{StaticResource AppFormLabelStyle}" Text="类型" />
+                    <TextBlock Style="{StaticResource AppFormLabelStyle}" Text="{DynamicResource TaskCenter.Kind}" />
                     <ComboBox x:Name="KindFilterBox" Width="100" SelectedIndex="0" SelectionChanged="Filter_Changed">
-                        <ComboBoxItem Content="全部类型" Tag="All" />
-                        <ComboBoxItem Content="导入" Tag="Import" />
-                        <ComboBoxItem Content="导出" Tag="Export" />
-                        <ComboBoxItem Content="预览" Tag="Preview" />
-                        <ComboBoxItem Content="设计" Tag="Design" />
-                        <ComboBoxItem Content="打印" Tag="Print" />
-                        <ComboBoxItem Content="上传" Tag="Upload" />
+                        <ComboBoxItem Content="{DynamicResource TaskCenter.AllKinds}" Tag="All" />
+                        <ComboBoxItem Content="{DynamicResource TaskCenter.Import}" Tag="Import" />
+                        <ComboBoxItem Content="{DynamicResource TaskCenter.Export}" Tag="Export" />
+                        <ComboBoxItem Content="{DynamicResource TaskCenter.Preview}" Tag="Preview" />
+                        <ComboBoxItem Content="{DynamicResource TaskCenter.Design}" Tag="Design" />
+                        <ComboBoxItem Content="{DynamicResource TaskCenter.Print}" Tag="Print" />
+                        <ComboBoxItem Content="{DynamicResource TaskCenter.Upload}" Tag="Upload" />
                     </ComboBox>
                 </StackPanel>
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,8,0">
-                    <TextBlock Style="{StaticResource AppFormLabelStyle}" Text="状态" />
+                    <TextBlock Style="{StaticResource AppFormLabelStyle}" Text="{DynamicResource Common.Status}" />
                     <ComboBox x:Name="StatusFilterBox" Width="100" SelectedIndex="0" SelectionChanged="Filter_Changed">
-                        <ComboBoxItem Content="全部状态" Tag="All" />
-                        <ComboBoxItem Content="等待中" Tag="Pending" />
-                        <ComboBoxItem Content="执行中" Tag="Running" />
-                        <ComboBoxItem Content="已完成" Tag="Completed" />
-                        <ComboBoxItem Content="失败" Tag="Failed" />
-                        <ComboBoxItem Content="已取消" Tag="Canceled" />
+                        <ComboBoxItem Content="{DynamicResource TaskCenter.AllStatuses}" Tag="All" />
+                        <ComboBoxItem Content="{DynamicResource TaskCenter.Pending}" Tag="Pending" />
+                        <ComboBoxItem Content="{DynamicResource TaskCenter.Running}" Tag="Running" />
+                        <ComboBoxItem Content="{DynamicResource TaskCenter.Completed}" Tag="Completed" />
+                        <ComboBoxItem Content="{DynamicResource TaskCenter.Failed}" Tag="Failed" />
+                        <ComboBoxItem Content="{DynamicResource TaskCenter.Canceled}" Tag="Canceled" />
                     </ComboBox>
                 </StackPanel>
 
                 <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,8,0">
-                    <TextBlock Style="{StaticResource AppFormLabelStyle}" Text="关键词" />
+                    <TextBlock Style="{StaticResource AppFormLabelStyle}" Text="{DynamicResource Common.Keyword}" />
                     <TextBox x:Name="TaskSearchBox"
                              MinWidth="120"
                              MaxWidth="220"
@@ -96,19 +96,19 @@
                     <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="ApplyFilter_Click" Margin="0,0,8,0" auth:PermissionAssist.PermissionKey="Button.TaskCenter.Search">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="Magnify" Margin="0,0,6,0" VerticalAlignment="Center" />
-                            <TextBlock Text="查询" VerticalAlignment="Center" />
+                            <TextBlock Text="{DynamicResource Common.Search}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
                     <Button Style="{StaticResource AppGhostButtonStyle}" Click="ClearFilter_Click" Margin="0,0,8,0" auth:PermissionAssist.PermissionKey="Button.TaskCenter.Search">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="FilterRemoveOutline" Margin="0,0,6,0" VerticalAlignment="Center" />
-                            <TextBlock Text="清空" VerticalAlignment="Center" />
+                            <TextBlock Text="{DynamicResource Common.Clear}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
                     <Button Style="{StaticResource AppDangerButtonStyle}" Click="ClearCompleted_Click" Margin="0" auth:PermissionAssist.PermissionKey="Button.TaskCenter.ClearCompleted">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="TrashCanOutline" Margin="0,0,6,0" VerticalAlignment="Center" />
-                            <TextBlock Text="清理已结束" VerticalAlignment="Center" />
+                            <TextBlock Text="{DynamicResource TaskCenter.ClearCompleted}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
                 </StackPanel>
@@ -121,7 +121,7 @@
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
-            <TextBlock Grid.Row="0" Style="{StaticResource SectionTitleStyle}" Text="后台任务" />
+            <TextBlock Grid.Row="0" Style="{StaticResource SectionTitleStyle}" Text="{DynamicResource TaskCenter.BackgroundTasks}" />
 
             <Border Grid.Row="1" Style="{StaticResource AppDataCardStyle}" VerticalAlignment="Stretch">
                 <Grid>
@@ -133,7 +133,7 @@
                               HorizontalScrollBarVisibility="Auto"
                               VerticalScrollBarVisibility="Auto">
                         <DataGrid.Columns>
-                            <DataGridTemplateColumn Header="类型" Width="82" SortMemberPath="Kind">
+                            <DataGridTemplateColumn Header="{DynamicResource TaskCenter.Kind}" Width="82" SortMemberPath="Kind">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <Border x:Name="KindBadge" CornerRadius="11" HorizontalAlignment="Left" VerticalAlignment="Center" Padding="8,2.5" BorderThickness="1">
@@ -189,15 +189,15 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTemplateColumn Header="状态" Width="96" SortMemberPath="Status">
+                            <DataGridTemplateColumn Header="{DynamicResource Common.Status}" Width="96" SortMemberPath="Status">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <ContentControl Content="{Binding StatusText}" ContentTemplate="{StaticResource AppStatusBadgeTemplate}" />
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTextColumn Header="任务" Binding="{Binding DisplayTitle}" Width="220" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
-                            <DataGridTemplateColumn Header="进度" Width="180">
+                            <DataGridTextColumn Header="{DynamicResource TaskCenter.Task}" Binding="{Binding DisplayTitle}" Width="220" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
+                            <DataGridTemplateColumn Header="{DynamicResource TaskCenter.Progress}" Width="180">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <Grid VerticalAlignment="Center" Margin="0,0,8,0">
@@ -221,10 +221,10 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTextColumn Header="说明" Binding="{Binding Description}" Width="260" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
-                            <DataGridTextColumn Header="创建时间" Binding="{Binding CreateTime, StringFormat=\{0:yyyy-MM-dd HH:mm:ss\}}" Width="170" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
-                            <DataGridTextColumn Header="完成时间" Binding="{Binding FinishTime, StringFormat=\{0:yyyy-MM-dd HH:mm:ss\}}" Width="170" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
-                            <DataGridTextColumn Header="错误" Binding="{Binding ErrorMessage}" Width="*" MinWidth="180" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
+                            <DataGridTextColumn Header="{DynamicResource TaskCenter.Description}" Binding="{Binding Description}" Width="260" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
+                            <DataGridTextColumn Header="{DynamicResource PrintHistory.CreateTime}" Binding="{Binding CreateTime, StringFormat=\{0:yyyy-MM-dd HH:mm:ss\}}" Width="170" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
+                            <DataGridTextColumn Header="{DynamicResource TaskCenter.FinishTime}" Binding="{Binding FinishTime, StringFormat=\{0:yyyy-MM-dd HH:mm:ss\}}" Width="170" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
+                            <DataGridTextColumn Header="{DynamicResource TaskCenter.Error}" Binding="{Binding ErrorMessage}" Width="*" MinWidth="180" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
                         </DataGrid.Columns>
                     </DataGrid>
                     <StackPanel Style="{StaticResource AppDataGridEmptyStatePanelStyle}"
@@ -233,10 +233,10 @@
                             <iconPacks:PackIconMaterial Kind="FormatListText" Style="{StaticResource AppEmptyStateIconStyle}" />
                         </Border>
                         <TextBlock x:Name="EmptyText"
-                                   Text="暂无后台任务"
+                                   Text="{DynamicResource TaskCenter.EmptyTitle}"
                                    Style="{StaticResource AppEmptyStateTitleStyle}"
                                    Visibility="Collapsed" />
-                        <TextBlock Text="导入、导出、预览、设计和打印任务会显示在这里。"
+                        <TextBlock Text="{DynamicResource TaskCenter.EmptyHint}"
                                    Style="{StaticResource AppEmptyStateHintStyle}" />
                     </StackPanel>
                     <!-- 任务加载遮罩层 -->
@@ -244,7 +244,7 @@
                         <Border Background="{DynamicResource RegionBrush}" Opacity="0.75" CornerRadius="6" />
                         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                             <hc:LoadingCircle Width="36" Height="36" Foreground="{DynamicResource PrimaryBrush}" />
-                            <TextBlock Text="正在更新任务日志..." Margin="0,10,0,0" HorizontalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" />
+                            <TextBlock Text="{DynamicResource TaskCenter.Loading}" Margin="0,10,0,0" HorizontalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" />
                         </StackPanel>
                     </Grid>
                 </Grid>

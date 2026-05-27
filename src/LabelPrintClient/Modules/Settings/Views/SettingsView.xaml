@@ -46,7 +46,7 @@
             <DockPanel LastChildFill="True">
                 <TextBlock DockPanel.Dock="Left"
                            Style="{StaticResource AppPageTitleStyle}"
-                           Text="系统配置"
+                           Text="{DynamicResource Settings.Title}"
                            Margin="0,0,20,0" />
                 <TextBlock x:Name="ConfigPathText"
                            VerticalAlignment="Center"
@@ -71,19 +71,19 @@
                         <StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
                                 <iconPacks:PackIconMaterial Kind="Database" Foreground="{DynamicResource PrimaryBrush}" Width="16" Height="16" VerticalAlignment="Center" />
-                                <TextBlock Style="{StaticResource ConfigTitleStyle}" Text="数据源连接配置" />
+                                <TextBlock Style="{StaticResource ConfigTitleStyle}" Text="{DynamicResource Settings.DataSource}" />
                             </StackPanel>
 
                             <StackPanel Margin="0,0,0,14">
-                                <TextBlock Text="运行模式" Style="{StaticResource ConfigLabelStyle}" />
+                                <TextBlock Text="{DynamicResource Settings.RunMode}" Style="{StaticResource ConfigLabelStyle}" />
                                 <ComboBox x:Name="RunModeBox" Width="200" HorizontalAlignment="Left">
-                                    <ComboBoxItem Content="本地数据库 (SQLite)" Tag="LocalSqlite" />
-                                    <ComboBoxItem Content="局域网服务端 (PostgreSQL)" Tag="LanPostgreSql" />
+                                    <ComboBoxItem Content="{DynamicResource Settings.LocalSqlite}" Tag="LocalSqlite" />
+                                    <ComboBoxItem Content="{DynamicResource Settings.LanPostgreSql}" Tag="LanPostgreSql" />
                                 </ComboBox>
                             </StackPanel>
 
                             <StackPanel Margin="0,0,0,14">
-                                <TextBlock Text="SQLite 连接串" Style="{StaticResource ConfigLabelStyle}" />
+                                <TextBlock Text="{DynamicResource Settings.SqliteConnection}" Style="{StaticResource ConfigLabelStyle}" />
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
@@ -93,14 +93,14 @@
                                     <Button Grid.Column="1" Style="{StaticResource AppSecondaryButtonStyle}" Click="TestSqliteConnection_Click" Width="72" auth:PermissionAssist.PermissionKey="Button.Settings.TestConnection">
                                         <StackPanel Orientation="Horizontal">
                                             <iconPacks:PackIconMaterial Kind="Connection" Margin="0,0,4,0" VerticalAlignment="Center" Width="12" Height="12" />
-                                            <TextBlock Text="测试" VerticalAlignment="Center" FontSize="12" />
+                                            <TextBlock Text="{DynamicResource Settings.Test}" VerticalAlignment="Center" FontSize="12" />
                                         </StackPanel>
                                     </Button>
                                 </Grid>
                             </StackPanel>
 
                             <StackPanel Margin="0,0,0,4">
-                                <TextBlock Text="PostgreSQL 连接串" Style="{StaticResource ConfigLabelStyle}" />
+                                <TextBlock Text="{DynamicResource Settings.PostgreSqlConnection}" Style="{StaticResource ConfigLabelStyle}" />
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
@@ -110,7 +110,7 @@
                                     <Button Grid.Column="1" Style="{StaticResource AppSecondaryButtonStyle}" Click="TestPostgreSqlConnection_Click" Width="72" auth:PermissionAssist.PermissionKey="Button.Settings.TestConnection">
                                         <StackPanel Orientation="Horizontal">
                                             <iconPacks:PackIconMaterial Kind="Connection" Margin="0,0,4,0" VerticalAlignment="Center" Width="12" Height="12" />
-                                            <TextBlock Text="测试" VerticalAlignment="Center" FontSize="12" />
+                                            <TextBlock Text="{DynamicResource Settings.Test}" VerticalAlignment="Center" FontSize="12" />
                                         </StackPanel>
                                     </Button>
                                 </Grid>
@@ -123,7 +123,7 @@
                         <StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
                                 <iconPacks:PackIconMaterial Kind="ArchiveOutline" Foreground="{DynamicResource PrimaryBrush}" Width="16" Height="16" VerticalAlignment="Center" />
-                                <TextBlock Style="{StaticResource ConfigTitleStyle}" Text="数据备份 / 恢复" />
+                                <TextBlock Style="{StaticResource ConfigTitleStyle}" Text="{DynamicResource Settings.BackupRestore}" />
                             </StackPanel>
 
                             <TextBlock x:Name="BackupModeText"
@@ -141,7 +141,7 @@
                                         auth:PermissionAssist.PermissionKey="Button.Settings.Backup">
                                     <StackPanel Orientation="Horizontal">
                                         <iconPacks:PackIconMaterial Kind="ArchiveArrowDownOutline" Margin="0,0,6,0" VerticalAlignment="Center" Width="14" Height="14" />
-                                        <TextBlock Text="一键备份" VerticalAlignment="Center" />
+                                        <TextBlock Text="{DynamicResource Settings.Backup}" VerticalAlignment="Center" />
                                     </StackPanel>
                                 </Button>
                                 <Button x:Name="RestoreDataButton"
@@ -150,7 +150,7 @@
                                         auth:PermissionAssist.PermissionKey="Button.Settings.Restore">
                                     <StackPanel Orientation="Horizontal">
                                         <iconPacks:PackIconMaterial Kind="ArchiveArrowUpOutline" Margin="0,0,6,0" VerticalAlignment="Center" Width="14" Height="14" />
-                                        <TextBlock Text="恢复备份" VerticalAlignment="Center" />
+                                        <TextBlock Text="{DynamicResource Settings.Restore}" VerticalAlignment="Center" />
                                     </StackPanel>
                                 </Button>
                             </WrapPanel>
@@ -166,11 +166,11 @@
                         <StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
                                 <iconPacks:PackIconMaterial Kind="PrinterSettings" Foreground="{DynamicResource PrimaryBrush}" Width="16" Height="16" VerticalAlignment="Center" />
-                                <TextBlock Style="{StaticResource ConfigTitleStyle}" Text="打印默认预设" />
+                                <TextBlock Style="{StaticResource ConfigTitleStyle}" Text="{DynamicResource Settings.PrintDefaults}" />
                             </StackPanel>
 
                             <StackPanel Margin="0,0,0,14">
-                                <TextBlock Text="默认物理打印机" Style="{StaticResource ConfigLabelStyle}" />
+                                <TextBlock Text="{DynamicResource Settings.DefaultPrinter}" Style="{StaticResource ConfigLabelStyle}" />
                                 <ComboBox x:Name="DefaultPrinterBox"
                                           infra:SearchableComboBoxBehavior.IsEnabled="True" />
                             </StackPanel>
@@ -181,18 +181,18 @@
                                     <ColumnDefinition Width="1.2*" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0" Margin="0,0,12,0">
-                                    <TextBlock Text="默认打印份数" Style="{StaticResource ConfigLabelStyle}" />
+                                    <TextBlock Text="{DynamicResource Settings.DefaultPrintCopies}" Style="{StaticResource ConfigLabelStyle}" />
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <TextBox x:Name="DefaultPrintCopiesBox" Grid.Column="0" Padding="8,6" />
-                                        <TextBlock Grid.Column="1" Text="份" VerticalAlignment="Center" Margin="8,0,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12.5" />
+                                        <TextBlock Grid.Column="1" Text="{DynamicResource Settings.CopyUnit}" VerticalAlignment="Center" Margin="8,0,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12.5" />
                                     </Grid>
                                 </StackPanel>
                                 <StackPanel Grid.Column="1" VerticalAlignment="Bottom" Margin="12,0,0,8">
-                                    <CheckBox x:Name="ConfirmBeforePrintBox" Content="物理打印前进行弹窗确认" VerticalAlignment="Center" />
+                                    <CheckBox x:Name="ConfirmBeforePrintBox" Content="{DynamicResource Settings.ConfirmBeforePrint}" VerticalAlignment="Center" />
                                 </StackPanel>
                             </Grid>
                         </StackPanel>
@@ -203,11 +203,11 @@
                         <StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
                                 <iconPacks:PackIconMaterial Kind="PaletteOutline" Foreground="{DynamicResource PrimaryBrush}" Width="16" Height="16" VerticalAlignment="Center" />
-                                <TextBlock Style="{StaticResource ConfigTitleStyle}" Text="基础与个性化" />
+                                <TextBlock Style="{StaticResource ConfigTitleStyle}" Text="{DynamicResource Settings.Personalization}" />
                             </StackPanel>
 
                             <StackPanel Margin="0,0,0,14">
-                                <TextBlock Text="本地模板保存目录" Style="{StaticResource ConfigLabelStyle}" />
+                                <TextBlock Text="{DynamicResource Settings.TemplateFolder}" Style="{StaticResource ConfigLabelStyle}" />
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
@@ -217,23 +217,31 @@
                                     <Button Grid.Column="1" Style="{StaticResource AppSecondaryButtonStyle}" Click="BrowseTemplateFolder_Click" Width="72" auth:PermissionAssist.PermissionKey="Button.Settings.BrowseTemplateFolder">
                                         <StackPanel Orientation="Horizontal">
                                             <iconPacks:PackIconMaterial Kind="FolderOpen" Margin="0,0,4,0" VerticalAlignment="Center" Width="12" Height="12" />
-                                            <TextBlock Text="浏览" VerticalAlignment="Center" FontSize="12" />
+                                            <TextBlock Text="{DynamicResource Settings.Browse}" VerticalAlignment="Center" FontSize="12" />
                                         </StackPanel>
                                     </Button>
                                 </Grid>
                             </StackPanel>
 
                             <StackPanel Margin="0,0,0,14">
-                                <TextBlock Text="当前登录用户" Style="{StaticResource ConfigLabelStyle}" />
+                                <TextBlock Text="{DynamicResource Settings.CurrentUser}" Style="{StaticResource ConfigLabelStyle}" />
                                 <TextBox x:Name="OperatorNameBox" Padding="8,6" IsReadOnly="True" />
                             </StackPanel>
 
                             <StackPanel Margin="0,0,0,4">
-                                <TextBlock Text="应用主题方式" Style="{StaticResource ConfigLabelStyle}" />
+                                <TextBlock Text="{DynamicResource Settings.ThemeMode}" Style="{StaticResource ConfigLabelStyle}" />
                                 <ComboBox x:Name="ThemeModeBox" Width="200" HorizontalAlignment="Left">
-                                    <ComboBoxItem Content="跟随系统" Tag="System" />
-                                    <ComboBoxItem Content="优雅浅色" Tag="Light" />
-                                    <ComboBoxItem Content="深邃暗色" Tag="Dark" />
+                                    <ComboBoxItem Content="{DynamicResource Settings.ThemeSystem}" Tag="System" />
+                                    <ComboBoxItem Content="{DynamicResource Settings.ThemeLight}" Tag="Light" />
+                                    <ComboBoxItem Content="{DynamicResource Settings.ThemeDark}" Tag="Dark" />
+                                </ComboBox>
+                            </StackPanel>
+
+                            <StackPanel Margin="0,12,0,4">
+                                <TextBlock Text="{DynamicResource Settings.Language}" Style="{StaticResource ConfigLabelStyle}" />
+                                <ComboBox x:Name="LanguageBox" Width="200" HorizontalAlignment="Left">
+                                    <ComboBoxItem Content="{DynamicResource Settings.LanguageZhCn}" Tag="ZhCn" />
+                                    <ComboBoxItem Content="{DynamicResource Settings.LanguageEnUs}" Tag="EnUs" />
                                 </ComboBox>
                             </StackPanel>
                         </StackPanel>
@@ -258,7 +266,7 @@
                                                        Margin="0,2,8,0" 
                                                        VerticalAlignment="Top"/>
                             <TextBlock Grid.Column="1" 
-                                       Text="保存后会写入 appsettings.json；运行模式、连接串、模板目录等配置需要重启应用后完全生效。" 
+                                       Text="{DynamicResource Settings.RestartHint}" 
                                        TextWrapping="Wrap" 
                                        FontSize="12" 
                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
@@ -279,13 +287,13 @@
                     <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="Reload_Click" Margin="0,0,8,0" auth:PermissionAssist.PermissionKey="Button.Settings.Reload">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="Reload" Margin="0,0,6,0" VerticalAlignment="Center" />
-                            <TextBlock Text="重新加载" VerticalAlignment="Center" />
+                            <TextBlock Text="{DynamicResource Settings.Reload}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
                     <Button Style="{StaticResource AppPrimaryButtonStyle}" Click="Save_Click" auth:PermissionAssist.PermissionKey="Button.Settings.Save">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="ContentSave" Margin="0,0,6,0" VerticalAlignment="Center" />
-                            <TextBlock Text="保存配置" VerticalAlignment="Center" />
+                            <TextBlock Text="{DynamicResource Settings.SaveConfig}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
                 </WrapPanel>

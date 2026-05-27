@@ -31,9 +31,14 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
     public TemplateManageView()
     {
         InitializeComponent();
-        RunModeText.Text = App.Settings.RunMode.ToString();
+        RunModeText.Text = GetRunModeText();
         Loaded += async (_, _) => await RefreshAllAsync();
-        Unloaded += (_, _) => CancelPendingLoads();
+        Loaded += (_, _) => AppLanguageService.LanguageChanged += AppLanguageService_LanguageChanged;
+        Unloaded += (_, _) =>
+        {
+            CancelPendingLoads();
+            AppLanguageService.LanguageChanged -= AppLanguageService_LanguageChanged;
+        };
     }
 
     private LabelCategory? SelectedCategory => CategoryGrid.SelectedItem as LabelCategory;
@@ -119,7 +124,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         }
         catch (Exception ex)
         {
-            AppMessageBox.Show($"刷新失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            AppMessageBox.Show(AppLanguageService.Format("Template.RefreshFailed", ex.Message), AppLanguageService.GetString("Common.Error"), MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -191,7 +196,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         }
         catch (Exception ex)
         {
-            AppMessageBox.Show($"加载模板失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            AppMessageBox.Show(AppLanguageService.Format("Template.LoadTemplatesFailed", ex.Message), AppLanguageService.GetString("Common.Error"), MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -246,7 +251,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         }
         catch (Exception ex)
         {
-            AppMessageBox.Show($"加载字段失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            AppMessageBox.Show(AppLanguageService.Format("Template.LoadFieldsFailed", ex.Message), AppLanguageService.GetString("Common.Error"), MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -267,7 +272,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         var category = win.Category;
         if (await FindCategoryAsync(category.Name, 0) != null)
         {
-            AppMessageBox.Show("分类名称已存在，请勿重复新增。", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppMessageBox.Show(AppLanguageService.GetString("Template.CategoryNameExists"), AppLanguageService.GetString("Common.Prompt"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -285,7 +290,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         var category = SelectedCategory;
         if (category == null)
         {
-            AppMessageBox.Show("请先选择要编辑的分类。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+            AppMessageBox.Show(AppLanguageService.GetString("Template.SelectCategoryToEdit"), AppLanguageService.GetString("Common.Prompt"), MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -301,7 +306,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         var existing = await FindCategoryAsync(edited.Name, 0);
         if (existing != null && existing.Id != edited.Id)
         {
-            AppMessageBox.Show("分类名称已存在，无法重命名为此名称。", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppMessageBox.Show(AppLanguageService.GetString("Template.CategoryRenameExists"), AppLanguageService.GetString("Common.Prompt"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -316,11 +321,11 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         var category = SelectedCategory;
         if (category == null)
         {
-            AppMessageBox.Show("请先选择要删除的分类。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+            AppMessageBox.Show(AppLanguageService.GetString("Template.SelectCategoryToDelete"), AppLanguageService.GetString("Common.Prompt"), MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
-        if (AppMessageBox.Show($"确定删除分类 {category.Name}？\n这将会同步删除该分类下的所有模板和关联字段！该操作不可恢复！", "确认删除", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+        if (AppMessageBox.Show(AppLanguageService.Format("Template.DeleteCategoryConfirm", category.Name), AppLanguageService.GetString("Template.DeleteCategoryTitle"), MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
         {
             return;
         }
@@ -356,7 +361,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         var category = SelectedCategory;
         if (category == null)
         {
-            AppMessageBox.Show("请先选择分类，再新增模板。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+            AppMessageBox.Show(AppLanguageService.GetString("Template.SelectCategoryBeforeAddTemplate"), AppLanguageService.GetString("Common.Prompt"), MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -371,7 +376,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         var template = win.Template;
         if (await FindTemplateAsync(category.Id, template.Name) != null)
         {
-            AppMessageBox.Show("当前分类下已存在同名模板，请勿重复新增。", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppMessageBox.Show(AppLanguageService.GetString("Template.TemplateNameExists"), AppLanguageService.GetString("Common.Prompt"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -404,7 +409,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         var template = SelectedTemplate;
         if (template == null)
         {
-            AppMessageBox.Show("请先选择要编辑的模板。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+            AppMessageBox.Show(AppLanguageService.GetString("Template.SelectTemplateToEdit"), AppLanguageService.GetString("Common.Prompt"), MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -426,7 +431,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         var existing = await FindTemplateAsync(edited.CategoryId, edited.Name);
         if (existing != null && existing.Id != edited.Id)
         {
-            AppMessageBox.Show("当前分类下已存在同名模板，无法重命名为此名称。", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppMessageBox.Show(AppLanguageService.GetString("Template.TemplateRenameExists"), AppLanguageService.GetString("Common.Prompt"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -472,8 +477,8 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         if (win.TemplateModeChanged)
         {
             AppMessageBox.Show(
-                "模板模式已变更，系统固定字段可能已调整。请及时打开模板设计器更新 MRT 模板中的字段绑定，避免打印时仍引用旧字段。",
-                "更新模板提醒",
+                AppLanguageService.GetString("Template.ModeChangedReminder"),
+                AppLanguageService.GetString("Template.ModeChangedReminderTitle"),
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
         }
@@ -488,11 +493,11 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         var template = SelectedTemplate;
         if (template == null)
         {
-            AppMessageBox.Show("请先选择要删除的模板。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+            AppMessageBox.Show(AppLanguageService.GetString("Template.SelectTemplateToDelete"), AppLanguageService.GetString("Common.Prompt"), MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
-        if (AppMessageBox.Show($"确定删除模板 {template.Name}？\n这将同步删除该模板下的所有字段，且不可恢复！", "确认删除", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+        if (AppMessageBox.Show(AppLanguageService.Format("Template.DeleteTemplateConfirm", template.Name), AppLanguageService.GetString("Template.DeleteTemplateTitle"), MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
         {
             return;
         }
@@ -528,7 +533,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         var template = SelectedTemplate;
         if (template == null)
         {
-            AppMessageBox.Show("请先选择模板，再新增字段。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+            AppMessageBox.Show(AppLanguageService.GetString("Template.SelectTemplateBeforeAddField"), AppLanguageService.GetString("Common.Prompt"), MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -548,7 +553,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         var duplicateFieldError = GetDuplicateFieldError(fields, field.FieldName, field.FieldCode, null);
         if (duplicateFieldError != null)
         {
-            AppMessageBox.Show(duplicateFieldError, "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppMessageBox.Show(duplicateFieldError, AppLanguageService.GetString("Common.Prompt"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -574,13 +579,13 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         var field = SelectedField;
         if (template == null || field == null)
         {
-            AppMessageBox.Show("请先选择要编辑的字段。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+            AppMessageBox.Show(AppLanguageService.GetString("Template.SelectFieldToEdit"), AppLanguageService.GetString("Common.Prompt"), MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
         if (TemplateSystemFields.IsManagedSystemField(field.FieldCode))
         {
-            AppMessageBox.Show("系统默认控制字段，不允许修改！", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppMessageBox.Show(AppLanguageService.GetString("Template.ManagedSystemFieldEditDenied"), AppLanguageService.GetString("Common.Prompt"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -599,7 +604,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         var before = fields.FirstOrDefault(x => x.Id == edited.Id);
         if (before == null)
         {
-            AppMessageBox.Show("字段不存在或已被删除，请刷新后重试。", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppMessageBox.Show(AppLanguageService.GetString("Template.FieldMissingRefresh"), AppLanguageService.GetString("Common.Prompt"), MessageBoxButton.OK, MessageBoxImage.Warning);
             await LoadFieldsAsync();
             return;
         }
@@ -607,13 +612,13 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         var duplicateFieldError = GetDuplicateFieldError(fields, edited.FieldName, edited.FieldCode, edited.Id);
         if (duplicateFieldError != null)
         {
-            AppMessageBox.Show(duplicateFieldError, "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppMessageBox.Show(duplicateFieldError, AppLanguageService.GetString("Common.Prompt"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
         if (!HasFieldMaintenanceChanges(before, edited))
         {
-            AppMessageBox.Show("字段内容未变化。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+            AppMessageBox.Show(AppLanguageService.GetString("Template.FieldNoChanges"), AppLanguageService.GetString("Common.Prompt"), MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -664,17 +669,17 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         var field = SelectedField;
         if (field == null)
         {
-            AppMessageBox.Show("请先选择要删除的字段。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+            AppMessageBox.Show(AppLanguageService.GetString("Template.SelectFieldToDelete"), AppLanguageService.GetString("Common.Prompt"), MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
         if (TemplateSystemFields.IsManagedSystemField(field.FieldCode))
         {
-            AppMessageBox.Show("系统默认控制字段，不允许删除！", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppMessageBox.Show(AppLanguageService.GetString("Template.ManagedSystemFieldDeleteDenied"), AppLanguageService.GetString("Common.Prompt"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
-        if (AppMessageBox.Show($"确定删除字段 {field.FieldName}？", "确认", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+        if (AppMessageBox.Show(AppLanguageService.Format("Template.DeleteFieldConfirm", field.FieldName), AppLanguageService.GetString("Common.Confirm"), MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
         {
             return;
         }
@@ -682,7 +687,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         var template = SelectedTemplate;
         if (template == null)
         {
-            AppMessageBox.Show("请先选择模板。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+            AppMessageBox.Show(AppLanguageService.GetString("Template.SelectTemplateOnly"), AppLanguageService.GetString("Common.Prompt"), MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -692,7 +697,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         var before = beforeList.FirstOrDefault();
         if (before == null)
         {
-            AppMessageBox.Show("字段不存在或已被删除，请刷新后重试。", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppMessageBox.Show(AppLanguageService.GetString("Template.FieldMissingRefresh"), AppLanguageService.GetString("Common.Prompt"), MessageBoxButton.OK, MessageBoxImage.Warning);
             await LoadFieldsAsync();
             return;
         }
@@ -727,7 +732,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         var template = SelectedTemplate;
         if (template == null)
         {
-            AppMessageBox.Show("请先选择模板，再查看字段履历。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+            AppMessageBox.Show(AppLanguageService.GetString("Template.SelectTemplateBeforeHistory"), AppLanguageService.GetString("Common.Prompt"), MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -749,26 +754,26 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         var template = SelectedTemplate;
         if (template == null)
         {
-            AppMessageBox.Show("请先选择模板。");
+            AppMessageBox.Show(AppLanguageService.GetString("Template.SelectTemplateOnly"));
             return;
         }
 
         var dialog = new Microsoft.Win32.OpenFileDialog
         {
-            Filter = "STI 报表模板|*.mrt|所有文件|*.*"
+            Filter = AppLanguageService.GetString("Template.StiTemplateFilter")
         };
         if (dialog.ShowDialog() != true) return;
 
         try
         {
-            await RunQueuedAsync(sender, BackgroundTaskKind.Upload, "正在上传模板...", context =>
+            await RunQueuedAsync(sender, BackgroundTaskKind.Upload, AppLanguageService.GetString("Template.Uploading"), context =>
                 UploadTemplateAsync(template, dialog.FileName, context.CancellationToken));
             await LoadTemplatesAsync();
-            AppMessageBox.Show("模板已保存。");
+            AppMessageBox.Show(AppLanguageService.GetString("Template.TemplateSaved"));
         }
         catch (Exception ex)
         {
-            AppMessageBox.Show($"模板保存失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            AppMessageBox.Show(AppLanguageService.Format("Template.TemplateSaveFailed", ex.Message), AppLanguageService.GetString("Common.Error"), MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -842,7 +847,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         var template = SelectedTemplate;
         if (template == null)
         {
-            AppMessageBox.Show("请先选择模板。");
+            AppMessageBox.Show(AppLanguageService.GetString("Template.SelectTemplateOnly"));
             return;
         }
 
@@ -853,7 +858,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
 
         if (fields.Count == 0)
         {
-            AppMessageBox.Show("请先维护模板字段，设计器会根据字段注册 LabelData 数据源。");
+            AppMessageBox.Show(AppLanguageService.GetString("Template.FieldsRequiredBeforeDesign"));
             return;
         }
 
@@ -861,14 +866,14 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         {
             var storage = LabelTemplateStorageFactory.Create(App.Settings.RunMode);
             var designer = new StiTemplateDesignerService(storage);
-            await RunQueuedAsync(sender, BackgroundTaskKind.Design, "正在打开设计器...", context =>
+            await RunQueuedAsync(sender, BackgroundTaskKind.Design, AppLanguageService.GetString("Template.OpeningDesigner"), context =>
                 designer.DesignAsync(template, fields, context.CancellationToken));
             await LoadTemplatesAsync();
-            AppMessageBox.Show("模板设计已保存。");
+            AppMessageBox.Show(AppLanguageService.GetString("Template.DesignSaved"));
         }
         catch (Exception ex)
         {
-            AppMessageBox.Show($"打开设计器失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            AppMessageBox.Show(AppLanguageService.Format("Template.OpenDesignerFailed", ex.Message), AppLanguageService.GetString("Common.Error"), MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -1294,7 +1299,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         }
 
         await RefreshAllAsync();
-        AppMessageBox.Show("示例分类、模板（含物理 MRT 文件）、预置测试导入批次及已打印重打历史已完美初始化！\n您可以直接前往打印中心点预览/打印，或前往打印记录测试区间补打！");
+        AppMessageBox.Show(AppLanguageService.GetString("Template.DemoSeedCompleted"));
     }
 
     private static LabelTemplateField NewField(long templateId, string name, string code, string type, bool required, int sort, string remark)
@@ -1349,7 +1354,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
             return;
         }
 
-        TemplatePageInfoText.Text = $"{_templateCurrentPage} / {_templateTotalPages}，共 {_templateTotalRows} 个";
+        TemplatePageInfoText.Text = AppLanguageService.Format("Template.PageInfo", _templateCurrentPage, _templateTotalPages, _templateTotalRows);
 
         var hasRows = _templateTotalRows > 0;
         TemplateFirstPageButton.IsEnabled = hasRows && _templateCurrentPage > 1;
@@ -1368,14 +1373,18 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
 
         if (TemplateEmptyText != null)
         {
-            TemplateEmptyText.Text = SelectedCategory == null ? "请选择分类查看模板" : "当前分类暂无模板";
+            TemplateEmptyText.Text = SelectedCategory == null
+                ? AppLanguageService.GetString("Template.SelectCategoryForTemplates")
+                : AppLanguageService.GetString("Template.NoTemplatesInCategory");
             TemplateEmptyText.Visibility = _templateTotalRows == 0 ? Visibility.Visible : Visibility.Collapsed;
         }
 
         if (FieldEmptyText != null)
         {
             var fieldCount = FieldGrid?.ItemsSource?.Cast<object>().Count() ?? 0;
-            FieldEmptyText.Text = SelectedTemplate == null ? "请选择模板查看字段" : "当前模板暂无字段";
+            FieldEmptyText.Text = SelectedTemplate == null
+                ? AppLanguageService.GetString("Template.SelectTemplateForFields")
+                : AppLanguageService.GetString("Template.NoFieldsInTemplate");
             FieldEmptyText.Visibility = fieldCount == 0 ? Visibility.Visible : Visibility.Collapsed;
         }
     }
@@ -1448,7 +1457,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         var field = SelectedField;
         if (template == null || field == null)
         {
-            AppMessageBox.Show("请先选择字段。");
+            AppMessageBox.Show(AppLanguageService.GetString("Template.SelectFieldOnly"));
             return;
         }
 
@@ -1629,7 +1638,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
     private async Task RunQueuedAsync(object sender, BackgroundTaskKind kind, string runningText, Func<BackgroundTaskContext, Task> operation)
     {
         var element = sender as UIElement;
-        var modeText = App.Settings.RunMode.ToString();
+        var modeText = GetRunModeText();
 
         if (element != null)
             element.IsEnabled = false;
@@ -1645,6 +1654,25 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
                 element.IsEnabled = true;
             RunModeText.Text = modeText;
         }
+    }
+
+    private void AppLanguageService_LanguageChanged(object? sender, AppLanguage language)
+    {
+        RunModeText.Text = GetRunModeText();
+        CategoryGrid?.Items.Refresh();
+        TemplateGrid?.Items.Refresh();
+        FieldGrid?.Items.Refresh();
+        UpdateEmptyStates();
+    }
+
+    private static string GetRunModeText()
+    {
+        return App.Settings.RunMode switch
+        {
+            AppRunMode.LocalSqlite => AppLanguageService.GetString("Settings.LocalSqlite"),
+            AppRunMode.LanPostgreSql => AppLanguageService.GetString("Settings.LanPostgreSql"),
+            _ => App.Settings.RunMode.ToString()
+        };
     }
 
     private static CancellationToken ResetCancellation(ref CancellationTokenSource? cts)

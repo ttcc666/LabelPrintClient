@@ -3,7 +3,7 @@
            xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
            xmlns:hc="https://handyorg.github.io/handycontrol"
            xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
-           Title="用户维护"
+           Title="{DynamicResource Account.UserEditTitle}"
            Width="420"
            Height="420"
            WindowStartupLocation="CenterOwner"
@@ -18,26 +18,26 @@
         </Grid.RowDefinitions>
 
         <!-- 顶部标题 -->
-        <TextBlock x:Name="TitleText" Grid.Row="0" Style="{StaticResource AppPageTitleStyle}" Text="新增用户" Margin="0,0,0,16" />
+        <TextBlock x:Name="TitleText" Grid.Row="0" Style="{StaticResource AppPageTitleStyle}" Text="{DynamicResource Account.UserAddTitle}" Margin="0,0,0,16" />
 
         <!-- 主体表单区域 -->
         <StackPanel Grid.Row="1">
             <StackPanel Margin="0,0,0,12">
-                <TextBlock Text="用户名" Style="{StaticResource AppFormLabelStyle}" Margin="0,0,0,6" FontWeight="SemiBold" />
-                <TextBox x:Name="UserNameBox" Padding="10,8" hc:InfoElement.Placeholder="请输入唯一登录账号，例如 zhangsan" />
+                <TextBlock Text="{DynamicResource Account.UserName}" Style="{StaticResource AppFormLabelStyle}" Margin="0,0,0,6" FontWeight="SemiBold" />
+                <TextBox x:Name="UserNameBox" Padding="10,8" hc:InfoElement.Placeholder="{DynamicResource Account.UserNamePlaceholder}" />
             </StackPanel>
 
             <StackPanel Margin="0,0,0,12">
-                <TextBlock Text="显示名" Style="{StaticResource AppFormLabelStyle}" Margin="0,0,0,6" FontWeight="SemiBold" />
-                <TextBox x:Name="DisplayNameBox" Padding="10,8" hc:InfoElement.Placeholder="请输入便于识别的名字，例如 张三" />
+                <TextBlock Text="{DynamicResource Account.DisplayName}" Style="{StaticResource AppFormLabelStyle}" Margin="0,0,0,6" FontWeight="SemiBold" />
+                <TextBox x:Name="DisplayNameBox" Padding="10,8" hc:InfoElement.Placeholder="{DynamicResource Account.DisplayNamePlaceholder}" />
             </StackPanel>
 
             <StackPanel Margin="0,0,0,14">
-                <TextBlock x:Name="PasswordLabel" Text="初始密码" Style="{StaticResource AppFormLabelStyle}" Margin="0,0,0,6" FontWeight="SemiBold" />
-                <PasswordBox x:Name="PasswordBox" Padding="10,8" hc:InfoElement.Placeholder="请输入初始登录密码，不少于6位" />
+                <TextBlock x:Name="PasswordLabel" Text="{DynamicResource Account.InitialPassword}" Style="{StaticResource AppFormLabelStyle}" Margin="0,0,0,6" FontWeight="SemiBold" />
+                <PasswordBox x:Name="PasswordBox" Padding="10,8" hc:InfoElement.Placeholder="{DynamicResource Account.InitialPasswordPlaceholder}" />
             </StackPanel>
 
-            <CheckBox x:Name="IsEnabledBox" Content="启用该用户" IsChecked="True" VerticalAlignment="Center" />
+            <CheckBox x:Name="IsEnabledBox" Content="{DynamicResource Account.EnableUser}" IsChecked="True" VerticalAlignment="Center" />
         </StackPanel>
 
         <!-- 底部按钮 -->
@@ -45,13 +45,13 @@
             <Button Width="90" Style="{StaticResource AppDialogPrimaryButtonStyle}" Click="Ok_Click" Margin="0,0,10,0">
                 <StackPanel Orientation="Horizontal">
                     <iconPacks:PackIconMaterial Kind="Check" Width="14" Height="14" Margin="0,0,6,0" VerticalAlignment="Center" />
-                    <TextBlock Text="确定" VerticalAlignment="Center" />
+                    <TextBlock Text="{DynamicResource Common.Ok}" VerticalAlignment="Center" />
                 </StackPanel>
             </Button>
             <Button Width="90" Style="{StaticResource AppDialogCancelButtonStyle}" Click="Cancel_Click">
                 <StackPanel Orientation="Horizontal">
                     <iconPacks:PackIconMaterial Kind="Close" Width="14" Height="14" Margin="0,0,6,0" VerticalAlignment="Center" />
-                    <TextBlock Text="取消" VerticalAlignment="Center" />
+                    <TextBlock Text="{DynamicResource Common.Cancel}" VerticalAlignment="Center" />
                 </StackPanel>
             </Button>
         </StackPanel>

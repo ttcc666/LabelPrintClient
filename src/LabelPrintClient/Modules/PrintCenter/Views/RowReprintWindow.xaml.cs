@@ -53,9 +53,9 @@ public partial class RowReprintWindow : Window
 
         ProductInfoText.Text = summaryList.Count > 0 
             ? string.Join(" | ", summaryList.Take(2)) 
-            : "当前导入数据";
+            : AppLanguageService.GetString("Reprint.CurrentImportData");
 
-        BatchInfoText.Text = $"导入批次：{_batch.BatchNo}  (文件: {_batch.ExcelFileName})";
+        BatchInfoText.Text = AppLanguageService.Format("Reprint.BatchInfo", _batch.BatchNo, _batch.ExcelFileName);
     }
 
     private void LoadPrinters()
@@ -124,7 +124,7 @@ public partial class RowReprintWindow : Window
 
             if (_allSerials.Count == 0)
             {
-                AppMessageBox.Show("该物理行数据尚未成功打印生成过序列号，无法补打序列号。", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+                AppMessageBox.Show(AppLanguageService.GetString("Reprint.NoSerialHistory"), AppLanguageService.GetString("Common.Prompt"), MessageBoxButton.OK, MessageBoxImage.Warning);
                 DialogResult = false;
                 Close();
                 return;
@@ -138,7 +138,7 @@ public partial class RowReprintWindow : Window
         }
         catch (Exception ex)
         {
-            AppMessageBox.Show($"加载历史序列号失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            AppMessageBox.Show(AppLanguageService.Format("Reprint.LoadSerialFailed", ex.Message), AppLanguageService.GetString("Common.Error"), MessageBoxButton.OK, MessageBoxImage.Error);
         }
         finally
         {
@@ -152,13 +152,13 @@ public partial class RowReprintWindow : Window
         var printerName = (PrinterNameBox.SelectedItem as string)?.Trim() ?? string.Empty;
         if (string.IsNullOrWhiteSpace(printerName))
         {
-            AppMessageBox.Show("请先选择目标打印机。", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppMessageBox.Show(AppLanguageService.GetString("Reprint.PrinterRequired"), AppLanguageService.GetString("Common.Prompt"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
         if (!int.TryParse(PrintCopiesBox.Text.Trim(), out var copies) || copies < 1 || copies > 999)
         {
-            AppMessageBox.Show("打印份数必须是 1 到 999 之间的整数。", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppMessageBox.Show(AppLanguageService.GetString("Reprint.CopiesRange999"), AppLanguageService.GetString("Common.Prompt"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -169,7 +169,7 @@ public partial class RowReprintWindow : Window
 
             if (string.IsNullOrWhiteSpace(startSerial) || string.IsNullOrWhiteSpace(endSerial))
             {
-                AppMessageBox.Show("请指定有效的起始与结束序列号范围。", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+                AppMessageBox.Show(AppLanguageService.GetString("Reprint.SerialRangeRequired"), AppLanguageService.GetString("Common.Prompt"), MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -178,13 +178,13 @@ public partial class RowReprintWindow : Window
 
             if (startIndex < 0 || endIndex < 0)
             {
-                AppMessageBox.Show("所选序列号不存在于该行历史生成库中，请重新点选。", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+                AppMessageBox.Show(AppLanguageService.GetString("Reprint.SerialNotFound"), AppLanguageService.GetString("Common.Prompt"), MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
             if (endIndex < startIndex)
             {
-                AppMessageBox.Show("补打的结束序列号不能小于起始序列号。", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+                AppMessageBox.Show(AppLanguageService.GetString("Reprint.SerialEndBeforeStart"), AppLanguageService.GetString("Common.Prompt"), MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -208,7 +208,7 @@ public partial class RowReprintWindow : Window
 
             if (SelectedJobRows.Count == 0)
             {
-                AppMessageBox.Show("在指定的起止区间内未匹配到物理明细数据，无法补打。", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+                AppMessageBox.Show(AppLanguageService.GetString("Reprint.NoMatchedRows"), AppLanguageService.GetString("Common.Prompt"), MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
         }

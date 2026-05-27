@@ -38,15 +38,32 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
     private int _rowTotalPages = 1;
     private bool _printersLoaded;
     private string? _rowGridColumnSignature;
+    private IReadOnlyList<LabelTemplateField> _lastRowLoadFields = Array.Empty<LabelTemplateField>();
+    private IReadOnlyList<string> _lastRowLoadExtraKeys = Array.Empty<string>();
+    private IReadOnlyList<string> _lastRowLoadSystemKeys = Array.Empty<string>();
 
     public PrintHistoryView()
     {
         InitializeComponent();
         Loaded += (_, _) => LoadPrinters();
-        Unloaded += (_, _) => CancelPendingLoads();
+        Loaded += (_, _) => AppLanguageService.LanguageChanged += AppLanguageService_LanguageChanged;
+        Unloaded += (_, _) =>
+        {
+            CancelPendingLoads();
+            AppLanguageService.LanguageChanged -= AppLanguageService_LanguageChanged;
+        };
     }
 
     private PrintJobGridItem? SelectedJob => JobGrid.SelectedItem as PrintJobGridItem;
+
+    private void AppLanguageService_LanguageChanged(object? sender, LabelPrintClient.Config.AppLanguage language)
+    {
+        JobGrid?.Items.Refresh();
+        RowGrid?.Items.Refresh();
+        BuildRowGridColumns(_lastRowLoadFields, _lastRowLoadExtraKeys, _lastRowLoadSystemKeys);
+        UpdateSummary();
+        UpdateEmptyStates();
+    }
 
     public void RefreshHistory()
     {
@@ -159,7 +176,7 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
         }
         catch (Exception ex)
         {
-            AppMessageBox.Show($"加载打印记录失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            AppMessageBox.Show(AppLanguageService.Format("PrintHistory.LoadJobsFailed", ex.Message), AppLanguageService.GetString("Common.Error"), MessageBoxButton.OK, MessageBoxImage.Error);
         }
         finally
         {
@@ -232,7 +249,7 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
         }
         catch (Exception ex)
         {
-            AppMessageBox.Show($"加载打印明细失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            AppMessageBox.Show(AppLanguageService.Format("PrintHistory.LoadRowsFailed", ex.Message), AppLanguageService.GetString("Common.Error"), MessageBoxButton.OK, MessageBoxImage.Error);
         }
         finally
         {
@@ -253,6 +270,9 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
             return;
 
         _rowGridColumnSignature = signature;
+        _lastRowLoadFields = fields;
+        _lastRowLoadExtraKeys = extraKeys.ToList();
+        _lastRowLoadSystemKeys = systemKeys.ToList();
         BuildRowGridColumns(fields, extraKeys, systemKeys);
     }
 
@@ -275,7 +295,7 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
 
         RowGrid.Columns.Add(new DataGridTemplateColumn
         {
-            Header = "操作",
+            Header = AppLanguageService.GetString("Common.Operation"),
             Width = DataGridLength.Auto,
             CellTemplate = BuildRowActionTemplate()
         });
@@ -313,13 +333,13 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
 
             if (matchingField != null)
             {
-                headerText = $"{matchingField.FieldName} (已废弃)";
-                toolTipText = $"字段“{matchingField.FieldName} ({key})”在当前最新模板中已被废弃/删除，此处仅用于追溯历史打印数据。";
+                headerText = $"{matchingField.FieldName} ({AppLanguageService.GetString("PrintHistory.DeprecatedSuffix")})";
+                toolTipText = AppLanguageService.Format("PrintHistory.DeprecatedFieldTooltip", matchingField.FieldName, key);
             }
             else
             {
-                headerText = $"{key} (已废弃)";
-                toolTipText = $"字段“{key}”在当前最新模板中已被废弃/删除，此处仅用于追溯历史打印数据。";
+                headerText = $"{key} ({AppLanguageService.GetString("PrintHistory.DeprecatedSuffix")})";
+                toolTipText = AppLanguageService.Format("PrintHistory.DeprecatedKeyTooltip", key);
             }
 
             var headerBlock = new TextBlock
@@ -367,7 +387,7 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
         button.SetValue(System.Windows.FrameworkElement.StyleProperty, System.Windows.Application.Current.FindResource("ButtonPrimary"));
         button.SetValue(PermissionAssist.PermissionKeyProperty, Permissions.PrintHistoryReprint);
         button.AddHandler(System.Windows.Controls.Primitives.ButtonBase.ClickEvent, new System.Windows.RoutedEventHandler(ReprintJobRow_Click));
-        button.AppendChild(BuildButtonContent("重打", MahApps.Metro.IconPacks.PackIconMaterialKind.PrinterAlert));
+        button.AppendChild(BuildButtonContent(AppLanguageService.GetString("PrintHistory.Reprint"), MahApps.Metro.IconPacks.PackIconMaterialKind.PrinterAlert));
 
         return new System.Windows.DataTemplate
         {
@@ -403,7 +423,7 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
 
         if (!string.Equals(job.Status, "Failed", StringComparison.OrdinalIgnoreCase))
         {
-            AppMessageBox.Show("只有失败的打印任务可以失败重试。");
+            AppMessageBox.Show(AppLanguageService.GetString("PrintHistory.FailedOnlyRetry"));
             return;
         }
         if (!TryGetPrintOptions(out var printerName, out _))
@@ -411,7 +431,7 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
 
         await ExecuteHistoryPrintAsync(
             sender,
-            $"确定按原任务明细重试失败任务 {job.TemplateName}？请确认现场没有重复出纸。",
+            AppLanguageService.Format("PrintHistory.RetryFailedConfirm", job.TemplateName),
             context => new LabelPrintService(App.Settings).RetryFailedJobAsync(
                 job.Id,
                 printerName,
@@ -438,11 +458,11 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
             if (jobRow == null) return;
 
             var list = Enumerable.Range(0, printCopies).Select(_ => jobRow).ToList();
-            var sn = row.Data.TryGetValue(TemplateSystemFields.SerialNo, out var sVal) ? sVal : "未知";
+            var sn = row.Data.TryGetValue(TemplateSystemFields.SerialNo, out var sVal) ? sVal : AppLanguageService.GetString("PrintHistory.UnknownSerial");
 
             await ExecuteHistoryPrintAsync(
                 sender,
-                $"确定原样补打序列号 {sn} 的标签，{printCopies} 份？",
+                AppLanguageService.Format("PrintHistory.ConfirmReprintSerial", sn, printCopies),
                 context => new LabelPrintService(App.Settings).PrintHistoryRowsAsync(
                     job.TemplateId,
                     list,
@@ -454,7 +474,7 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
         {
             await ExecuteHistoryPrintAsync(
                 sender,
-                $"确定重打印当前明细，{printCopies} 份？",
+                AppLanguageService.Format("PrintHistory.ConfirmReprintRow", printCopies),
                 context => new LabelPrintService(App.Settings).ReprintJobRowAsync(
                     row.Id,
                     printerName,
@@ -545,7 +565,7 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
             return;
         }
 
-        JobPageInfoText.Text = $"{_jobCurrentPage} / {_jobTotalPages}，共 {_jobTotalRows} 条";
+        JobPageInfoText.Text = AppLanguageService.Format("PrintHistory.JobPageInfo", _jobCurrentPage, _jobTotalPages, _jobTotalRows);
 
         var hasRows = _jobTotalRows > 0;
         JobFirstPageButton.IsEnabled = hasRows && _jobCurrentPage > 1;
@@ -563,7 +583,7 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
             return;
         }
 
-        RowPageInfoText.Text = $"{_rowCurrentPage} / {_rowTotalPages}，共 {_rowTotalRows} 行";
+        RowPageInfoText.Text = AppLanguageService.Format("PrintHistory.RowPageInfo", _rowCurrentPage, _rowTotalPages, _rowTotalRows);
 
         var hasRows = _rowTotalRows > 0;
         RowFirstPageButton.IsEnabled = hasRows && _rowCurrentPage > 1;
@@ -578,9 +598,9 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
             return;
 
         var selectedJobText = SelectedJob == null
-            ? "未选择打印任务"
-            : $"当前任务：{SelectedJob.TemplateName}，{SelectedJob.SelectedRowCount} 张，状态 {SelectedJob.StatusText}";
-        HistorySummaryText.Text = $"打印任务共 {_jobTotalRows} 条；当前明细 {_rows.Count} 行 / 共 {_rowTotalRows} 行。{selectedJobText}。";
+            ? AppLanguageService.GetString("PrintHistory.NoSelectedJobSummary")
+            : AppLanguageService.Format("PrintHistory.SelectedJobSummary", SelectedJob.TemplateName, SelectedJob.SelectedRowCount, SelectedJob.StatusText);
+        HistorySummaryText.Text = AppLanguageService.Format("PrintHistory.Summary", _jobTotalRows, _rows.Count, _rowTotalRows, selectedJobText);
     }
 
     private string? GetSelectedStatus()
@@ -629,7 +649,7 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
 
         if (string.IsNullOrWhiteSpace(printerName))
         {
-            AppMessageBox.Show("请先选择打印机。");
+            AppMessageBox.Show(AppLanguageService.GetString("PrintHistory.PrinterRequired"));
             return false;
         }
 
@@ -637,7 +657,7 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
             copies < 1 ||
             copies > MaxPrintCopies)
         {
-            AppMessageBox.Show($"打印份数必须是 1 到 {MaxPrintCopies} 之间的整数。");
+            AppMessageBox.Show(AppLanguageService.Format("PrintHistory.PrintCopiesRange", MaxPrintCopies));
             return false;
         }
 
@@ -651,7 +671,7 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
         Func<BackgroundTaskContext, Task> operation)
     {
         if (App.Settings.ConfirmBeforePrint &&
-            AppMessageBox.Show(confirmMessage, "确认打印", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+            AppMessageBox.Show(confirmMessage, AppLanguageService.GetString("PrintHistory.ConfirmPrintTitle"), MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
         {
             return;
         }
@@ -662,13 +682,13 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
 
         try
         {
-            await BackgroundTaskQueue.Shared.EnqueueAsync(BackgroundTaskKind.Print, "正在提交历史打印...", operation);
-            AppMessageBox.Show("打印任务已完成。");
+            await BackgroundTaskQueue.Shared.EnqueueAsync(BackgroundTaskKind.Print, AppLanguageService.GetString("PrintHistory.Submitting"), operation);
+            AppMessageBox.Show(AppLanguageService.GetString("PrintHistory.PrintCompleted"));
             await RefreshHistoryAsync();
         }
         catch (Exception ex)
         {
-            AppMessageBox.Show($"打印失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            AppMessageBox.Show(AppLanguageService.Format("PrintHistory.PrintFailed", ex.Message), AppLanguageService.GetString("Common.Error"), MessageBoxButton.OK, MessageBoxImage.Error);
         }
         finally
         {
@@ -685,8 +705,8 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
         if (RowEmptyText != null)
         {
             RowEmptyText.Text = SelectedJob == null
-                ? "请选择打印任务查看明细"
-                : "当前打印任务没有明细";
+                ? AppLanguageService.GetString("PrintHistory.EmptyRowsSelectJob")
+                : AppLanguageService.GetString("PrintHistory.EmptyRowsNoDetails");
             RowEmptyText.Visibility = _rowTotalRows == 0 ? Visibility.Visible : Visibility.Collapsed;
         }
     }

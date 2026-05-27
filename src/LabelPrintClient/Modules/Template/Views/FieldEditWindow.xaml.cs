@@ -35,7 +35,7 @@ public partial class FieldEditWindow : Window
                 MinValue = field.MinValue,
                 MaxValue = field.MaxValue
             };
-            TitleText.Text = title ?? "编辑字段";
+            TitleText.Text = title ?? AppLanguageService.GetString("Field.EditActionTitle");
             FieldNameBox.Text = Field.FieldName;
             FieldCodeBox.Text = Field.FieldCode;
             IsRequiredBox.IsChecked = Field.IsRequired;
@@ -56,7 +56,7 @@ public partial class FieldEditWindow : Window
                 FieldType = "string",
                 IsRequired = false
             };
-            TitleText.Text = title ?? "新增字段";
+            TitleText.Text = title ?? AppLanguageService.GetString("Field.AddTitle");
         }
     }
 
@@ -67,19 +67,19 @@ public partial class FieldEditWindow : Window
 
         if (string.IsNullOrWhiteSpace(name))
         {
-            AppMessageBox.Show("请输入字段名称。", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppMessageBox.Show(AppLanguageService.GetString("Field.NameRequired"), AppLanguageService.GetString("Common.Prompt"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
         if (string.IsNullOrWhiteSpace(code))
         {
-            AppMessageBox.Show("请输入字段编码。", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppMessageBox.Show(AppLanguageService.GetString("Field.CodeRequired"), AppLanguageService.GetString("Common.Prompt"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
         if (TemplateSystemFields.IsSystemField(code))
         {
-            AppMessageBox.Show("该字段编码为系统固定字段，请通过模板模式自动维护。", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppMessageBox.Show(AppLanguageService.GetString("Field.SystemFieldReadonly"), AppLanguageService.GetString("Common.Prompt"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -93,13 +93,13 @@ public partial class FieldEditWindow : Window
 
         if (minLength.HasValue && maxLength.HasValue && minLength.Value > maxLength.Value)
         {
-            AppMessageBox.Show("最小长度不能大于最大长度。", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppMessageBox.Show(AppLanguageService.GetString("Field.MinLengthGreaterThanMax"), AppLanguageService.GetString("Common.Prompt"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
         if (minValue.HasValue && maxValue.HasValue && minValue.Value > maxValue.Value)
         {
-            AppMessageBox.Show("最小数值不能大于最大数值。", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppMessageBox.Show(AppLanguageService.GetString("Field.MinValueGreaterThanMax"), AppLanguageService.GetString("Common.Prompt"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -112,7 +112,7 @@ public partial class FieldEditWindow : Window
             }
             catch (ArgumentException ex)
             {
-                AppMessageBox.Show($"正则表达式无效：{ex.Message}", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+                AppMessageBox.Show(AppLanguageService.Format("Field.RegexInvalid", ex.Message), AppLanguageService.GetString("Common.Prompt"), MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
         }
@@ -164,7 +164,7 @@ public partial class FieldEditWindow : Window
 
         if (!int.TryParse(text.Trim(), out var parsed) || parsed < 0)
         {
-            AppMessageBox.Show($"{displayName}必须是大于等于 0 的整数。", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppMessageBox.Show(AppLanguageService.Format("Field.NonNegativeIntegerRequired", displayName), AppLanguageService.GetString("Common.Prompt"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return false;
         }
 
@@ -180,7 +180,7 @@ public partial class FieldEditWindow : Window
 
         if (!decimal.TryParse(text.Trim(), out var parsed))
         {
-            AppMessageBox.Show($"{displayName}必须是数字。", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppMessageBox.Show(AppLanguageService.Format("Field.NumberRequired", displayName), AppLanguageService.GetString("Common.Prompt"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return false;
         }
 

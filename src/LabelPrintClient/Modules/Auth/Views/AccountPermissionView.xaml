@@ -21,9 +21,9 @@
                                            VerticalAlignment="Center" />
                 <TextBlock DockPanel.Dock="Left"
                            Style="{StaticResource AppPageTitleStyle}"
-                           Text="账号权限"
+                           Text="{DynamicResource Account.Title}"
                            Margin="0,0,20,0" />
-                <TextBlock Text="集中维护系统用户账号、角色配置以及细粒度的菜单与按钮权限"
+                <TextBlock Text="{DynamicResource Account.Subtitle}"
                            VerticalAlignment="Center"
                            Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
             </DockPanel>
@@ -38,118 +38,149 @@
             </Grid.ColumnDefinitions>
 
             <!-- 第一列：用户管理 -->
-            <Grid Grid.Column="0" Margin="0,0,12,0">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
-                </Grid.RowDefinitions>
-                <TextBlock Grid.Row="0" Text="用户账号管理" Style="{StaticResource AppSectionTitleStyle}" />
-                <WrapPanel Grid.Row="1" Margin="0,0,0,8">
-                    <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="AddUser_Click" Margin="0,0,6,6" auth:PermissionAssist.PermissionKey="Button.Account.User.Create">
-                        <StackPanel Orientation="Horizontal">
-                            <iconPacks:PackIconMaterial Kind="AccountPlus" Width="13" Height="13" Margin="0,0,4,0" VerticalAlignment="Center" />
-                            <TextBlock Text="新增用户" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Button>
-                    <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="EditUser_Click" Margin="0,0,6,6" auth:PermissionAssist.PermissionKey="Button.Account.User.Edit">
-                        <StackPanel Orientation="Horizontal">
-                            <iconPacks:PackIconMaterial Kind="AccountEdit" Width="13" Height="13" Margin="0,0,4,0" VerticalAlignment="Center" />
-                            <TextBlock Text="编辑" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Button>
-                    <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="ResetPassword_Click" Margin="0,0,6,6" auth:PermissionAssist.PermissionKey="Button.Account.User.ResetPassword">
-                        <StackPanel Orientation="Horizontal">
-                            <iconPacks:PackIconMaterial Kind="LockReset" Width="13" Height="13" Margin="0,0,4,0" VerticalAlignment="Center" />
-                            <TextBlock Text="密码" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Button>
-                    <Button Style="{StaticResource AppGhostButtonStyle}" Click="ToggleUser_Click" Margin="0,0,6,6" auth:PermissionAssist.PermissionKey="Button.Account.User.Disable">
-                        <StackPanel Orientation="Horizontal">
-                            <iconPacks:PackIconMaterial Kind="Power" Width="13" Height="13" Margin="0,0,4,0" VerticalAlignment="Center" />
-                            <TextBlock Text="启停" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Button>
-                </WrapPanel>
-                <Border Grid.Row="2" Style="{StaticResource AppDataCardStyle}">
-                    <DataGrid x:Name="UserGrid"
-                              AutoGenerateColumns="False"
-                              IsReadOnly="True"
-                              BorderThickness="0"
-                              Margin="0"
-                              CellStyle="{StaticResource AppDataGridCellStyle}"
-                              ColumnHeaderStyle="{StaticResource AppDataGridColumnHeaderStyle}"
-                              SelectionChanged="UserGrid_SelectionChanged">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="用户名" Binding="{Binding UserName}" Width="110" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
-                            <DataGridTextColumn Header="显示名" Binding="{Binding DisplayName}" Width="110" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
-                            <DataGridCheckBoxColumn Header="启用" Binding="{Binding IsEnabled}" Width="55" ElementStyle="{StaticResource AppDataGridReadOnlyCheckBoxStyle}" />
-                            <DataGridTextColumn Header="最后登录" Binding="{Binding LastLoginTime, StringFormat=\{0:yyyy-MM-dd HH:mm\}}" Width="*" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
-                        </DataGrid.Columns>
-                    </DataGrid>
-                </Border>
-            </Grid>
+            <Border Grid.Column="0" Margin="0,0,12,0" Style="{StaticResource AppCardStyle}" Padding="16">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    
+                    <TextBlock Grid.Row="0" Text="{DynamicResource Account.UserManagement}" Style="{StaticResource AppSectionTitleStyle}" Margin="0,0,0,12" />
+                    
+                    <WrapPanel Grid.Row="1" Margin="0,0,0,10">
+                        <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="AddUser_Click" Margin="0,0,6,6" auth:PermissionAssist.PermissionKey="Button.Account.User.Create">
+                            <StackPanel Orientation="Horizontal">
+                                <iconPacks:PackIconMaterial Kind="AccountPlus" Width="13" Height="13" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                <TextBlock Text="{DynamicResource Account.AddUser}" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="EditUser_Click" Margin="0,0,6,6" auth:PermissionAssist.PermissionKey="Button.Account.User.Edit">
+                            <StackPanel Orientation="Horizontal">
+                                <iconPacks:PackIconMaterial Kind="AccountEdit" Width="13" Height="13" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                <TextBlock Text="{DynamicResource Common.Edit}" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="ResetPassword_Click" Margin="0,0,6,6" auth:PermissionAssist.PermissionKey="Button.Account.User.ResetPassword">
+                            <StackPanel Orientation="Horizontal">
+                                <iconPacks:PackIconMaterial Kind="LockReset" Width="13" Height="13" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                <TextBlock Text="{DynamicResource Account.ResetPasswordTitle}" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource AppGhostButtonStyle}" Click="ToggleUser_Click" Margin="0,0,6,6" auth:PermissionAssist.PermissionKey="Button.Account.User.Disable">
+                            <StackPanel Orientation="Horizontal">
+                                <iconPacks:PackIconMaterial Kind="Power" Width="13" Height="13" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                <TextBlock Text="{DynamicResource Account.Toggle}" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                    </WrapPanel>
+                    
+                    <Border Grid.Row="2" Style="{StaticResource AppDataCardStyle}">
+                        <DataGrid x:Name="UserGrid"
+                                  AutoGenerateColumns="False"
+                                  IsReadOnly="True"
+                                  BorderThickness="0"
+                                  Margin="0"
+                                  CellStyle="{StaticResource AppDataGridCellStyle}"
+                                  ColumnHeaderStyle="{StaticResource AppDataGridColumnHeaderStyle}"
+                                  SelectionChanged="UserGrid_SelectionChanged">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="{DynamicResource Account.UserName}" Binding="{Binding UserName}" Width="110" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
+                                <DataGridTextColumn Header="{DynamicResource Account.DisplayName}" Binding="{Binding DisplayName}" Width="110" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
+                                <DataGridCheckBoxColumn Header="{DynamicResource Common.Enabled}" Binding="{Binding IsEnabled}" Width="55" ElementStyle="{StaticResource AppDataGridReadOnlyCheckBoxStyle}" />
+                                <DataGridTextColumn Header="{DynamicResource Account.LastLogin}" Binding="{Binding LastLoginTime, StringFormat=\{0:yyyy-MM-dd HH:mm\}}" Width="*" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Border>
+                </Grid>
+            </Border>
 
             <!-- 第二列：角色与用户角色映射管理 -->
-            <Grid Grid.Column="1" Margin="0,0,12,0">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
-                <TextBlock Grid.Row="0" Text="角色管理" Style="{StaticResource AppSectionTitleStyle}" />
-                <WrapPanel Grid.Row="1" Margin="0,0,0,8">
-                    <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="AddRole_Click" Margin="0,0,6,6" auth:PermissionAssist.PermissionKey="Button.Account.Role.Create">
-                        <StackPanel Orientation="Horizontal">
-                            <iconPacks:PackIconMaterial Kind="ShieldPlus" Width="13" Height="13" Margin="0,0,4,0" VerticalAlignment="Center" />
-                            <TextBlock Text="新增角色" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Button>
-                    <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="EditRole_Click" Margin="0,0,6,6" auth:PermissionAssist.PermissionKey="Button.Account.Role.Edit">
-                        <StackPanel Orientation="Horizontal">
-                            <iconPacks:PackIconMaterial Kind="Pencil" Width="13" Height="13" Margin="0,0,4,0" VerticalAlignment="Center" />
-                            <TextBlock Text="编辑" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Button>
-                    <Button Style="{StaticResource AppDangerButtonStyle}" Click="DeleteRole_Click" Margin="0,0,6,6" auth:PermissionAssist.PermissionKey="Button.Account.Role.Delete">
-                        <StackPanel Orientation="Horizontal">
-                            <iconPacks:PackIconMaterial Kind="TrashCanOutline" Width="13" Height="13" Margin="0,0,4,0" VerticalAlignment="Center" />
-                            <TextBlock Text="删除" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Button>
-                </WrapPanel>
-                <Border Grid.Row="2" Style="{StaticResource AppDataCardStyle}" Margin="0,0,0,12">
-                    <DataGrid x:Name="RoleGrid"
-                              AutoGenerateColumns="False"
-                              IsReadOnly="True"
-                              BorderThickness="0"
-                              Margin="0"
-                              CellStyle="{StaticResource AppDataGridCellStyle}"
-                              ColumnHeaderStyle="{StaticResource AppDataGridColumnHeaderStyle}"
-                              SelectionChanged="RoleGrid_SelectionChanged">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="名称" Binding="{Binding Name}" Width="100" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
-                            <DataGridTextColumn Header="编码" Binding="{Binding Code}" Width="120" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
-                            <DataGridCheckBoxColumn Header="内置" Binding="{Binding IsSystem}" Width="55" ElementStyle="{StaticResource AppDataGridReadOnlyCheckBoxStyle}" />
-                            <DataGridCheckBoxColumn Header="启用" Binding="{Binding IsEnabled}" Width="55" ElementStyle="{StaticResource AppDataGridReadOnlyCheckBoxStyle}" />
-                        </DataGrid.Columns>
-                    </DataGrid>
-                </Border>
+            <Border Grid.Column="1" Margin="0,0,12,0" Style="{StaticResource AppCardStyle}" Padding="16">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="1.2*" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    
+                    <TextBlock Grid.Row="0" Text="{DynamicResource Account.RoleManagement}" Style="{StaticResource AppSectionTitleStyle}" Margin="0,0,0,12" />
+                    
+                    <WrapPanel Grid.Row="1" Margin="0,0,0,10">
+                        <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="AddRole_Click" Margin="0,0,6,6" auth:PermissionAssist.PermissionKey="Button.Account.Role.Create">
+                            <StackPanel Orientation="Horizontal">
+                                <iconPacks:PackIconMaterial Kind="ShieldPlus" Width="13" Height="13" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                <TextBlock Text="{DynamicResource Account.AddRole}" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="EditRole_Click" Margin="0,0,6,6" auth:PermissionAssist.PermissionKey="Button.Account.Role.Edit">
+                            <StackPanel Orientation="Horizontal">
+                                <iconPacks:PackIconMaterial Kind="Pencil" Width="13" Height="13" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                <TextBlock Text="{DynamicResource Common.Edit}" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource AppDangerButtonStyle}" Click="DeleteRole_Click" Margin="0,0,6,6" auth:PermissionAssist.PermissionKey="Button.Account.Role.Delete">
+                            <StackPanel Orientation="Horizontal">
+                                <iconPacks:PackIconMaterial Kind="TrashCanOutline" Width="13" Height="13" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                <TextBlock Text="{DynamicResource Common.Delete}" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                    </WrapPanel>
+                    
+                    <Border Grid.Row="2" Style="{StaticResource AppDataCardStyle}" Margin="0,0,0,16">
+                        <DataGrid x:Name="RoleGrid"
+                                  AutoGenerateColumns="False"
+                                  IsReadOnly="True"
+                                  BorderThickness="0"
+                                  Margin="0"
+                                  CellStyle="{StaticResource AppDataGridCellStyle}"
+                                  ColumnHeaderStyle="{StaticResource AppDataGridColumnHeaderStyle}"
+                                  SelectionChanged="RoleGrid_SelectionChanged">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="{DynamicResource Common.Name}" Binding="{Binding Name}" Width="100" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
+                                <DataGridTextColumn Header="{DynamicResource Common.Code}" Binding="{Binding Code}" Width="120" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
+                                <DataGridCheckBoxColumn Header="{DynamicResource Account.SystemRole}" Binding="{Binding IsSystem}" Width="55" ElementStyle="{StaticResource AppDataGridReadOnlyCheckBoxStyle}" />
+                                <DataGridCheckBoxColumn Header="{DynamicResource Common.Enabled}" Binding="{Binding IsEnabled}" Width="55" ElementStyle="{StaticResource AppDataGridReadOnlyCheckBoxStyle}" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Border>
 
-                <!-- 选中用户的角色分配 -->
-                <Border Grid.Row="3" Style="{StaticResource AppCardStyle}">
-                    <Grid>
+                    <GridSplitter Grid.Row="3" Height="1" HorizontalAlignment="Stretch" Background="{DynamicResource ControlStrokeColorDefaultBrush}" Margin="0,0,0,16" IsEnabled="False" />
+
+                    <!-- 选中用户的角色分配 -->
+                    <Grid Grid.Row="4">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="*" />
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
-                        <TextBlock Grid.Row="0" Text="分配用户角色" Style="{StaticResource AppSectionTitleStyle}" Margin="0,0,0,8" />
-                        <ListBox Grid.Row="1" x:Name="UserRoleList" Height="120" Margin="0,0,0,10" Background="Transparent" BorderThickness="1" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}">
+                        <TextBlock Grid.Row="0" Text="{DynamicResource Account.AssignUserRoles}" Style="{StaticResource AppSectionTitleStyle}" Margin="0,0,0,10" />
+                        <ListBox Grid.Row="1" x:Name="UserRoleList" Margin="0,0,0,12" Background="Transparent" BorderThickness="1" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}">
                             <ListBox.ItemContainerStyle>
                                 <Style TargetType="ListBoxItem">
-                                    <Setter Property="Padding" Value="4" />
+                                    <Setter Property="Padding" Value="8,6" />
+                                    <Setter Property="Background" Value="Transparent" />
+                                    <Setter Property="BorderThickness" Value="0" />
+                                    <Setter Property="Margin" Value="0,2" />
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="ListBoxItem">
+                                                <Border CornerRadius="6" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                                                    <ContentPresenter />
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="#0F0066FF" />
+                                        </Trigger>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter Property="Background" Value="#1A0066FF" />
+                                        </Trigger>
+                                    </Style.Triggers>
                                 </Style>
                             </ListBox.ItemContainerStyle>
                         </ListBox>
@@ -159,43 +190,48 @@
                                 auth:PermissionAssist.PermissionKey="Button.Account.User.Edit">
                             <StackPanel Orientation="Horizontal">
                                 <iconPacks:PackIconMaterial Kind="ContentSave" Width="14" Height="14" Margin="0,0,6,0" VerticalAlignment="Center" />
-                                <TextBlock Text="保存角色配置" VerticalAlignment="Center" />
+                                <TextBlock Text="{DynamicResource Account.SaveRoleConfig}" VerticalAlignment="Center" />
                             </StackPanel>
                         </Button>
                     </Grid>
-                </Border>
-            </Grid>
+                </Grid>
+            </Border>
 
             <!-- 第三列：角色权限（菜单与按钮） -->
-            <Grid Grid.Column="2">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
-                </Grid.RowDefinitions>
-                <TextBlock Grid.Row="0" Text="功能权限管理" Style="{StaticResource AppSectionTitleStyle}" />
-                <DockPanel Grid.Row="1" LastChildFill="True" Margin="0,0,0,8">
-                    <Button DockPanel.Dock="Right"
-                            Style="{StaticResource AppPrimaryButtonStyle}"
-                            Click="SaveRolePermissions_Click"
-                            auth:PermissionAssist.PermissionKey="Button.Account.Role.Permissions">
-                        <StackPanel Orientation="Horizontal">
-                            <iconPacks:PackIconMaterial Kind="ShieldCheck" Width="14" Height="14" Margin="0,0,6,0" VerticalAlignment="Center" />
-                            <TextBlock Text="保存权限分配" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Button>
-                    <TextBlock Text="选中角色可用的菜单及按钮操作权限"
-                               VerticalAlignment="Center"
-                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                               TextWrapping="Wrap"
-                               Margin="0,0,12,0" />
-                </DockPanel>
-                <Border Grid.Row="2" Style="{StaticResource AppCardStyle}">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto">
-                        <ItemsControl x:Name="PermissionList" />
-                    </ScrollViewer>
-                </Border>
-            </Grid>
+            <Border Grid.Column="2" Style="{StaticResource AppCardStyle}" Padding="16">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    
+                    <TextBlock Grid.Row="0" Text="{DynamicResource Account.PermissionManagement}" Style="{StaticResource AppSectionTitleStyle}" Margin="0,0,0,12" />
+                    
+                    <DockPanel Grid.Row="1" LastChildFill="True" Margin="0,0,0,12">
+                        <Button DockPanel.Dock="Right"
+                                Style="{StaticResource AppPrimaryButtonStyle}"
+                                Click="SaveRolePermissions_Click"
+                                auth:PermissionAssist.PermissionKey="Button.Account.Role.Permissions">
+                            <StackPanel Orientation="Horizontal">
+                                <iconPacks:PackIconMaterial Kind="ShieldCheck" Width="14" Height="14" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                <TextBlock Text="{DynamicResource Account.SavePermissions}" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                        <TextBlock Text="{DynamicResource Account.PermissionHint}"
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,12,0" />
+                    </DockPanel>
+                    
+                    <Border Grid.Row="2" Style="{StaticResource AppDataCardStyle}">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <ItemsControl x:Name="PermissionList" Margin="12,8" />
+                        </ScrollViewer>
+                    </Border>
+                </Grid>
+            </Border>
         </Grid>
 
         <!-- 底部状态条 -->

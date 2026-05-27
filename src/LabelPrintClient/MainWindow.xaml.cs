@@ -23,13 +23,16 @@ public partial class MainWindow : HandyControl.Controls.Window
     private readonly SettingsView _settingsView = new();
     private readonly AccountPermissionView _accountPermissionView = new();
     private bool _isSelectingNavigation;
+    private bool _isUpdatingSelector;
 
     public MainWindow()
     {
         InitializeComponent();
         InitializeThemeSelector();
+        InitializeLanguageSelector();
         UpdateCurrentUserText();
         AppThemeService.ThemeModeChanged += AppThemeService_ThemeModeChanged;
+        AppLanguageService.LanguageChanged += AppLanguageService_LanguageChanged;
         Loaded += (_, _) =>
         {
             HandyControl.Controls.Growl.Register(AppMessageBox.ToastToken, ToastHost);
@@ -39,6 +42,7 @@ public partial class MainWindow : HandyControl.Controls.Window
         {
             HandyControl.Controls.Growl.Unregister(AppMessageBox.ToastToken, ToastHost);
             AppThemeService.ThemeModeChanged -= AppThemeService_ThemeModeChanged;
+            AppLanguageService.LanguageChanged -= AppLanguageService_LanguageChanged;
         };
     }
 
@@ -168,7 +172,7 @@ public partial class MainWindow : HandyControl.Controls.Window
         };
         panel.Children.Add(new TextBlock
         {
-            Text = "当前账号没有可用菜单权限",
+            Text = AppLanguageService.GetString("Nav.NoPermissionTitle"),
             FontSize = 20,
             FontWeight = FontWeights.SemiBold,
             HorizontalAlignment = System.Windows.HorizontalAlignment.Center,
@@ -176,7 +180,7 @@ public partial class MainWindow : HandyControl.Controls.Window
         });
         panel.Children.Add(new TextBlock
         {
-            Text = "请联系管理员分配角色或菜单权限后重新登录。",
+            Text = AppLanguageService.GetString("Nav.NoPermissionHint"),
             FontSize = 13,
             Foreground = System.Windows.Media.Brushes.Gray,
             HorizontalAlignment = System.Windows.HorizontalAlignment.Center
@@ -187,53 +191,146 @@ public partial class MainWindow : HandyControl.Controls.Window
         return grid;
     }
 
-    private void ThemeButton_Click(object sender, RoutedEventArgs e)
+    private void InitializeThemeSelector()
     {
-        if (sender is not System.Windows.Controls.Button button ||
-            !Enum.TryParse<AppThemeMode>(button.Tag?.ToString(), out var themeMode) ||
-            themeMode == App.Settings.ThemeMode)
-        {
-            return;
-        }
-
-        var previousMode = App.Settings.ThemeMode;
-        if (AppThemeService.TryApplyAndPersist(themeMode, out var errorMessage))
-            return;
-
-        SelectThemeMode(previousMode);
-        AppMessageBox.Show($"主题切换失败：{errorMessage}", "主题切换", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+        SelectThemeModeInComboBox(App.Settings.ThemeMode);
     }
 
     private void AppThemeService_ThemeModeChanged(object? sender, AppThemeMode themeMode)
     {
         if (!Dispatcher.CheckAccess())
         {
-            Dispatcher.Invoke(() => SelectThemeMode(themeMode));
+            Dispatcher.Invoke(() => SelectThemeModeInComboBox(themeMode));
             return;
         }
 
-        SelectThemeMode(themeMode);
+        SelectThemeModeInComboBox(themeMode);
     }
 
-    private void InitializeThemeSelector()
+    private void SelectThemeModeInComboBox(AppThemeMode themeMode)
     {
-        SelectThemeMode(App.Settings.ThemeMode);
+        if (_isUpdatingSelector)
+            return;
+
+        _isUpdatingSelector = true;
+        try
+        {
+            var targetTag = themeMode.ToString();
+            foreach (ComboBoxItem item in ThemeComboBox.Items)
+            {
+                if (item.Tag?.ToString() == targetTag)
+                {
+                    ThemeComboBox.SelectedItem = item;
+                    break;
+                }
+            }
+        }
+        finally
+        {
+            _isUpdatingSelector = false;
+        }
     }
 
-    private void SelectThemeMode(AppThemeMode themeMode)
+    private void ThemeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        var primaryBrush = FindResource("PrimaryBrush") as System.Windows.Media.Brush ?? System.Windows.Media.Brushes.DodgerBlue;
-        var transparentBrush = System.Windows.Media.Brushes.Transparent;
-        var whiteText = System.Windows.Media.Brushes.White;
-        var primaryText = FindResource("PrimaryTextBrush") as System.Windows.Media.Brush ?? System.Windows.Media.Brushes.Black;
+        if (_isUpdatingSelector ||
+            ThemeComboBox.SelectedItem is not ComboBoxItem selectedItem ||
+            !Enum.TryParse<AppThemeMode>(selectedItem.Tag?.ToString(), out var themeMode))
+        {
+            return;
+        }
 
-        SystemThemeButton.Background = themeMode == AppThemeMode.System ? primaryBrush : transparentBrush;
-        SystemThemeButton.Foreground = themeMode == AppThemeMode.System ? whiteText : primaryText;
+        if (themeMode == App.Settings.ThemeMode)
+        {
+            return;
+        }
 
-        LightThemeButton.Background = themeMode == AppThemeMode.Light ? primaryBrush : transparentBrush;
-        LightThemeButton.Foreground = themeMode == AppThemeMode.Light ? whiteText : primaryText;
+        var previousMode = App.Settings.ThemeMode;
+        if (AppThemeService.TryApplyAndPersist(themeMode, out var errorMessage))
+        {
+            return;
+        }
 
-        DarkThemeButton.Background = themeMode == AppThemeMode.Dark ? primaryBrush : transparentBrush;
-        DarkThemeButton.Foreground = themeMode == AppThemeMode.Dark ? whiteText : primaryText;
+        SelectThemeModeInComboBox(previousMode);
+        AppMessageBox.Show(
+            AppLanguageService.Format("Theme.SwitchFailed", errorMessage),
+            AppLanguageService.GetString("Theme.SwitchTitle"),
+            System.Windows.MessageBoxButton.OK,
+            System.Windows.MessageBoxImage.Warning);
+    }
+
+    private void InitializeLanguageSelector()
+    {
+        SelectLanguageInComboBox(App.Settings.Language);
+    }
+
+    private void AppLanguageService_LanguageChanged(object? sender, AppLanguage language)
+    {
+        if (!Dispatcher.CheckAccess())
+        {
+            Dispatcher.Invoke(() => SelectLanguageInComboBox(language));
+            return;
+        }
+
+        SelectLanguageInComboBox(language);
+    }
+
+    private void SelectLanguageInComboBox(AppLanguage language)
+    {
+        if (_isUpdatingSelector)
+            return;
+
+        _isUpdatingSelector = true;
+        try
+        {
+            var targetTag = language == AppLanguage.ZhCn ? "ZhCn" : "EnUs";
+            foreach (ComboBoxItem item in LanguageComboBox.Items)
+            {
+                if (item.Tag?.ToString() == targetTag)
+                {
+                    LanguageComboBox.SelectedItem = item;
+                    break;
+                }
+            }
+        }
+        finally
+        {
+            _isUpdatingSelector = false;
+        }
+    }
+
+    private void LanguageComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_isUpdatingSelector ||
+            LanguageComboBox.SelectedItem is not ComboBoxItem selectedItem ||
+            selectedItem.Tag?.ToString() is not string tag)
+        {
+            return;
+        }
+
+        AppLanguage language = tag switch
+        {
+            "ZhCn" => AppLanguage.ZhCn,
+            "EnUs" => AppLanguage.EnUs,
+            _ => App.Settings.Language
+        };
+
+        if (language == App.Settings.Language)
+        {
+            return;
+        }
+
+        var previousLanguage = App.Settings.Language;
+        if (AppLanguageService.TryApplyAndPersist(language, out var errorMessage))
+        {
+            return;
+        }
+
+        SelectLanguageInComboBox(previousLanguage);
+        AppMessageBox.Show(
+            AppLanguageService.Format("Language.SwitchFailed", errorMessage),
+            AppLanguageService.GetString("Settings.LanguageSwitch"),
+            System.Windows.MessageBoxButton.OK,
+            System.Windows.MessageBoxImage.Warning);
     }
 }

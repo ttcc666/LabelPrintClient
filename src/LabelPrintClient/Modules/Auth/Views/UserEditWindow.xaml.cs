@@ -27,7 +27,7 @@ public partial class UserEditWindow : HandyControl.Controls.Window
                 LastLoginTime = user.LastLoginTime
             };
 
-        TitleText.Text = _isNew ? "新增用户" : "编辑用户";
+        TitleText.Text = AppLanguageService.GetString(_isNew ? "Account.UserAddTitle" : "Account.UserEditActionTitle");
         UserNameBox.Text = User.UserName;
         UserNameBox.IsEnabled = _isNew;
         DisplayNameBox.Text = User.DisplayName;
@@ -45,13 +45,13 @@ public partial class UserEditWindow : HandyControl.Controls.Window
         var userName = UserNameBox.Text.Trim();
         if (string.IsNullOrWhiteSpace(userName))
         {
-            AppMessageBox.Show("用户名不能为空。");
+            AppMessageBox.Show(AppLanguageService.GetString("Account.UserNameRequired"));
             return;
         }
 
         if (_isNew && PasswordBox.Password.Length < 6)
         {
-            AppMessageBox.Show("密码至少 6 位。");
+            AppMessageBox.Show(AppLanguageService.GetString("Account.PasswordTooShort"));
             return;
         }
 

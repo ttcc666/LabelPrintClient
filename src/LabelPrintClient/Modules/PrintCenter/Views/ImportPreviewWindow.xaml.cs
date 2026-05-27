@@ -34,22 +34,22 @@ public partial class ImportPreviewWindow : Window
             SuccessAlertCard.Visibility = Visibility.Visible;
             ErrorAlertCard.Visibility = Visibility.Collapsed;
             SuccessFileNameText.Text = preview.ExcelFileName;
-            SuccessTotalText.Text = $"共 {preview.TotalRows} 行";
-            SuccessValidText.Text = $"有效 {preview.ValidRows} 行";
+            SuccessTotalText.Text = AppLanguageService.Format("ImportPreview.TotalRows", preview.TotalRows);
+            SuccessValidText.Text = AppLanguageService.Format("ImportPreview.ValidRows", preview.ValidRows);
         }
         else
         {
             SuccessAlertCard.Visibility = Visibility.Collapsed;
             ErrorAlertCard.Visibility = Visibility.Visible;
             ErrorFileNameText.Text = preview.ExcelFileName;
-            ErrorTotalText.Text = $"共 {preview.TotalRows} 行";
-            ErrorInvalidText.Text = $"错误 {preview.InvalidRows} 行";
+            ErrorTotalText.Text = AppLanguageService.Format("ImportPreview.TotalRows", preview.TotalRows);
+            ErrorInvalidText.Text = AppLanguageService.Format("ImportPreview.InvalidRows", preview.InvalidRows);
         }
 
         ConfirmButton.IsEnabled = preview.InvalidRows == 0;
         ImportHintText.Text = preview.InvalidRows == 0
-            ? "确认后才会写入导入批次和明细数据。"
-            : "存在错误行，修正 Excel 后才能确认导入。";
+            ? AppLanguageService.GetString("ImportPreview.ConfirmHint")
+            : AppLanguageService.GetString("ImportPreview.InvalidHint");
         BuildColumns(preview.Fields);
         _ = ApplyFilterAsync();
     }
@@ -81,7 +81,7 @@ public partial class ImportPreviewWindow : Window
     {
         if (_preview.InvalidRows > 0)
         {
-            AppMessageBox.Show("存在错误行，不能确认导入。请修正 Excel 后重新导入。", "导入校验", MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppMessageBox.Show(AppLanguageService.GetString("ImportPreview.CannotConfirmInvalidRows"), AppLanguageService.GetString("ImportPreview.ValidationTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -102,7 +102,7 @@ public partial class ImportPreviewWindow : Window
 
         PreviewGrid.Columns.Add(new DataGridCheckBoxColumn
         {
-            Header = "是否有效",
+            Header = AppLanguageService.GetString("PrintCenter.IsValid"),
             Binding = new System.Windows.Data.Binding(nameof(ImportPreviewRowGridItem.IsValid)),
             CellStyle = centerCellStyle,
             HeaderStyle = centerHeaderStyle,
@@ -122,7 +122,7 @@ public partial class ImportPreviewWindow : Window
 
         PreviewGrid.Columns.Add(new DataGridTextColumn
         {
-            Header = "错误信息",
+            Header = AppLanguageService.GetString("PrintHistory.ErrorMessage"),
             Binding = new System.Windows.Data.Binding(nameof(ImportPreviewRowGridItem.ErrorMessage)),
             Width = new DataGridLength(1, DataGridLengthUnitType.Star),
             MinWidth = 220,

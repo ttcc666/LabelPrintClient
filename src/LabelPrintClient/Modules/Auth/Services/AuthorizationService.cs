@@ -10,8 +10,23 @@ public static class AuthorizationService
         if (CurrentUserService.HasPermission(permissionKey))
             return true;
 
-        var name = string.IsNullOrWhiteSpace(actionName) ? "当前操作" : actionName;
-        AppMessageBox.Show($"无权限执行：{name}", "权限不足", MessageBoxButton.OK, MessageBoxImage.Warning);
+        string name;
+        if (!string.IsNullOrWhiteSpace(actionName))
+        {
+            var key = $"Permission.{permissionKey}";
+            var translated = AppLanguageService.GetString(key);
+            name = string.Equals(translated, key, StringComparison.Ordinal) ? actionName : translated;
+        }
+        else
+        {
+            name = AppLanguageService.GetString("Common.CurrentOperation");
+        }
+
+        AppMessageBox.Show(
+            AppLanguageService.Format("Common.PermissionDenied", name),
+            AppLanguageService.GetString("Common.PermissionDeniedTitle"),
+            MessageBoxButton.OK,
+            MessageBoxImage.Warning);
         return false;
     }
 }

@@ -32,7 +32,7 @@ public partial class FieldHistoryWindow : Window
     {
         InitializeComponent();
         _templateId = templateId;
-        TemplateNameText.Text = $"模板：{templateName}";
+        TemplateNameText.Text = AppLanguageService.Format("Field.HistoryTemplateName", templateName);
         Loaded += async (_, _) =>
         {
             _isWindowLoaded = true;
@@ -57,7 +57,7 @@ public partial class FieldHistoryWindow : Window
         var field = ReadFieldFromSnapshot(history.BeforeSnapshotJson);
         if (field == null)
         {
-            AppMessageBox.Show("无法读取字段快照，不能复制。", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppMessageBox.Show(AppLanguageService.GetString("Field.SnapshotReadFailed"), AppLanguageService.GetString("Common.Prompt"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -66,7 +66,7 @@ public partial class FieldHistoryWindow : Window
         field.IsDeleted = false;
         field.Sort = 0;
 
-        var win = new FieldEditWindow(field, "复制字段")
+        var win = new FieldEditWindow(field, AppLanguageService.GetString("Field.CopyActionTitle"))
         {
             Owner = this
         };
@@ -81,7 +81,7 @@ public partial class FieldHistoryWindow : Window
         var duplicateFieldError = GetDuplicateFieldError(fields, newField.FieldName, newField.FieldCode);
         if (duplicateFieldError != null)
         {
-            AppMessageBox.Show(duplicateFieldError, "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppMessageBox.Show(duplicateFieldError, AppLanguageService.GetString("Common.Prompt"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -105,7 +105,7 @@ public partial class FieldHistoryWindow : Window
 
     private async void RestoreHistoryField_Click(object sender, RoutedEventArgs e)
     {
-        if (!AuthorizationService.EnsurePermission(Permissions.TemplateFieldRestore, "恢复历史字段")) return;
+        if (!AuthorizationService.EnsurePermission(Permissions.TemplateFieldRestore, AppLanguageService.GetString("FieldHistory.RestoreField"))) return;
 
         if (sender is not FrameworkElement { DataContext: LabelTemplateFieldHistory history } ||
             !history.CanRestoreField)
@@ -119,25 +119,29 @@ public partial class FieldHistoryWindow : Window
         var field = fields.FirstOrDefault(x => x.Id == history.FieldId);
         if (field == null)
         {
-            AppMessageBox.Show("原字段不存在，无法恢复。可以使用复制功能新建字段。", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppMessageBox.Show(AppLanguageService.GetString("Field.OriginalMissingCannotRestore"), AppLanguageService.GetString("Common.Prompt"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
         if (!field.IsDeleted)
         {
-            AppMessageBox.Show("该字段当前未删除，无需恢复。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+            AppMessageBox.Show(AppLanguageService.GetString("Field.NotDeletedNoRestore"), AppLanguageService.GetString("Common.Prompt"), MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
         var activeFields = fields.Where(x => !x.IsDeleted && x.Id != field.Id).ToList();
-        var duplicateFieldError = GetDuplicateFieldError(activeFields, field.FieldName, field.FieldCode, "恢复");
+        var duplicateFieldError = GetDuplicateFieldError(activeFields, field.FieldName, field.FieldCode, AppLanguageService.GetString("Field.RestoreAction"));
         if (duplicateFieldError != null)
         {
-            AppMessageBox.Show(duplicateFieldError, "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+            AppMessageBox.Show(duplicateFieldError, AppLanguageService.GetString("Common.Prompt"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
-        if (AppMessageBox.Show($"确定恢复字段 {field.FieldName}（{field.FieldCode}）？", "确认恢复", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+        if (AppMessageBox.Show(
+                AppLanguageService.Format("Field.ConfirmRestore", field.FieldName, field.FieldCode),
+                AppLanguageService.GetString("Field.ConfirmRestoreTitle"),
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question) != MessageBoxResult.Yes)
             return;
 
         var beforeSnapshotJson = CreateFieldSnapshotJson(field);
@@ -149,7 +153,7 @@ public partial class FieldHistoryWindow : Window
             LabelTemplateFieldHistory.OperationRestore,
             beforeSnapshotJson,
             CreateFieldSnapshotJson(field),
-            $"恢复字段：{field.FieldName}（{field.FieldCode}）");
+            AppLanguageService.Format("Field.RestoreSummary", field.FieldName, field.FieldCode));
 
         await AppDb.UseTranAsync(async () =>
         {
@@ -202,7 +206,7 @@ public partial class FieldHistoryWindow : Window
         }
         catch (Exception ex)
         {
-            AppMessageBox.Show($"加载字段履历失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            AppMessageBox.Show(AppLanguageService.Format("Field.LoadHistoryFailed", ex.Message), AppLanguageService.GetString("Common.Error"), MessageBoxButton.OK, MessageBoxImage.Error);
         }
         finally
         {
@@ -258,7 +262,7 @@ public partial class FieldHistoryWindow : Window
             return;
         }
 
-        StatusText.Text = $"当前页 {HistoryGrid.Items.Count} 条；共 {_historyTotalRows} 条履历";
+        StatusText.Text = AppLanguageService.Format("Field.HistoryStatus", HistoryGrid.Items.Count, _historyTotalRows);
         HistoryPageInfoText.Text = $"{_historyCurrentPage} / {_historyTotalPages}";
 
         var hasRows = _historyTotalRows > 0;
@@ -311,13 +315,15 @@ public partial class FieldHistoryWindow : Window
         }
     }
 
-    private static string? GetDuplicateFieldError(IEnumerable<LabelTemplateField> fields, string name, string code, string actionText = "复制")
+    private static string? GetDuplicateFieldError(IEnumerable<LabelTemplateField> fields, string name, string code, string? actionText = null)
     {
+        actionText ??= AppLanguageService.GetString("Field.CopyActionTitle");
+
         if (fields.Any(x => string.Equals(x.FieldName.Trim(), name, StringComparison.OrdinalIgnoreCase)))
-            return $"字段名已存在，无法{actionText}。";
+            return AppLanguageService.Format("Field.DuplicateNameCannotAction", actionText);
 
         if (fields.Any(x => string.Equals(x.FieldCode.Trim(), code, StringComparison.OrdinalIgnoreCase)))
-            return $"字段编码已存在，无法{actionText}。";
+            return AppLanguageService.Format("Field.DuplicateCodeCannotAction", actionText);
 
         return null;
     }

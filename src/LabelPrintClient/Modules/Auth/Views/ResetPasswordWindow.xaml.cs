@@ -16,13 +16,13 @@ public partial class ResetPasswordWindow : HandyControl.Controls.Window
     {
         if (PasswordBox.Password.Length < 6)
         {
-            AppMessageBox.Show("密码至少 6 位。");
+            AppMessageBox.Show(AppLanguageService.GetString("Account.PasswordTooShort"));
             return;
         }
 
         if (!string.Equals(PasswordBox.Password, ConfirmPasswordBox.Password, StringComparison.Ordinal))
         {
-            AppMessageBox.Show("两次输入的密码不一致。");
+            AppMessageBox.Show(AppLanguageService.GetString("Account.PasswordMismatch"));
             return;
         }
 

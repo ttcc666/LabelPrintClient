@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using LabelPrintClient.Infrastructure;
 using LabelPrintClient.Modules.Auth.Services;
+using LabelPrintClient.Services;
 
 namespace LabelPrintClient.Modules.TaskCenter.Views;
 
@@ -22,6 +23,15 @@ public partial class TaskCenterView : System.Windows.Controls.UserControl
         foreach (var item in BackgroundTaskQueue.Shared.Tasks)
             item.PropertyChanged += TaskItem_PropertyChanged;
         Loaded += (_, _) => UpdateSummary();
+        Loaded += (_, _) => AppLanguageService.LanguageChanged += AppLanguageService_LanguageChanged;
+        Unloaded += (_, _) => AppLanguageService.LanguageChanged -= AppLanguageService_LanguageChanged;
+    }
+
+    private void AppLanguageService_LanguageChanged(object? sender, LabelPrintClient.Config.AppLanguage language)
+    {
+        _taskView.Refresh();
+        TaskGrid?.Items.Refresh();
+        UpdateSummary();
     }
 
     private void Filter_Changed(object sender, SelectionChangedEventArgs e)
@@ -148,7 +158,7 @@ public partial class TaskCenterView : System.Windows.Controls.UserControl
         var visibleCount = _taskView.Cast<object>().Count();
         var active = tasks.Count(x => x.IsActive);
         var failed = tasks.Count(x => x.Status == BackgroundTaskStatus.Failed);
-        SummaryText.Text = $"当前显示 {visibleCount} / 共 {tasks.Count} 个任务，执行中/等待 {active} 个，失败 {failed} 个。任务记录仅保留在本次应用运行期间。";
+        SummaryText.Text = AppLanguageService.Format("TaskCenter.Summary", visibleCount, tasks.Count, active, failed);
         EmptyText.Visibility = visibleCount == 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 

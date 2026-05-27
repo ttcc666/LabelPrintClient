@@ -1,5 +1,7 @@
 ﻿namespace LabelPrintClient.Infrastructure;
 
+using LabelPrintClient.Services;
+
 public sealed class BackgroundTaskItem : NotifyObject
 {
     private BackgroundTaskStatus _status = BackgroundTaskStatus.Pending;
@@ -119,11 +121,11 @@ public sealed class BackgroundTaskItem : NotifyObject
 
             return Status switch
             {
-                BackgroundTaskStatus.Pending => "等待",
-                BackgroundTaskStatus.Running => "执行中",
+                BackgroundTaskStatus.Pending => AppLanguageService.GetString("TaskCenter.PendingShort"),
+                BackgroundTaskStatus.Running => AppLanguageService.GetString("TaskCenter.RunningShort"),
                 BackgroundTaskStatus.Completed => "100%",
-                BackgroundTaskStatus.Failed => "失败",
-                BackgroundTaskStatus.Canceled => "已取消",
+                BackgroundTaskStatus.Failed => AppLanguageService.GetString("TaskCenter.Failed"),
+                BackgroundTaskStatus.Canceled => AppLanguageService.GetString("TaskCenter.Canceled"),
                 _ => "-"
             };
         }
@@ -131,32 +133,32 @@ public sealed class BackgroundTaskItem : NotifyObject
 
     public string Description => Status switch
     {
-        BackgroundTaskStatus.Pending => "等待执行",
-        BackgroundTaskStatus.Running => string.IsNullOrWhiteSpace(Message) ? "执行中" : Message,
-        BackgroundTaskStatus.Completed => string.IsNullOrWhiteSpace(Message) ? "任务已完成" : Message,
-        BackgroundTaskStatus.Failed => string.IsNullOrWhiteSpace(ErrorMessage) ? "任务执行失败" : ErrorMessage,
-        BackgroundTaskStatus.Canceled => "任务已取消",
+        BackgroundTaskStatus.Pending => AppLanguageService.GetString("TaskCenter.Waiting"),
+        BackgroundTaskStatus.Running => string.IsNullOrWhiteSpace(Message) ? AppLanguageService.GetString("TaskCenter.RunningShort") : Message,
+        BackgroundTaskStatus.Completed => string.IsNullOrWhiteSpace(Message) ? AppLanguageService.GetString("TaskCenter.TaskCompleted") : Message,
+        BackgroundTaskStatus.Failed => string.IsNullOrWhiteSpace(ErrorMessage) ? AppLanguageService.GetString("TaskCenter.TaskFailed") : ErrorMessage,
+        BackgroundTaskStatus.Canceled => AppLanguageService.GetString("TaskCenter.TaskCanceled"),
         _ => Message ?? string.Empty
     };
 
     public string KindText => Kind switch
     {
-        BackgroundTaskKind.Import => "导入",
-        BackgroundTaskKind.Export => "导出",
-        BackgroundTaskKind.Preview => "预览",
-        BackgroundTaskKind.Design => "设计",
-        BackgroundTaskKind.Print => "打印",
-        BackgroundTaskKind.Upload => "上传",
-        _ => "任务"
+        BackgroundTaskKind.Import => AppLanguageService.GetString("TaskCenter.Import"),
+        BackgroundTaskKind.Export => AppLanguageService.GetString("TaskCenter.Export"),
+        BackgroundTaskKind.Preview => AppLanguageService.GetString("TaskCenter.Preview"),
+        BackgroundTaskKind.Design => AppLanguageService.GetString("TaskCenter.Design"),
+        BackgroundTaskKind.Print => AppLanguageService.GetString("TaskCenter.Print"),
+        BackgroundTaskKind.Upload => AppLanguageService.GetString("TaskCenter.Upload"),
+        _ => AppLanguageService.GetString("TaskCenter.Task")
     };
 
     public string StatusText => Status switch
     {
-        BackgroundTaskStatus.Pending => "等待中",
-        BackgroundTaskStatus.Running => "执行中",
-        BackgroundTaskStatus.Completed => "已完成",
-        BackgroundTaskStatus.Failed => "失败",
-        BackgroundTaskStatus.Canceled => "已取消",
+        BackgroundTaskStatus.Pending => AppLanguageService.GetString("TaskCenter.Pending"),
+        BackgroundTaskStatus.Running => AppLanguageService.GetString("TaskCenter.Running"),
+        BackgroundTaskStatus.Completed => AppLanguageService.GetString("TaskCenter.Completed"),
+        BackgroundTaskStatus.Failed => AppLanguageService.GetString("TaskCenter.Failed"),
+        BackgroundTaskStatus.Canceled => AppLanguageService.GetString("TaskCenter.Canceled"),
         _ => Status.ToString()
     };
 
