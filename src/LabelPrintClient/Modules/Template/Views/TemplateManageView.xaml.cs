@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using LabelPrintClient.Config;
 using LabelPrintClient.Database;
 using LabelPrintClient.Infrastructure;
+using LabelPrintClient.Modules.Auth.Services;
 using LabelPrintClient.Modules.PrintCenter.Models;
 using LabelPrintClient.Modules.PrintCenter.Services;
 using LabelPrintClient.Modules.Template.Models;
@@ -253,6 +254,8 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
 
     private async void AddCategory_Click(object sender, RoutedEventArgs e)
     {
+        if (!AuthorizationService.EnsurePermission(Permissions.TemplateCategoryCreate, "新增分类")) return;
+
         var parentWindow = Window.GetWindow(this);
         var win = new CategoryEditWindow
         {
@@ -277,6 +280,8 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
 
     private async void EditCategory_Click(object sender, RoutedEventArgs e)
     {
+        if (!AuthorizationService.EnsurePermission(Permissions.TemplateCategoryEdit, "编辑分类")) return;
+
         var category = SelectedCategory;
         if (category == null)
         {
@@ -306,6 +311,8 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
 
     private async void DeleteCategory_Click(object sender, RoutedEventArgs e)
     {
+        if (!AuthorizationService.EnsurePermission(Permissions.TemplateCategoryDelete, "删除分类")) return;
+
         var category = SelectedCategory;
         if (category == null)
         {
@@ -344,6 +351,8 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
 
     private async void AddTemplate_Click(object sender, RoutedEventArgs e)
     {
+        if (!AuthorizationService.EnsurePermission(Permissions.TemplateCreate, "新增模板")) return;
+
         var category = SelectedCategory;
         if (category == null)
         {
@@ -390,6 +399,8 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
 
     private async void EditTemplate_Click(object sender, RoutedEventArgs e)
     {
+        if (!AuthorizationService.EnsurePermission(Permissions.TemplateEdit, "编辑模板")) return;
+
         var template = SelectedTemplate;
         if (template == null)
         {
@@ -472,6 +483,8 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
 
     private async void DeleteTemplate_Click(object sender, RoutedEventArgs e)
     {
+        if (!AuthorizationService.EnsurePermission(Permissions.TemplateDelete, "删除模板")) return;
+
         var template = SelectedTemplate;
         if (template == null)
         {
@@ -510,6 +523,8 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
 
     private async void AddField_Click(object sender, RoutedEventArgs e)
     {
+        if (!AuthorizationService.EnsurePermission(Permissions.TemplateFieldCreate, "新增字段")) return;
+
         var template = SelectedTemplate;
         if (template == null)
         {
@@ -553,6 +568,8 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
 
     private async void EditField_Click(object sender, RoutedEventArgs e)
     {
+        if (!AuthorizationService.EnsurePermission(Permissions.TemplateFieldEdit, "编辑字段")) return;
+
         var template = SelectedTemplate;
         var field = SelectedField;
         if (template == null || field == null)
@@ -642,6 +659,8 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
 
     private async void DeleteField_Click(object sender, RoutedEventArgs e)
     {
+        if (!AuthorizationService.EnsurePermission(Permissions.TemplateFieldDelete, "删除字段")) return;
+
         var field = SelectedField;
         if (field == null)
         {
@@ -703,6 +722,8 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
 
     private async void FieldHistory_Click(object sender, RoutedEventArgs e)
     {
+        if (!AuthorizationService.EnsurePermission(Permissions.TemplateFieldHistory, "字段历史")) return;
+
         var template = SelectedTemplate;
         if (template == null)
         {
@@ -723,6 +744,8 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
 
     private async void UploadTemplate_Click(object sender, RoutedEventArgs e)
     {
+        if (!AuthorizationService.EnsurePermission(Permissions.TemplateUpload, "上传模板")) return;
+
         var template = SelectedTemplate;
         if (template == null)
         {
@@ -814,6 +837,8 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
 
     private async void DesignTemplate_Click(object sender, RoutedEventArgs e)
     {
+        if (!AuthorizationService.EnsurePermission(Permissions.TemplateDesign, "设计模板")) return;
+
         var template = SelectedTemplate;
         if (template == null)
         {
@@ -876,6 +901,8 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
 
     private async void SeedDemo_Click(object sender, RoutedEventArgs e)
     {
+        if (!AuthorizationService.EnsurePermission(Permissions.TemplateSeedDemo, "初始化示例数据")) return;
+
         var category = await FindCategoryAsync("产品标签", 0);
         if (category == null)
         {
@@ -1405,11 +1432,13 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
 
     private async void MoveFieldUp_Click(object sender, RoutedEventArgs e)
     {
+        if (!AuthorizationService.EnsurePermission(Permissions.TemplateFieldSort, "字段排序")) return;
         await MoveSelectedFieldAsync(-1);
     }
 
     private async void MoveFieldDown_Click(object sender, RoutedEventArgs e)
     {
+        if (!AuthorizationService.EnsurePermission(Permissions.TemplateFieldSort, "字段排序")) return;
         await MoveSelectedFieldAsync(1);
     }
 
@@ -1548,7 +1577,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
             BeforeSnapshotJson = beforeSnapshotJson,
             AfterSnapshotJson = afterSnapshotJson,
             ChangeSummary = changeSummary,
-            OperatorName = App.Settings.OperatorName,
+            OperatorName = CurrentUserService.OperatorName,
             CreateTime = DateTime.Now
         };
     }

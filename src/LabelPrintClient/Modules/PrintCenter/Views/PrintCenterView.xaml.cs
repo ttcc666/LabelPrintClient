@@ -6,6 +6,8 @@ using System.Windows.Data;
 using System.Windows.Input;
 using LabelPrintClient.Database;
 using LabelPrintClient.Infrastructure;
+using LabelPrintClient.Modules.Auth.Infrastructure;
+using LabelPrintClient.Modules.Auth.Services;
 using LabelPrintClient.Modules.PrintCenter.Models;
 using LabelPrintClient.Modules.Template.Models;
 using LabelPrintClient.Modules.PrintCenter.Services;
@@ -300,6 +302,8 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
 
     private async void DownloadExcel_Click(object sender, RoutedEventArgs e)
     {
+        if (!AuthorizationService.EnsurePermission(Permissions.PrintCenterDownloadExcel, "下载 Excel 模板")) return;
+
         if (SelectedTemplate == null)
         {
             AppMessageBox.Show("请先选择模板。");
@@ -328,6 +332,8 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
 
     private async void ImportExcel_Click(object sender, RoutedEventArgs e)
     {
+        if (!AuthorizationService.EnsurePermission(Permissions.PrintCenterImportExcel, "导入 Excel")) return;
+
         var template = SelectedTemplate;
         if (template == null)
         {
@@ -362,7 +368,7 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
             }
 
             var batchId = await RunQueuedAsync(sender, BackgroundTaskKind.Import, "正在提交导入数据...", context =>
-                service.CommitImportAsync(preview, batchNo, App.Settings.OperatorName, context.CancellationToken));
+                service.CommitImportAsync(preview, batchNo, CurrentUserService.OperatorName, context.CancellationToken));
 
             if (SelectedTemplate?.Id == templateId)
             {
@@ -389,6 +395,8 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
 
     private async void VoidBatch_Click(object sender, RoutedEventArgs e)
     {
+        if (!AuthorizationService.EnsurePermission(Permissions.PrintCenterVoidBatch, "作废批次")) return;
+
         if (sender is not FrameworkElement { DataContext: LabelImportBatch batch })
             return;
 
@@ -645,11 +653,11 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         panel.SetValue(StackPanel.OrientationProperty, System.Windows.Controls.Orientation.Horizontal);
         panel.SetValue(FrameworkElement.HorizontalAlignmentProperty, System.Windows.HorizontalAlignment.Center);
 
-        var previewButton = BuildRowActionButton("预览", MahApps.Metro.IconPacks.PackIconMaterialKind.Eye, PreviewRow_Click, false);
+        var previewButton = BuildRowActionButton("预览", MahApps.Metro.IconPacks.PackIconMaterialKind.Eye, PreviewRow_Click, false, Permissions.PrintCenterPreview);
         previewButton.SetValue(FrameworkElement.MarginProperty, new Thickness(0, 0, 6, 0));
         panel.AppendChild(previewButton);
 
-        var printButton = BuildRowActionButton("打印", MahApps.Metro.IconPacks.PackIconMaterialKind.Printer, PrintRow_Click, true);
+        var printButton = BuildRowActionButton("打印", MahApps.Metro.IconPacks.PackIconMaterialKind.Printer, PrintRow_Click, true, Permissions.PrintCenterPrint);
         printButton.SetValue(FrameworkElement.MarginProperty, new Thickness(0, 0, 6, 0));
         panel.AppendChild(printButton);
 
@@ -657,6 +665,7 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         reprintButton.SetValue(System.Windows.FrameworkElement.HeightProperty, 28.0);
         reprintButton.SetValue(System.Windows.FrameworkElement.StyleProperty, System.Windows.Application.Current.FindResource("AppSecondaryButtonStyle"));
         reprintButton.SetBinding(System.Windows.UIElement.IsEnabledProperty, new System.Windows.Data.Binding(nameof(ImportRowGridItem.IsPrinted)));
+        reprintButton.SetValue(PermissionAssist.PermissionKeyProperty, Permissions.PrintCenterReprint);
         reprintButton.AddHandler(System.Windows.Controls.Primitives.ButtonBase.ClickEvent, new System.Windows.RoutedEventHandler(ReprintRow_Click));
 
         var reprintPanel = BuildButtonContent("补打", MahApps.Metro.IconPacks.PackIconMaterialKind.PrinterAlert);
@@ -669,12 +678,13 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         };
     }
 
-    private static FrameworkElementFactory BuildRowActionButton(string content, MahApps.Metro.IconPacks.PackIconMaterialKind iconKind, System.Windows.RoutedEventHandler clickHandler, bool isPrimary)
+    private static FrameworkElementFactory BuildRowActionButton(string content, MahApps.Metro.IconPacks.PackIconMaterialKind iconKind, System.Windows.RoutedEventHandler clickHandler, bool isPrimary, string permissionKey)
     {
         var button = new FrameworkElementFactory(typeof(System.Windows.Controls.Button));
         button.SetValue(System.Windows.FrameworkElement.HeightProperty, 28.0);
         button.SetValue(System.Windows.FrameworkElement.StyleProperty, System.Windows.Application.Current.FindResource(isPrimary ? "ButtonPrimary" : "AppSecondaryButtonStyle"));
         button.SetBinding(System.Windows.UIElement.IsEnabledProperty, new System.Windows.Data.Binding(nameof(ImportRowGridItem.IsValid)));
+        button.SetValue(PermissionAssist.PermissionKeyProperty, permissionKey);
         button.AddHandler(System.Windows.Controls.Primitives.ButtonBase.ClickEvent, clickHandler);
 
         var panel = BuildButtonContent(content, iconKind);
@@ -873,21 +883,25 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
 
     private void SelectValidUnprinted_Click(object sender, RoutedEventArgs e)
     {
+        if (!AuthorizationService.EnsurePermission(Permissions.PrintCenterSelectRows, "选择明细行")) return;
         ApplyRowSelection(row => row.IsValid && !row.IsPrinted);
     }
 
     private void SelectValid_Click(object sender, RoutedEventArgs e)
     {
+        if (!AuthorizationService.EnsurePermission(Permissions.PrintCenterSelectRows, "选择明细行")) return;
         ApplyRowSelection(row => row.IsValid);
     }
 
     private void ReverseSelect_Click(object sender, RoutedEventArgs e)
     {
+        if (!AuthorizationService.EnsurePermission(Permissions.PrintCenterSelectRows, "选择明细行")) return;
         ApplyRowSelection(row => !row.IsSelected);
     }
 
     private void ClearSelect_Click(object sender, RoutedEventArgs e)
     {
+        if (!AuthorizationService.EnsurePermission(Permissions.PrintCenterSelectRows, "选择明细行")) return;
         ApplyRowSelection(_ => false);
     }
 
@@ -909,6 +923,8 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
 
     private async void PreviewRow_Click(object sender, RoutedEventArgs e)
     {
+        if (!AuthorizationService.EnsurePermission(Permissions.PrintCenterPreview, "预览标签")) return;
+
         if (!TryGetRowActionContext(sender, out var template, out var batch, out var row))
             return;
 
@@ -928,6 +944,8 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
 
     private async void PrintRow_Click(object sender, RoutedEventArgs e)
     {
+        if (!AuthorizationService.EnsurePermission(Permissions.PrintCenterPrint, "打印标签")) return;
+
         if (!TryGetRowActionContext(sender, out var template, out var batch, out var row))
             return;
 
@@ -966,6 +984,8 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
 
     private async void ReprintRow_Click(object sender, RoutedEventArgs e)
     {
+        if (!AuthorizationService.EnsurePermission(Permissions.PrintCenterReprint, "补打标签")) return;
+
         if (sender is not FrameworkElement { DataContext: ImportRowGridItem rowItem })
             return;
 
@@ -1044,6 +1064,8 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
 
     private async void PrintSelected_Click(object sender, RoutedEventArgs e)
     {
+        if (!AuthorizationService.EnsurePermission(Permissions.PrintCenterPrint, "批量打印")) return;
+
         var template = SelectedTemplate;
         var batch = SelectedBatch;
         if (template == null || batch == null)
@@ -1095,6 +1117,8 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
 
     private async void PreviewSelected_Click(object sender, RoutedEventArgs e)
     {
+        if (!AuthorizationService.EnsurePermission(Permissions.PrintCenterPreview, "批量预览")) return;
+
         var template = SelectedTemplate;
         var batch = SelectedBatch;
         if (template == null || batch == null)

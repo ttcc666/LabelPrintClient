@@ -2,6 +2,7 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+             xmlns:auth="clr-namespace:LabelPrintClient.Modules.Auth.Infrastructure"
              xmlns:hc="https://handyorg.github.io/handycontrol">
     <UserControl.Resources>
         <Style x:Key="SectionTitleStyle" TargetType="TextBlock" BasedOn="{StaticResource AppSectionTitleStyle}" />
@@ -96,13 +97,13 @@
                 </StackPanel>
 
                 <WrapPanel DockPanel.Dock="Right" HorizontalAlignment="Right" VerticalAlignment="Center">
-                    <Button  Style="{StaticResource AppSecondaryButtonStyle}" Click="Refresh_Click" Margin="0,0,8,0">
+                    <Button  Style="{StaticResource AppSecondaryButtonStyle}" Click="Refresh_Click" Margin="0,0,8,0" auth:PermissionAssist.PermissionKey="Button.Template.Refresh">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="Refresh" Margin="0,0,6,0" VerticalAlignment="Center" />
                             <TextBlock Text="刷新" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
-                    <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="SeedDemo_Click">
+                    <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="SeedDemo_Click" auth:PermissionAssist.PermissionKey="Button.Template.SeedDemo">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="DatabasePlusOutline" Margin="0,0,6,0" VerticalAlignment="Center" />
                             <TextBlock Text="初始化示例数据" VerticalAlignment="Center" />
@@ -135,19 +136,19 @@
             <StackPanel Grid.Column="0" Grid.Row="1" Margin="0,0,6,8" VerticalAlignment="Top">
                 <!-- 分类操作按钮 -->
                 <WrapPanel Margin="0,0,0,4">
-                    <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="AddCategory_Click" Margin="0,0,8,8">
+                    <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="AddCategory_Click" Margin="0,0,8,8" auth:PermissionAssist.PermissionKey="Button.Template.Category.Create">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="PlusCircleOutline" Margin="0,0,6,0" VerticalAlignment="Center" />
                             <TextBlock Text="新增分类" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
-                    <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="EditCategory_Click" Margin="0,0,8,8">
+                    <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="EditCategory_Click" Margin="0,0,8,8" auth:PermissionAssist.PermissionKey="Button.Template.Category.Edit">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="PencilOutline" Margin="0,0,6,0" VerticalAlignment="Center" />
                             <TextBlock Text="编辑" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
-                    <Button Style="{StaticResource AppDangerButtonStyle}" Click="DeleteCategory_Click" Margin="0,0,8,8">
+                    <Button Style="{StaticResource AppDangerButtonStyle}" Click="DeleteCategory_Click" Margin="0,0,8,8" auth:PermissionAssist.PermissionKey="Button.Template.Category.Delete">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="TrashCanOutline" Margin="0,0,6,0" VerticalAlignment="Center" />
                             <TextBlock Text="删除" VerticalAlignment="Center" />
@@ -161,13 +162,13 @@
                         <TextBlock Style="{StaticResource AppFormLabelStyle}" Text="关键词" />
                         <TextBox x:Name="CategorySearchBox" Width="130" VerticalAlignment="Center" KeyDown="CategorySearchBox_KeyDown" />
                     </StackPanel>
-                    <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="CategoryFilter_Click" Margin="0,0,8,8">
+                    <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="CategoryFilter_Click" Margin="0,0,8,8" auth:PermissionAssist.PermissionKey="Button.Template.Category.Search">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="Magnify" Margin="0,0,6,0" VerticalAlignment="Center" />
                             <TextBlock Text="查询" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
-                    <Button Style="{StaticResource AppGhostButtonStyle}" Click="ClearCategoryFilter_Click" Margin="0,0,8,8">
+                    <Button Style="{StaticResource AppGhostButtonStyle}" Click="ClearCategoryFilter_Click" Margin="0,0,8,8" auth:PermissionAssist.PermissionKey="Button.Template.Category.Search">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="FilterRemoveOutline" Margin="0,0,6,0" VerticalAlignment="Center" />
                             <TextBlock Text="清空" VerticalAlignment="Center" />
@@ -225,31 +226,31 @@
             <StackPanel Grid.Column="2" Grid.Row="1" Margin="6,0,6,8" VerticalAlignment="Top">
                 <!-- 模板操作按钮 -->
                 <WrapPanel Margin="0,0,0,2">
-                    <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="AddTemplate_Click" Margin="0,0,8,8">
+                    <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="AddTemplate_Click" Margin="0,0,8,8" auth:PermissionAssist.PermissionKey="Button.Template.Create">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="PlusCircleOutline" Margin="0,0,6,0" VerticalAlignment="Center" />
                             <TextBlock Text="新增模板" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
-                    <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="EditTemplate_Click" Margin="0,0,8,8">
+                    <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="EditTemplate_Click" Margin="0,0,8,8" auth:PermissionAssist.PermissionKey="Button.Template.Edit">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="PencilOutline" Margin="0,0,6,0" VerticalAlignment="Center" />
                             <TextBlock Text="编辑" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
-                    <Button Style="{StaticResource AppDangerButtonStyle}" Click="DeleteTemplate_Click" Margin="0,0,8,8">
+                    <Button Style="{StaticResource AppDangerButtonStyle}" Click="DeleteTemplate_Click" Margin="0,0,8,8" auth:PermissionAssist.PermissionKey="Button.Template.Delete">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="TrashCanOutline" Margin="0,0,6,0" VerticalAlignment="Center" />
                             <TextBlock Text="删除" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
-                    <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="UploadTemplate_Click" Margin="0,0,8,8">
+                    <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="UploadTemplate_Click" Margin="0,0,8,8" auth:PermissionAssist.PermissionKey="Button.Template.Upload">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="CloudUploadOutline" Margin="0,0,6,0" VerticalAlignment="Center" />
                             <TextBlock Text="上传 .mrt" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
-                    <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="DesignTemplate_Click" Margin="0,0,8,8">
+                    <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="DesignTemplate_Click" Margin="0,0,8,8" auth:PermissionAssist.PermissionKey="Button.Template.Design">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="PaletteOutline" Margin="0,0,6,0" VerticalAlignment="Center" />
                             <TextBlock Text="设计器" VerticalAlignment="Center" />
@@ -263,13 +264,13 @@
                         <TextBlock Style="{StaticResource AppFormLabelStyle}" Text="关键词" />
                         <TextBox x:Name="TemplateSearchBox" Width="120" VerticalAlignment="Center" KeyDown="TemplateSearchBox_KeyDown" />
                     </StackPanel>
-                    <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="TemplateFilter_Click" Margin="0,0,8,8">
+                    <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="TemplateFilter_Click" Margin="0,0,8,8" auth:PermissionAssist.PermissionKey="Button.Template.Search">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="Magnify" Margin="0,0,6,0" VerticalAlignment="Center" />
                             <TextBlock Text="查询" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
-                    <Button Style="{StaticResource AppGhostButtonStyle}" Click="ClearTemplateFilter_Click" Margin="0,0,8,8">
+                    <Button Style="{StaticResource AppGhostButtonStyle}" Click="ClearTemplateFilter_Click" Margin="0,0,8,8" auth:PermissionAssist.PermissionKey="Button.Template.Search">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="FilterRemoveOutline" Margin="0,0,6,0" VerticalAlignment="Center" />
                             <TextBlock Text="清空" VerticalAlignment="Center" />
@@ -378,31 +379,31 @@
             <StackPanel Grid.Column="4" Grid.Row="1" Margin="6,0,0,8" VerticalAlignment="Top">
                 <!-- 字段操作按钮 -->
                 <WrapPanel Margin="0,0,0,2">
-                    <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="AddField_Click" Margin="0,0,8,8">
+                    <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="AddField_Click" Margin="0,0,8,8" auth:PermissionAssist.PermissionKey="Button.Template.Field.Create">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="PlusCircleOutline" Margin="0,0,6,0" VerticalAlignment="Center" />
                             <TextBlock Text="新增字段" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
-                    <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="EditField_Click" Margin="0,0,8,8">
+                    <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="EditField_Click" Margin="0,0,8,8" auth:PermissionAssist.PermissionKey="Button.Template.Field.Edit">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="PencilOutline" Margin="0,0,6,0" VerticalAlignment="Center" />
                             <TextBlock Text="编辑" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
-                    <Button Style="{StaticResource AppDangerButtonStyle}" Click="DeleteField_Click" Margin="0,0,8,8">
+                    <Button Style="{StaticResource AppDangerButtonStyle}" Click="DeleteField_Click" Margin="0,0,8,8" auth:PermissionAssist.PermissionKey="Button.Template.Field.Delete">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="TrashCanOutline" Margin="0,0,6,0" VerticalAlignment="Center" />
                             <TextBlock Text="删除" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
-                    <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="FieldHistory_Click" Margin="0,0,8,8">
+                    <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="FieldHistory_Click" Margin="0,0,8,8" auth:PermissionAssist.PermissionKey="Button.Template.Field.History">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="History" Margin="0,0,6,0" VerticalAlignment="Center" />
                             <TextBlock Text="字段履历" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
-                    <Button Style="{StaticResource AppGhostButtonStyle}" Click="MoveFieldUp_Click" Margin="0,0,8,8">
+                    <Button Style="{StaticResource AppGhostButtonStyle}" Click="MoveFieldUp_Click" Margin="0,0,8,8" auth:PermissionAssist.PermissionKey="Button.Template.Field.Sort">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="ChevronLeft" Margin="0,0,6,0" VerticalAlignment="Center" RenderTransformOrigin="0.5,0.5">
                                 <iconPacks:PackIconMaterial.RenderTransform>
@@ -412,7 +413,7 @@
                             <TextBlock Text="上移" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
-                    <Button Style="{StaticResource AppGhostButtonStyle}" Click="MoveFieldDown_Click" Margin="0,0,8,8">
+                    <Button Style="{StaticResource AppGhostButtonStyle}" Click="MoveFieldDown_Click" Margin="0,0,8,8" auth:PermissionAssist.PermissionKey="Button.Template.Field.Sort">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="ChevronLeft" Margin="0,0,6,0" VerticalAlignment="Center" RenderTransformOrigin="0.5,0.5">
                                 <iconPacks:PackIconMaterial.RenderTransform>
@@ -430,13 +431,13 @@
                         <TextBlock Style="{StaticResource AppFormLabelStyle}" Text="关键词" />
                         <TextBox x:Name="FieldSearchBox" Width="140" VerticalAlignment="Center" KeyDown="FieldSearchBox_KeyDown" />
                     </StackPanel>
-                    <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="FieldFilter_Click" Margin="0,0,8,8">
+                    <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="FieldFilter_Click" Margin="0,0,8,8" auth:PermissionAssist.PermissionKey="Button.Template.Field.Search">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="Magnify" Margin="0,0,6,0" VerticalAlignment="Center" />
                             <TextBlock Text="查询" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
-                    <Button Style="{StaticResource AppGhostButtonStyle}" Click="ClearFieldFilter_Click" Margin="0,0,8,8">
+                    <Button Style="{StaticResource AppGhostButtonStyle}" Click="ClearFieldFilter_Click" Margin="0,0,8,8" auth:PermissionAssist.PermissionKey="Button.Template.Field.Search">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="FilterRemoveOutline" Margin="0,0,6,0" VerticalAlignment="Center" />
                             <TextBlock Text="清空" VerticalAlignment="Center" />

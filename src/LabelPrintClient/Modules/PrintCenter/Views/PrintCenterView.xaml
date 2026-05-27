@@ -1,8 +1,9 @@
 <UserControl x:Class="LabelPrintClient.Modules.PrintCenter.Views.PrintCenterView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+             xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
              xmlns:infra="clr-namespace:LabelPrintClient.Infrastructure"
+             xmlns:auth="clr-namespace:LabelPrintClient.Modules.Auth.Infrastructure"
              xmlns:hc="https://handyorg.github.io/handycontrol">
     <UserControl.Resources>
         <Style x:Key="SectionTitleStyle" TargetType="TextBlock" BasedOn="{StaticResource AppSectionTitleStyle}" />
@@ -96,7 +97,7 @@
                                   infra:SearchableComboBoxBehavior.IsEnabled="True" />
                     </StackPanel>
 
-                    <Button Grid.Column="4" Style="{StaticResource AppSecondaryButtonStyle}" Click="Refresh_Click" Margin="12,0,0,0">
+                    <Button Grid.Column="4" Style="{StaticResource AppSecondaryButtonStyle}" Click="Refresh_Click" Margin="12,0,0,0" auth:PermissionAssist.PermissionKey="Button.PrintCenter.Refresh">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="Refresh" Margin="0,0,6,0" VerticalAlignment="Center" />
                             <TextBlock Text="刷新" VerticalAlignment="Center" />
@@ -105,13 +106,13 @@
                 </Grid>
 
                 <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,8,0,0">
-                    <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="DownloadExcel_Click" Margin="0,0,8,0">
+                    <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="DownloadExcel_Click" Margin="0,0,8,0" auth:PermissionAssist.PermissionKey="Button.PrintCenter.DownloadExcel">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="Download" Margin="0,0,6,0" VerticalAlignment="Center" />
                             <TextBlock Text="下载 Excel 模板" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
-                    <Button Style="{StaticResource AppPrimaryButtonStyle}" Click="ImportExcel_Click" Margin="0,0,20,0">
+                    <Button Style="{StaticResource AppPrimaryButtonStyle}" Click="ImportExcel_Click" Margin="0,0,20,0" auth:PermissionAssist.PermissionKey="Button.PrintCenter.ImportExcel">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="MicrosoftExcel" Margin="0,0,6,0" VerticalAlignment="Center" />
                             <TextBlock Text="导入 Excel" VerticalAlignment="Center" />
@@ -163,13 +164,13 @@
                                 <ComboBoxItem Content="已作废" Tag="Voided" />
                             </ComboBox>
                         </StackPanel>
-                        <Button  Style="{StaticResource AppSecondaryButtonStyle}" Click="BatchFilter_Click" Margin="0,0,8,0">
+                        <Button  Style="{StaticResource AppSecondaryButtonStyle}" Click="BatchFilter_Click" Margin="0,0,8,0" auth:PermissionAssist.PermissionKey="Button.PrintCenter.BatchSearch">
         <StackPanel Orientation="Horizontal">
             <iconPacks:PackIconMaterial Kind="Magnify" Margin="0,0,6,0" VerticalAlignment="Center" />
             <TextBlock Text="查询" VerticalAlignment="Center" />
         </StackPanel>
     </Button>
-                        <Button  Style="{StaticResource AppSecondaryButtonStyle}" Click="LoadBatches_Click">
+                        <Button  Style="{StaticResource AppSecondaryButtonStyle}" Click="LoadBatches_Click" auth:PermissionAssist.PermissionKey="Button.PrintCenter.LoadBatches">
         <StackPanel Orientation="Horizontal">
             <iconPacks:PackIconMaterial Kind="Refresh" Margin="0,0,6,0" VerticalAlignment="Center" />
             <TextBlock Text="刷新批次" VerticalAlignment="Center" />
@@ -192,7 +193,7 @@
                                 <DataGridTemplateColumn Header="操作" Width="Auto">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <Button Click="VoidBatch_Click" Height="24" Padding="6,0">
+                                            <Button Click="VoidBatch_Click" Height="24" Padding="6,0" auth:PermissionAssist.PermissionKey="Button.PrintCenter.VoidBatch">
                                                 <Button.Style>
                                                     <Style TargetType="Button" BasedOn="{StaticResource AppSecondaryButtonStyle}">
                                                         <Setter Property="Height" Value="24" />
@@ -298,13 +299,13 @@
                                      VerticalAlignment="Center"
                                      KeyDown="RowSearchBox_KeyDown" />
                         </StackPanel>
-                        <Button  Style="{StaticResource AppSecondaryButtonStyle}" Click="RowFilter_Click" Margin="0,0,8,0">
+                        <Button  Style="{StaticResource AppSecondaryButtonStyle}" Click="RowFilter_Click" Margin="0,0,8,0" auth:PermissionAssist.PermissionKey="Button.PrintCenter.RowSearch">
         <StackPanel Orientation="Horizontal">
             <iconPacks:PackIconMaterial Kind="Magnify" Margin="0,0,6,0" VerticalAlignment="Center" />
             <TextBlock Text="查询" VerticalAlignment="Center" />
         </StackPanel>
     </Button>
-                        <Button  Style="{StaticResource AppGhostButtonStyle}" Click="ClearRowFilter_Click">
+                        <Button  Style="{StaticResource AppGhostButtonStyle}" Click="ClearRowFilter_Click" auth:PermissionAssist.PermissionKey="Button.PrintCenter.RowSearch">
         <StackPanel Orientation="Horizontal">
             <iconPacks:PackIconMaterial Kind="FilterRemoveOutline" Margin="0,0,6,0" VerticalAlignment="Center" />
             <TextBlock Text="清空" VerticalAlignment="Center" />
@@ -395,37 +396,37 @@
                         <TextBlock Style="{StaticResource FormLabelStyle}" Text="份数" />
                         <TextBox x:Name="PrintCopiesBox" Width="72" Text="1" VerticalAlignment="Center" />
                     </StackPanel>
-                    <Button  Style="{StaticResource AppSecondaryButtonStyle}" Click="SelectValidUnprinted_Click" Margin="0,0,8,0">
+                    <Button  Style="{StaticResource AppSecondaryButtonStyle}" Click="SelectValidUnprinted_Click" Margin="0,0,8,0" auth:PermissionAssist.PermissionKey="Button.PrintCenter.SelectRows">
         <StackPanel Orientation="Horizontal">
             <iconPacks:PackIconMaterial Kind="CheckboxMarked" Margin="0,0,6,0" VerticalAlignment="Center" />
             <TextBlock Text="全选有效未打印" VerticalAlignment="Center" />
         </StackPanel>
     </Button>
-                    <Button  Style="{StaticResource AppSecondaryButtonStyle}" Click="SelectValid_Click" Margin="0,0,8,0">
+                    <Button  Style="{StaticResource AppSecondaryButtonStyle}" Click="SelectValid_Click" Margin="0,0,8,0" auth:PermissionAssist.PermissionKey="Button.PrintCenter.SelectRows">
         <StackPanel Orientation="Horizontal">
             <iconPacks:PackIconMaterial Kind="CheckboxMultipleMarked" Margin="0,0,6,0" VerticalAlignment="Center" />
             <TextBlock Text="全选有效行" VerticalAlignment="Center" />
         </StackPanel>
     </Button>
-                    <Button  Style="{StaticResource AppGhostButtonStyle}" Click="ReverseSelect_Click" Margin="0,0,8,0">
+                    <Button  Style="{StaticResource AppGhostButtonStyle}" Click="ReverseSelect_Click" Margin="0,0,8,0" auth:PermissionAssist.PermissionKey="Button.PrintCenter.SelectRows">
         <StackPanel Orientation="Horizontal">
             <iconPacks:PackIconMaterial Kind="MinusBoxOutline" Margin="0,0,6,0" VerticalAlignment="Center" />
             <TextBlock Text="反选" VerticalAlignment="Center" />
         </StackPanel>
     </Button>
-                    <Button  Style="{StaticResource AppGhostButtonStyle}" Click="ClearSelect_Click" Margin="0,0,16,0">
+                    <Button  Style="{StaticResource AppGhostButtonStyle}" Click="ClearSelect_Click" Margin="0,0,16,0" auth:PermissionAssist.PermissionKey="Button.PrintCenter.SelectRows">
         <StackPanel Orientation="Horizontal">
             <iconPacks:PackIconMaterial Kind="FilterRemoveOutline" Margin="0,0,6,0" VerticalAlignment="Center" />
             <TextBlock Text="清空" VerticalAlignment="Center" />
         </StackPanel>
     </Button>
-                    <Button  Style="{StaticResource AppSecondaryButtonStyle}" Click="PreviewSelected_Click" Margin="0,0,8,0">
+                    <Button  Style="{StaticResource AppSecondaryButtonStyle}" Click="PreviewSelected_Click" Margin="0,0,8,0" auth:PermissionAssist.PermissionKey="Button.PrintCenter.Preview">
         <StackPanel Orientation="Horizontal">
             <iconPacks:PackIconMaterial Kind="Eye" Margin="0,0,6,0" VerticalAlignment="Center" />
             <TextBlock Text="批量预览" VerticalAlignment="Center" />
         </StackPanel>
     </Button>
-                    <Button Style="{StaticResource AppPrimaryButtonStyle}" Click="PrintSelected_Click">
+                    <Button Style="{StaticResource AppPrimaryButtonStyle}" Click="PrintSelected_Click" auth:PermissionAssist.PermissionKey="Button.PrintCenter.Print">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="Printer" Margin="0,0,6,0" VerticalAlignment="Center" />
                             <TextBlock Text="批量打印" VerticalAlignment="Center" />

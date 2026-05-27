@@ -4,6 +4,8 @@ namespace LabelPrintClient.Services;
 
 public static class AppMessageBox
 {
+    public const string ToastToken = "AppToast";
+
     public static MessageBoxResult Show(
         string messageBoxText,
         string caption = "",
@@ -62,32 +64,32 @@ public static class AppMessageBox
 
             if (icon == MessageBoxImage.Error)
             {
-                HandyControl.Controls.Growl.Error(messageBoxText);
+                HandyControl.Controls.Growl.Error(messageBoxText, ToastToken);
                 return MessageBoxResult.OK;
             }
             if (icon == MessageBoxImage.Warning)
             {
-                HandyControl.Controls.Growl.Warning(messageBoxText);
+                HandyControl.Controls.Growl.Warning(messageBoxText, ToastToken);
                 return MessageBoxResult.OK;
             }
             if (icon == MessageBoxImage.Information)
             {
                 if (isSuccess)
-                    HandyControl.Controls.Growl.Success(messageBoxText);
+                    HandyControl.Controls.Growl.Success(messageBoxText, ToastToken);
                 else
-                    HandyControl.Controls.Growl.Info(messageBoxText);
+                    HandyControl.Controls.Growl.Info(messageBoxText, ToastToken);
                 return MessageBoxResult.OK;
             }
 
             // 默认根据内容推断
             if (isSuccess)
-                HandyControl.Controls.Growl.Success(messageBoxText);
+                HandyControl.Controls.Growl.Success(messageBoxText, ToastToken);
             else if (caption.Contains("错误") || messageBoxText.Contains("失败"))
-                HandyControl.Controls.Growl.Error(messageBoxText);
+                HandyControl.Controls.Growl.Error(messageBoxText, ToastToken);
             else if (caption.Contains("警告"))
-                HandyControl.Controls.Growl.Warning(messageBoxText);
+                HandyControl.Controls.Growl.Warning(messageBoxText, ToastToken);
             else
-                HandyControl.Controls.Growl.Info(messageBoxText);
+                HandyControl.Controls.Growl.Info(messageBoxText, ToastToken);
 
             return MessageBoxResult.OK;
         }

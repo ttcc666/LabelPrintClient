@@ -2,6 +2,8 @@ using System.IO;
 using System.Windows;
 using LabelPrintClient.Config;
 using LabelPrintClient.Database;
+using LabelPrintClient.Modules.Auth.Services;
+using LabelPrintClient.Modules.Auth.Views;
 using LabelPrintClient.Services;
 using LabelPrintClient.Infrastructure;
 using Stimulsoft.Report;
@@ -14,20 +16,45 @@ public partial class App : System.Windows.Application
 
     public static AppSettings Settings { get; private set; } = new();
 
-    protected override void OnStartup(System.Windows.StartupEventArgs e)
+    protected override async void OnStartup(System.Windows.StartupEventArgs e)
     {
         // 尽早挂载全局未处理异常捕获，确保启动阶段其他异常也能被记录
         RegisterGlobalExceptionHandlers();
 
         base.OnStartup(e);
+        ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
         try
         {
+            AppLogger.LogInfo("启动初始化开始");
             LoadStimulsoftLocalization();
             Settings = AppConfigService.LoadOrCreateDefault();
+            AppLogger.LogInfo($"配置已加载，运行模式：{Settings.RunMode}");
+            AppLogger.LogInfo("开始应用主题");
             AppThemeService.Apply(Settings.ThemeMode);
+            AppLogger.LogInfo("主题应用完成");
+            AppLogger.LogInfo("开始初始化数据库连接");
             AppDb.Init(Settings);
+            AppLogger.LogInfo("数据库连接对象初始化完成");
+            AppLogger.LogInfo("开始初始化数据库表");
             DbInitializer.InitTables();
+            AppLogger.LogInfo("业务表与 RBAC 表初始化完成");
+            AppLogger.LogInfo("开始同步权限资源");
+            await PermissionBootstrapper.SyncAsync();
+            AppLogger.LogInfo("数据库表与权限资源初始化完成");
+
+            if (!await ShowAuthFlowAsync())
+            {
+                AppLogger.LogInfo("用户取消登录，应用退出");
+                Shutdown();
+                return;
+            }
+
+            var mainWindow = new MainWindow();
+            MainWindow = mainWindow;
+            mainWindow.Show();
+            ShutdownMode = ShutdownMode.OnMainWindowClose;
+            AppLogger.LogInfo("主窗口已显示");
         }
         catch (Exception ex)
         {
@@ -35,6 +62,19 @@ public partial class App : System.Windows.Application
             AppMessageBox.Show($"系统初始化失败：{ex.Message}\n\n详情请查看应用程序根目录下 logs 文件夹中的日志文件。", "启动失败", MessageBoxButton.OK, MessageBoxImage.Error);
             Shutdown();
         }
+    }
+
+    private static async Task<bool> ShowAuthFlowAsync()
+    {
+        var hasAdministratorUser = await PermissionBootstrapper.HasAdministratorUserAsync();
+        if (!hasAdministratorUser)
+        {
+            var initialAdminWindow = new InitialAdminWindow();
+            return initialAdminWindow.ShowDialog() == true;
+        }
+
+        var loginWindow = new LoginWindow();
+        return loginWindow.ShowDialog() == true;
     }
 
     private void RegisterGlobalExceptionHandlers()

@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using LabelPrintClient.Infrastructure;
+using LabelPrintClient.Modules.Auth.Services;
 
 namespace LabelPrintClient.Modules.TaskCenter.Views;
 
@@ -31,11 +32,13 @@ public partial class TaskCenterView : System.Windows.Controls.UserControl
 
     private void ApplyFilter_Click(object sender, RoutedEventArgs e)
     {
+        if (!AuthorizationService.EnsurePermission(Permissions.TaskCenterSearch, "查询任务")) return;
         RefreshFilter();
     }
 
     private void ClearFilter_Click(object sender, RoutedEventArgs e)
     {
+        if (!AuthorizationService.EnsurePermission(Permissions.TaskCenterSearch, "清空任务筛选")) return;
         KindFilterBox.SelectedIndex = 0;
         StatusFilterBox.SelectedIndex = 0;
         TaskSearchBox.Text = string.Empty;
@@ -50,6 +53,7 @@ public partial class TaskCenterView : System.Windows.Controls.UserControl
 
     private void ClearCompleted_Click(object sender, RoutedEventArgs e)
     {
+        if (!AuthorizationService.EnsurePermission(Permissions.TaskCenterClearCompleted, "清理已结束任务")) return;
         BackgroundTaskQueue.Shared.ClearCompleted();
         UpdateSummary();
     }

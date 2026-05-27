@@ -3,6 +3,7 @@ using System.Windows.Controls;
 using System.Text.Json;
 using LabelPrintClient.Database;
 using LabelPrintClient.Infrastructure;
+using LabelPrintClient.Modules.Auth.Services;
 using LabelPrintClient.Modules.Template.Models;
 using LabelPrintClient.Services;
 using SqlSugar;
@@ -104,6 +105,8 @@ public partial class FieldHistoryWindow : Window
 
     private async void RestoreHistoryField_Click(object sender, RoutedEventArgs e)
     {
+        if (!AuthorizationService.EnsurePermission(Permissions.TemplateFieldRestore, "恢复历史字段")) return;
+
         if (sender is not FrameworkElement { DataContext: LabelTemplateFieldHistory history } ||
             !history.CanRestoreField)
         {
@@ -337,7 +340,7 @@ public partial class FieldHistoryWindow : Window
             BeforeSnapshotJson = beforeSnapshotJson,
             AfterSnapshotJson = afterSnapshotJson,
             ChangeSummary = changeSummary,
-            OperatorName = App.Settings.OperatorName,
+            OperatorName = CurrentUserService.OperatorName,
             CreateTime = DateTime.Now
         };
     }

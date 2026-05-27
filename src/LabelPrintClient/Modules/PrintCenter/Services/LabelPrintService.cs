@@ -1,6 +1,7 @@
 using LabelPrintClient.Config;
 using LabelPrintClient.Database;
 using LabelPrintClient.Infrastructure;
+using LabelPrintClient.Modules.Auth.Services;
 using LabelPrintClient.Modules.PrintCenter.Models;
 using LabelPrintClient.Modules.Template.Models;
 using LabelPrintClient.Modules.Template.Services;
@@ -85,7 +86,7 @@ public class LabelPrintService
         var context = await BuildPrintContextAsync(templateId, batchId, selectedRowIds, cancellationToken)
             .ConfigureAwait(false);
 
-        var printJob = BuildPrintJob(context.Template, batchId, context.Rows.Count * copyCount, printerName, _settings.OperatorName);
+        var printJob = BuildPrintJob(context.Template, batchId, context.Rows.Count * copyCount, printerName, CurrentUserService.OperatorName);
         List<LabelPrintJobRow> jobRows = new();
 
         await ExecuteTransactionAsync(async () =>

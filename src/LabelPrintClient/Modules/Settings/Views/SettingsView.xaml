@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
              xmlns:infra="clr-namespace:LabelPrintClient.Infrastructure"
+             xmlns:auth="clr-namespace:LabelPrintClient.Modules.Auth.Infrastructure"
              xmlns:hc="https://handyorg.github.io/handycontrol">
     <UserControl.Resources>
         <Style x:Key="SectionTitleStyle" TargetType="TextBlock" BasedOn="{StaticResource AppSectionTitleStyle}" />
@@ -89,7 +90,7 @@
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <TextBox x:Name="SqliteConnectionBox" Grid.Column="0" Margin="0,0,8,0" Padding="8,6" />
-                                    <Button Grid.Column="1" Style="{StaticResource AppSecondaryButtonStyle}" Click="TestSqliteConnection_Click" Width="72">
+                                    <Button Grid.Column="1" Style="{StaticResource AppSecondaryButtonStyle}" Click="TestSqliteConnection_Click" Width="72" auth:PermissionAssist.PermissionKey="Button.Settings.TestConnection">
                                         <StackPanel Orientation="Horizontal">
                                             <iconPacks:PackIconMaterial Kind="Connection" Margin="0,0,4,0" VerticalAlignment="Center" Width="12" Height="12" />
                                             <TextBlock Text="测试" VerticalAlignment="Center" FontSize="12" />
@@ -106,7 +107,7 @@
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <TextBox x:Name="PostgreSqlConnectionBox" Grid.Column="0" Margin="0,0,8,0" Padding="8,6" />
-                                    <Button Grid.Column="1" Style="{StaticResource AppSecondaryButtonStyle}" Click="TestPostgreSqlConnection_Click" Width="72">
+                                    <Button Grid.Column="1" Style="{StaticResource AppSecondaryButtonStyle}" Click="TestPostgreSqlConnection_Click" Width="72" auth:PermissionAssist.PermissionKey="Button.Settings.TestConnection">
                                         <StackPanel Orientation="Horizontal">
                                             <iconPacks:PackIconMaterial Kind="Connection" Margin="0,0,4,0" VerticalAlignment="Center" Width="12" Height="12" />
                                             <TextBlock Text="测试" VerticalAlignment="Center" FontSize="12" />
@@ -136,7 +137,8 @@
                                 <Button x:Name="BackupDataButton"
                                         Style="{StaticResource AppSecondaryButtonStyle}"
                                         Click="BackupData_Click"
-                                        Margin="0,0,12,0">
+                                        Margin="0,0,12,0"
+                                        auth:PermissionAssist.PermissionKey="Button.Settings.Backup">
                                     <StackPanel Orientation="Horizontal">
                                         <iconPacks:PackIconMaterial Kind="ArchiveArrowDownOutline" Margin="0,0,6,0" VerticalAlignment="Center" Width="14" Height="14" />
                                         <TextBlock Text="一键备份" VerticalAlignment="Center" />
@@ -144,7 +146,8 @@
                                 </Button>
                                 <Button x:Name="RestoreDataButton"
                                         Style="{StaticResource AppDangerButtonStyle}"
-                                        Click="RestoreData_Click">
+                                        Click="RestoreData_Click"
+                                        auth:PermissionAssist.PermissionKey="Button.Settings.Restore">
                                     <StackPanel Orientation="Horizontal">
                                         <iconPacks:PackIconMaterial Kind="ArchiveArrowUpOutline" Margin="0,0,6,0" VerticalAlignment="Center" Width="14" Height="14" />
                                         <TextBlock Text="恢复备份" VerticalAlignment="Center" />
@@ -211,7 +214,7 @@
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <TextBox x:Name="LocalTemplateFolderBox" Grid.Column="0" Margin="0,0,8,0" Padding="8,6" />
-                                    <Button Grid.Column="1" Style="{StaticResource AppSecondaryButtonStyle}" Click="BrowseTemplateFolder_Click" Width="72">
+                                    <Button Grid.Column="1" Style="{StaticResource AppSecondaryButtonStyle}" Click="BrowseTemplateFolder_Click" Width="72" auth:PermissionAssist.PermissionKey="Button.Settings.BrowseTemplateFolder">
                                         <StackPanel Orientation="Horizontal">
                                             <iconPacks:PackIconMaterial Kind="FolderOpen" Margin="0,0,4,0" VerticalAlignment="Center" Width="12" Height="12" />
                                             <TextBlock Text="浏览" VerticalAlignment="Center" FontSize="12" />
@@ -221,8 +224,8 @@
                             </StackPanel>
 
                             <StackPanel Margin="0,0,0,14">
-                                <TextBlock Text="操作人姓名" Style="{StaticResource ConfigLabelStyle}" />
-                                <TextBox x:Name="OperatorNameBox" Padding="8,6" />
+                                <TextBlock Text="当前登录用户" Style="{StaticResource ConfigLabelStyle}" />
+                                <TextBox x:Name="OperatorNameBox" Padding="8,6" IsReadOnly="True" />
                             </StackPanel>
 
                             <StackPanel Margin="0,0,0,4">
@@ -273,13 +276,13 @@
                            VerticalAlignment="Center"
                            Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                 <WrapPanel DockPanel.Dock="Right" HorizontalAlignment="Right">
-                    <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="Reload_Click" Margin="0,0,8,0">
+                    <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="Reload_Click" Margin="0,0,8,0" auth:PermissionAssist.PermissionKey="Button.Settings.Reload">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="Reload" Margin="0,0,6,0" VerticalAlignment="Center" />
                             <TextBlock Text="重新加载" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
-                    <Button Style="{StaticResource AppPrimaryButtonStyle}" Click="Save_Click">
+                    <Button Style="{StaticResource AppPrimaryButtonStyle}" Click="Save_Click" auth:PermissionAssist.PermissionKey="Button.Settings.Save">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="ContentSave" Margin="0,0,6,0" VerticalAlignment="Center" />
                             <TextBlock Text="保存配置" VerticalAlignment="Center" />

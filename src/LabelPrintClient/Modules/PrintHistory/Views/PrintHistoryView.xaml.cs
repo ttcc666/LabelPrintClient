@@ -6,6 +6,8 @@ using System.Windows.Data;
 using System.Windows.Media;
 using LabelPrintClient.Database;
 using LabelPrintClient.Infrastructure;
+using LabelPrintClient.Modules.Auth.Infrastructure;
+using LabelPrintClient.Modules.Auth.Services;
 using LabelPrintClient.Modules.PrintCenter.Models;
 using LabelPrintClient.Modules.PrintHistory.Services;
 using LabelPrintClient.Modules.Template.Models;
@@ -363,6 +365,7 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
         var button = new FrameworkElementFactory(typeof(System.Windows.Controls.Button));
         button.SetValue(System.Windows.FrameworkElement.HeightProperty, 28.0);
         button.SetValue(System.Windows.FrameworkElement.StyleProperty, System.Windows.Application.Current.FindResource("ButtonPrimary"));
+        button.SetValue(PermissionAssist.PermissionKeyProperty, Permissions.PrintHistoryReprint);
         button.AddHandler(System.Windows.Controls.Primitives.ButtonBase.ClickEvent, new System.Windows.RoutedEventHandler(ReprintJobRow_Click));
         button.AppendChild(BuildButtonContent("重打", MahApps.Metro.IconPacks.PackIconMaterialKind.PrinterAlert));
 
@@ -393,6 +396,8 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
 
     private async void RetryJob_Click(object sender, RoutedEventArgs e)
     {
+        if (!AuthorizationService.EnsurePermission(Permissions.PrintHistoryRetry, "失败任务重试")) return;
+
         if (sender is not FrameworkElement { DataContext: PrintJobGridItem job })
             return;
 
@@ -416,6 +421,8 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
 
     private async void ReprintJobRow_Click(object sender, RoutedEventArgs e)
     {
+        if (!AuthorizationService.EnsurePermission(Permissions.PrintHistoryReprint, "历史补打")) return;
+
         if (sender is not FrameworkElement { DataContext: PrintJobRowGridItem row })
             return;
         if (!TryGetPrintOptions(out var printerName, out var printCopies))

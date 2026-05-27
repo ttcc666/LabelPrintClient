@@ -1,4 +1,5 @@
-﻿using LabelPrintClient.Modules.PrintCenter.Models;
+using LabelPrintClient.Modules.Auth.Models;
+using LabelPrintClient.Modules.PrintCenter.Models;
 using LabelPrintClient.Modules.Template.Models;
 
 namespace LabelPrintClient.Database;
@@ -18,5 +19,10 @@ public static class DbInitializer
         AppDb.Db.CodeFirst.InitTables<LabelPrintJob>();
         AppDb.Db.CodeFirst.InitTables<LabelPrintJobRow>();
         AppDb.Db.CodeFirst.InitTables<LabelSerialCounter>();
+        AppDb.Db.CodeFirst.InitTables<AuthUser>();
+        AppDb.Db.CodeFirst.InitTables<AuthRole>();
+        AppDb.Db.CodeFirst.InitTables<AuthPermissionResource>();
+        AppDb.Db.CodeFirst.InitTables<AuthUserRole>();
+        AppDb.Db.CodeFirst.InitTables<AuthRolePermission>();
     }
 }

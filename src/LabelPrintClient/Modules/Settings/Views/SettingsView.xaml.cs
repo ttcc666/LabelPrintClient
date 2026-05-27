@@ -4,6 +4,7 @@ using System.Drawing.Printing;
 using System.Windows;
 using System.Windows.Controls;
 using LabelPrintClient.Config;
+using LabelPrintClient.Modules.Auth.Services;
 using LabelPrintClient.Modules.Settings.Services;
 using LabelPrintClient.Services;
 using WinForms = System.Windows.Forms;
@@ -27,11 +28,14 @@ public partial class SettingsView : System.Windows.Controls.UserControl
 
     private void Reload_Click(object sender, RoutedEventArgs e)
     {
+        if (!AuthorizationService.EnsurePermission(Permissions.SettingsReload, "重新加载配置")) return;
         LoadSettings();
     }
 
     private void BrowseTemplateFolder_Click(object sender, RoutedEventArgs e)
     {
+        if (!AuthorizationService.EnsurePermission(Permissions.SettingsBrowseTemplateFolder, "浏览模板目录")) return;
+
         using var dialog = new WinForms.FolderBrowserDialog
         {
             Description = "选择本地模板保存目录",
@@ -47,6 +51,8 @@ public partial class SettingsView : System.Windows.Controls.UserControl
 
     private async void BackupData_Click(object sender, RoutedEventArgs e)
     {
+        if (!AuthorizationService.EnsurePermission(Permissions.SettingsBackup, "一键备份")) return;
+
         var dialog = new Microsoft.Win32.SaveFileDialog
         {
             Filter = "备份文件|*.zip",
@@ -68,6 +74,8 @@ public partial class SettingsView : System.Windows.Controls.UserControl
 
     private async void RestoreData_Click(object sender, RoutedEventArgs e)
     {
+        if (!AuthorizationService.EnsurePermission(Permissions.SettingsRestore, "恢复备份")) return;
+
         var dialog = new Microsoft.Win32.OpenFileDialog
         {
             Filter = "备份文件|*.zip|所有文件|*.*"
@@ -96,6 +104,8 @@ public partial class SettingsView : System.Windows.Controls.UserControl
 
     private void Save_Click(object sender, RoutedEventArgs e)
     {
+        if (!AuthorizationService.EnsurePermission(Permissions.SettingsSave, "保存配置")) return;
+
         if (!TryBuildSettings(out var settings, out var errorMessage))
         {
             AppMessageBox.Show(errorMessage, "配置校验失败", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -125,11 +135,13 @@ public partial class SettingsView : System.Windows.Controls.UserControl
 
     private async void TestSqliteConnection_Click(object sender, RoutedEventArgs e)
     {
+        if (!AuthorizationService.EnsurePermission(Permissions.SettingsTestConnection, "测试 SQLite 连接")) return;
         await TestConnectionAsync(sender, AppRunMode.LocalSqlite, SqliteConnectionBox.Text.Trim(), "SQLite");
     }
 
     private async void TestPostgreSqlConnection_Click(object sender, RoutedEventArgs e)
     {
+        if (!AuthorizationService.EnsurePermission(Permissions.SettingsTestConnection, "测试 PostgreSQL 连接")) return;
         await TestConnectionAsync(sender, AppRunMode.LanPostgreSql, PostgreSqlConnectionBox.Text.Trim(), "PostgreSQL");
     }
 
@@ -154,7 +166,7 @@ public partial class SettingsView : System.Windows.Controls.UserControl
         SqliteConnectionBox.Text = settings.SqliteConnection;
         PostgreSqlConnectionBox.Text = settings.PostgreSqlConnection;
         LocalTemplateFolderBox.Text = settings.LocalTemplateFolder;
-        OperatorNameBox.Text = settings.OperatorName;
+        OperatorNameBox.Text = CurrentUserService.OperatorName;
         SelectDefaultPrinter(settings.DefaultPrinterName);
         DefaultPrintCopiesBox.Text = Math.Clamp(settings.DefaultPrintCopies, 1, MaxPrintCopies).ToString();
         ConfirmBeforePrintBox.IsChecked = settings.ConfirmBeforePrint;
@@ -175,7 +187,6 @@ public partial class SettingsView : System.Windows.Controls.UserControl
         var sqliteConnection = SqliteConnectionBox.Text.Trim();
         var postgreSqlConnection = PostgreSqlConnectionBox.Text.Trim();
         var localTemplateFolder = LocalTemplateFolderBox.Text.Trim();
-        var operatorName = OperatorNameBox.Text.Trim();
         var defaultPrinterName = GetSelectedDefaultPrinterName();
         var themeMode = GetSelectedThemeMode();
 
@@ -197,12 +208,6 @@ public partial class SettingsView : System.Windows.Controls.UserControl
             return false;
         }
 
-        if (string.IsNullOrWhiteSpace(operatorName))
-        {
-            errorMessage = "操作人不能为空。";
-            return false;
-        }
-
         if (!int.TryParse(DefaultPrintCopiesBox.Text.Trim(), out var defaultPrintCopies) ||
             defaultPrintCopies < 1 ||
             defaultPrintCopies > MaxPrintCopies)
@@ -215,7 +220,7 @@ public partial class SettingsView : System.Windows.Controls.UserControl
         settings.SqliteConnection = sqliteConnection;
         settings.PostgreSqlConnection = postgreSqlConnection;
         settings.LocalTemplateFolder = localTemplateFolder;
-        settings.OperatorName = operatorName;
+        settings.OperatorName = App.Settings.OperatorName;
         settings.DefaultPrinterName = defaultPrinterName;
         settings.DefaultPrintCopies = defaultPrintCopies;
         settings.ConfirmBeforePrint = ConfirmBeforePrintBox.IsChecked == true;

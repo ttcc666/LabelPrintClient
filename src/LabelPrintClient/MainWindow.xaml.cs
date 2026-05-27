@@ -1,4 +1,7 @@
 using LabelPrintClient.Config;
+using LabelPrintClient.Modules.Auth.Infrastructure;
+using LabelPrintClient.Modules.Auth.Services;
+using LabelPrintClient.Modules.Auth.Views;
 using LabelPrintClient.Modules.PrintCenter.Views;
 using LabelPrintClient.Modules.PrintHistory.Views;
 using LabelPrintClient.Modules.Settings.Views;
@@ -17,27 +20,98 @@ public partial class MainWindow : HandyControl.Controls.Window
     private readonly TaskCenterView _taskCenterView = new();
     private readonly TemplateManageView _templateManageView = new();
     private readonly SettingsView _settingsView = new();
+    private readonly AccountPermissionView _accountPermissionView = new();
+    private bool _isSelectingNavigation;
 
     public MainWindow()
     {
         InitializeComponent();
         InitializeThemeSelector();
+        UpdateCurrentUserText();
         AppThemeService.ThemeModeChanged += AppThemeService_ThemeModeChanged;
-        WorkspaceContent.Content = _printCenterView;
         Loaded += (_, _) =>
         {
-            if (RootNavigation.Items.Count > 0)
-            {
-                RootNavigation.SelectedIndex = 0;
-            }
+            HandyControl.Controls.Growl.Register(AppMessageBox.ToastToken, ToastHost);
+            SelectFirstAllowedNavigation();
         };
-        Closed += (_, _) => AppThemeService.ThemeModeChanged -= AppThemeService_ThemeModeChanged;
+        Closed += (_, _) =>
+        {
+            HandyControl.Controls.Growl.Unregister(AppMessageBox.ToastToken, ToastHost);
+            AppThemeService.ThemeModeChanged -= AppThemeService_ThemeModeChanged;
+        };
     }
 
     private async void RootNavigation_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (RootNavigation.SelectedItem is not ListBoxItem clickedItem) return;
+        if (_isSelectingNavigation)
+            return;
 
+        if (RootNavigation.SelectedItem is not ListBoxItem clickedItem) return;
+        if (!HasNavigationPermission(clickedItem))
+        {
+            SelectFirstAllowedNavigation();
+            return;
+        }
+
+        await OpenNavigationItemAsync(clickedItem);
+    }
+
+    private void LogoutButton_Click(object sender, RoutedEventArgs e)
+    {
+        AuthService.Logout();
+        var loginWindow = new LoginWindow
+        {
+            Owner = this
+        };
+
+        Hide();
+        if (loginWindow.ShowDialog() == true)
+        {
+            UpdateCurrentUserText();
+            SelectFirstAllowedNavigation();
+            Show();
+            return;
+        }
+
+        System.Windows.Application.Current.Shutdown();
+    }
+
+    private void UpdateCurrentUserText()
+    {
+        var current = CurrentUserService.Current;
+        CurrentUserText.Text = current == null
+            ? string.Empty
+            : $"{current.OperatorName} ({current.UserName})";
+    }
+
+    private void SelectFirstAllowedNavigation()
+    {
+        var items = RootNavigation.Items.OfType<ListBoxItem>().ToList();
+        foreach (var item in items)
+            ApplyNavigationPermission(item);
+
+        var selected = RootNavigation.SelectedItem as ListBoxItem;
+        if (selected != null && selected.Visibility == Visibility.Visible && HasNavigationPermission(selected))
+            return;
+
+        var firstVisible = items.FirstOrDefault(x => x.Visibility == Visibility.Visible && HasNavigationPermission(x));
+        if (firstVisible != null)
+        {
+            _isSelectingNavigation = true;
+            RootNavigation.SelectedItem = firstVisible;
+            _isSelectingNavigation = false;
+            _ = OpenNavigationItemAsync(firstVisible);
+            return;
+        }
+
+        _isSelectingNavigation = true;
+        RootNavigation.SelectedItem = null;
+        _isSelectingNavigation = false;
+        WorkspaceContent.Content = BuildNoPermissionContent();
+    }
+
+    private async Task OpenNavigationItemAsync(ListBoxItem clickedItem)
+    {
         switch (clickedItem.Tag?.ToString())
         {
             case "PrintHistory":
@@ -57,10 +131,53 @@ public partial class MainWindow : HandyControl.Controls.Window
                 WorkspaceContent.Content = _settingsView;
                 break;
 
+            case "AccountPermission":
+                WorkspaceContent.Content = _accountPermissionView;
+                break;
+
             default:
                 WorkspaceContent.Content = _printCenterView;
                 break;
         }
+    }
+
+    private static bool HasNavigationPermission(ListBoxItem item)
+    {
+        var permissionKey = PermissionAssist.GetPermissionKey(item);
+        return string.IsNullOrWhiteSpace(permissionKey) || CurrentUserService.HasPermission(permissionKey);
+    }
+
+    private static void ApplyNavigationPermission(ListBoxItem item)
+    {
+        item.Visibility = HasNavigationPermission(item) ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private static UIElement BuildNoPermissionContent()
+    {
+        var panel = new StackPanel
+        {
+            HorizontalAlignment = System.Windows.HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        panel.Children.Add(new TextBlock
+        {
+            Text = "当前账号没有可用菜单权限",
+            FontSize = 20,
+            FontWeight = FontWeights.SemiBold,
+            HorizontalAlignment = System.Windows.HorizontalAlignment.Center,
+            Margin = new Thickness(0, 0, 0, 10)
+        });
+        panel.Children.Add(new TextBlock
+        {
+            Text = "请联系管理员分配角色或菜单权限后重新登录。",
+            FontSize = 13,
+            Foreground = System.Windows.Media.Brushes.Gray,
+            HorizontalAlignment = System.Windows.HorizontalAlignment.Center
+        });
+
+        var grid = new Grid();
+        grid.Children.Add(panel);
+        return grid;
     }
 
     private void ThemeButton_Click(object sender, RoutedEventArgs e)
