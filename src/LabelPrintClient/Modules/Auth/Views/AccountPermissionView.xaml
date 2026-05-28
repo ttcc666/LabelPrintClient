@@ -184,7 +184,17 @@
                                 </Style>
                             </ListBox.ItemContainerStyle>
                         </ListBox>
-                        <Button Grid.Row="2" HorizontalAlignment="Right"
+                        <TextBlock x:Name="AdminUserHintText" Grid.Row="1" Text="{DynamicResource Account.AdminUserRolesNoNeeded}" 
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
+                                   FontSize="12" 
+                                   HorizontalAlignment="Center" 
+                                   VerticalAlignment="Center" 
+                                   FontWeight="SemiBold"
+                                   TextWrapping="Wrap"
+                                   Padding="16"
+                                   TextAlignment="Center"
+                                   Visibility="Collapsed" />
+                        <Button Grid.Row="2" x:Name="SaveUserRolesButton" HorizontalAlignment="Right"
                                 Style="{StaticResource AppPrimaryButtonStyle}"
                                 Click="SaveUserRoles_Click"
                                 auth:PermissionAssist.PermissionKey="Button.Account.User.Edit">

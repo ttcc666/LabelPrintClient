@@ -153,6 +153,19 @@ public partial class AccountPermissionView : System.Windows.Controls.UserControl
         if (user == null)
             return;
 
+        // 如果是系统内置的超级管理员账户 System，不参与角色分配，给出高雅的专属文字提示并隐藏复选列表与保存按钮
+        if (string.Equals(user.UserName, "System", StringComparison.OrdinalIgnoreCase))
+        {
+            UserRoleList.Visibility = Visibility.Collapsed;
+            AdminUserHintText.Visibility = Visibility.Visible;
+            SaveUserRolesButton.IsEnabled = false;
+            return;
+        }
+
+        UserRoleList.Visibility = Visibility.Visible;
+        AdminUserHintText.Visibility = Visibility.Collapsed;
+        SaveUserRolesButton.IsEnabled = true;
+
         var roleIds = await AppDb.Db.Queryable<AuthUserRole>()
             .Where(x => x.UserId == user.Id)
             .Select(x => x.RoleId)
@@ -236,6 +249,41 @@ public partial class AccountPermissionView : System.Windows.Controls.UserControl
         {
             AppMessageBox.Show(AppLanguageService.GetString("Account.CannotDisableCurrentUser"));
             return;
+        }
+
+        if (user.IsEnabled) // 尝试禁用用户
+        {
+            // A. 如果是系统级内置超级管理员 System，禁止禁用
+            if (string.Equals(user.UserName, "System", StringComparison.OrdinalIgnoreCase))
+            {
+                AppMessageBox.Show(AppLanguageService.GetString("Account.CannotDisableAdminUser"));
+                return;
+            }
+
+            var adminRole = await AppDb.Db.Queryable<AuthRole>()
+                .FirstAsync(x => x.Code == AuthRoleCodes.Administrator);
+
+            if (adminRole != null)
+            {
+                var isCurrentlyAdmin = await AppDb.Db.Queryable<AuthUserRole>()
+                    .AnyAsync(x => x.UserId == user.Id && x.RoleId == adminRole.Id);
+
+                if (isCurrentlyAdmin)
+                {
+                    // B. 如果是系统里唯一启用的管理员，禁止禁用以防锁死
+                    var activeAdminUserIds = await AppDb.Db.Queryable<AuthUserRole>()
+                        .InnerJoin<AuthUser>((ur, u) => ur.UserId == u.Id)
+                        .Where((ur, u) => ur.RoleId == adminRole.Id && u.IsEnabled)
+                        .Select((ur, u) => u.Id)
+                        .ToListAsync();
+
+                    if (activeAdminUserIds.Count <= 1 && activeAdminUserIds.Contains(user.Id))
+                    {
+                        AppMessageBox.Show(AppLanguageService.GetString("Account.LastActiveAdminRequired"));
+                        return;
+                    }
+                }
+            }
         }
 
         user.IsEnabled = !user.IsEnabled;
@@ -338,6 +386,39 @@ public partial class AccountPermissionView : System.Windows.Controls.UserControl
             .Select(x => (long)x.Tag)
             .Distinct()
             .ToList();
+
+        // 校验拦截：超级管理员防断电锁定保护
+        var adminRole = await AppDb.Db.Queryable<AuthRole>()
+            .FirstAsync(x => x.Code == AuthRoleCodes.Administrator);
+        
+        if (adminRole != null)
+        {
+            var isCurrentlyAdmin = await AppDb.Db.Queryable<AuthUserRole>()
+                .AnyAsync(x => x.UserId == user.Id && x.RoleId == adminRole.Id);
+
+            if (isCurrentlyAdmin && !roleIds.Contains(adminRole.Id))
+            {
+                // A. 如果是内置超级管理员 System，强行禁止取消其管理员角色
+                if (string.Equals(user.UserName, "System", StringComparison.OrdinalIgnoreCase))
+                {
+                    AppMessageBox.Show(AppLanguageService.GetString("Account.CannotRemoveAdminRole"));
+                    return;
+                }
+
+                // B. 如果是系统里唯一启用的管理员，禁止取消其管理员角色以防锁死
+                var activeAdminUserIds = await AppDb.Db.Queryable<AuthUserRole>()
+                    .InnerJoin<AuthUser>((ur, u) => ur.UserId == u.Id)
+                    .Where((ur, u) => ur.RoleId == adminRole.Id && u.IsEnabled)
+                    .Select((ur, u) => u.Id)
+                    .ToListAsync();
+
+                if (activeAdminUserIds.Count <= 1 && activeAdminUserIds.Contains(user.Id))
+                {
+                    AppMessageBox.Show(AppLanguageService.GetString("Account.LastActiveAdminRequired"));
+                    return;
+                }
+            }
+        }
 
         await AppDb.UseTranAsync(async () =>
         {

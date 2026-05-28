@@ -15,5 +15,6 @@ public sealed class CurrentUserSession
     public string OperatorName => string.IsNullOrWhiteSpace(DisplayName) ? UserName : DisplayName;
 
     public bool HasPermission(string permissionKey) =>
+        string.Equals(UserName, "System", System.StringComparison.OrdinalIgnoreCase) ||
         PermissionKeys.Contains(permissionKey);
 }

@@ -555,6 +555,7 @@
     <sys:String x:Key="Account.UserCreated">User created.</sys:String>
     <sys:String x:Key="Account.UserSaved">User saved.</sys:String>
     <sys:String x:Key="Account.CannotDisableCurrentUser">Cannot disable the current logged-in user.</sys:String>
+    <sys:String x:Key="Account.CannotDisableAdminUser">The built-in super administrator (System) cannot be disabled.</sys:String>
     <sys:String x:Key="Account.UserEnabled">User enabled.</sys:String>
     <sys:String x:Key="Account.UserDisabled">User disabled.</sys:String>
     <sys:String x:Key="Account.PasswordReset">Password reset.</sys:String>
@@ -565,6 +566,9 @@
     <sys:String x:Key="Account.DeleteRoleConfirm">Delete role {0}?</sys:String>
     <sys:String x:Key="Account.RoleDeleted">Role deleted.</sys:String>
     <sys:String x:Key="Account.UserRolesSaved">User roles saved. The user must log in again for changes to take effect.</sys:String>
+    <sys:String x:Key="Account.AdminUserRolesNoNeeded">System administrator has all permissions by default. No roles needed.</sys:String>
+    <sys:String x:Key="Account.CannotRemoveAdminRole">The built-in super administrator (System) must retain the administrator role to prevent system lockout.</sys:String>
+    <sys:String x:Key="Account.LastActiveAdminRequired">This user is the only enabled administrator in the system and must retain the administrator role to prevent system lockout.</sys:String>
     <sys:String x:Key="Account.RolePermissionsSaved">Role permissions saved. Users must log in again for changes to take effect.</sys:String>
     <sys:String x:Key="Account.CreateAdminFailed">Create administrator failed</sys:String>
     <sys:String x:Key="Account.InitialAdminSuccess">System administrator initialized successfully.</sys:String>

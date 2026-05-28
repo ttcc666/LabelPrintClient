@@ -21,20 +21,8 @@ public static class PermissionBootstrapper
 
     public static async Task<bool> HasAdministratorUserAsync()
     {
-        var adminRole = await GetRoleByCodeAsync(AuthRoleCodes.Administrator).ConfigureAwait(false);
-        if (adminRole == null)
-            return false;
-
-        var adminUserIds = await AppDb.Db.Queryable<AuthUserRole>()
-            .Where(x => x.RoleId == adminRole.Id)
-            .Select(x => x.UserId)
-            .ToListAsync()
-            .ConfigureAwait(false);
-        if (adminUserIds.Count == 0)
-            return false;
-
         return await AppDb.Db.Queryable<AuthUser>()
-            .Where(x => adminUserIds.Contains(x.Id) && x.IsEnabled)
+            .Where(x => x.UserName == "System" && x.IsEnabled)
             .AnyAsync()
             .ConfigureAwait(false);
     }
@@ -53,9 +41,6 @@ public static class PermissionBootstrapper
         if (duplicateUserName)
             throw new InvalidOperationException("用户名已存在，请换一个管理员用户名。");
 
-        var adminRole = await GetRoleByCodeAsync(AuthRoleCodes.Administrator).ConfigureAwait(false)
-            ?? throw new InvalidOperationException("管理员角色初始化失败。");
-
         var passwordHash = PasswordHasher.Hash(password);
         var user = new AuthUser
         {
@@ -72,12 +57,6 @@ public static class PermissionBootstrapper
         await AppDb.UseTranAsync(async () =>
         {
             await AppDb.Db.Insertable(user).ExecuteCommandAsync().ConfigureAwait(false);
-            await AppDb.Db.Insertable(new AuthUserRole
-            {
-                Id = IdHelper.NewId(),
-                UserId = user.Id,
-                RoleId = adminRole.Id
-            }).ExecuteCommandAsync().ConfigureAwait(false);
         }).ConfigureAwait(false);
 
         return user;

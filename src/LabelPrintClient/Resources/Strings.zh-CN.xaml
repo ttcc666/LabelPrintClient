@@ -555,6 +555,7 @@
     <sys:String x:Key="Account.UserCreated">用户已新增。</sys:String>
     <sys:String x:Key="Account.UserSaved">用户已保存。</sys:String>
     <sys:String x:Key="Account.CannotDisableCurrentUser">不能禁用当前登录用户。</sys:String>
+    <sys:String x:Key="Account.CannotDisableAdminUser">系统内置超级管理员 (System) 不能被禁用。</sys:String>
     <sys:String x:Key="Account.UserEnabled">用户已启用。</sys:String>
     <sys:String x:Key="Account.UserDisabled">用户已禁用。</sys:String>
     <sys:String x:Key="Account.PasswordReset">密码已重置。</sys:String>
@@ -565,6 +566,9 @@
     <sys:String x:Key="Account.DeleteRoleConfirm">确定删除角色 {0}？</sys:String>
     <sys:String x:Key="Account.RoleDeleted">角色已删除。</sys:String>
     <sys:String x:Key="Account.UserRolesSaved">用户角色已保存，用户重新登录后生效。</sys:String>
+    <sys:String x:Key="Account.AdminUserRolesNoNeeded">系统级管理员默认拥有所有权限，无需分配角色。</sys:String>
+    <sys:String x:Key="Account.CannotRemoveAdminRole">系统内置超级管理员 (System) 必须保留管理员角色，以防止系统被彻底锁定。</sys:String>
+    <sys:String x:Key="Account.LastActiveAdminRequired">该用户是系统中唯一处于启用状态的管理员，必须保留其管理员角色，以防止系统被彻底锁定。</sys:String>
     <sys:String x:Key="Account.RolePermissionsSaved">角色权限已保存，用户重新登录后生效。</sys:String>
     <sys:String x:Key="Account.CreateAdminFailed">创建管理员失败</sys:String>
     <sys:String x:Key="Account.InitialAdminSuccess">系统管理员初始化成功！</sys:String>
