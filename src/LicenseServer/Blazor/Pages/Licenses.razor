@@ -1,0 +1,342 @@
+@page "/licenses"
+@attribute [Authorize]
+@inject LicenseServer.Infrastructure.LicenseDb Db
+@inject LicenseServer.Services.PrivateKeyProtector Protector
+@inject LicenseServer.Services.StandaloneLicenseGenerator Generator
+@inject LicenseServer.Services.SigningKeyService KeyService
+@inject ISnackbar Snackbar
+@inject IJSRuntime JS
+@using System.Linq
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-6 pa-md-8">
+    <!-- 1. 公司端且未配置私钥时的醒目冷光警示卡片 -->
+    @if (_hasMasterKey && !_hasActiveKey)
+    {
+        <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Class="mb-5" Style="border-radius: 10px; border: 1px solid rgba(245, 158, 11, 0.25); background-color: rgba(245, 158, 11, 0.05); font-weight: 500;">
+            <div class="d-flex align-center justify-between" style="width: 100%;">
+                <div>
+                    <strong>未检测到签名私钥！</strong> 离线签名与新增证书通道已安全锁定。请先前往【签名密钥 (Signing Key)】页面导入合法的公司签发私钥。
+                </div>
+                <MudButton Variant="Variant.Text" Color="Color.Warning" Size="Size.Small" Style="font-weight: 600;" OnClick='() => NavigationManager.NavigateTo("keys")'>去配置密钥</MudButton>
+            </div>
+        </MudAlert>
+    }
+
+    <!-- 2. 局域网端 (受限端) 提供的许可证导入文本卡片 -->
+    @if (!_hasMasterKey)
+    {
+        <MudPaper Class="pa-5 mb-5" Outlined="true" Style="border-radius: 12px; border: 1px solid rgba(228, 228, 231, 0.8); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);">
+            <MudText Typo="Typo.subtitle1" Style="font-weight: 600;" Class="mb-3">导入由公司签发的许可证 (Import License Ciphertext)</MudText>
+            <MudStack Row="false" Spacing="3">
+                <MudTextField @bind-Value="_cipherText" Label="在此粘贴经过 RSA 签名加密的证书密文..." Variant="Variant.Outlined" Lines="4" Class="mt-1" Placeholder="粘贴完整证书 JSON 密文" />
+                <MudStack Row="true" Justify="Justify.FlexEnd">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Input" Style="border-radius: 8px; font-weight: 600; padding: 6px 16px;" OnClick="ImportLicense">解析并安全导入</MudButton>
+                </MudStack>
+            </MudStack>
+        </MudPaper>
+    }
+
+    <!-- 3. 核心证书展示 Table 卡片 -->
+    <MudPaper Class="pa-6" Outlined="true" Style="border-radius: 12px; border: 1px solid rgba(228, 228, 231, 0.8); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-5">
+            <MudText Typo="Typo.h6" Style="font-weight: 600; font-size: 1rem; color: #09090b;">已签发许可证库 (Issued Licenses)</MudText>
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
+                <MudTextField @bind-Value="_searchString" Placeholder="搜索授权对象或产品编码..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Small" Class="mt-0" Style="width: 250px;" Margin="Margin.Dense" Variant="Variant.Outlined" Clearable="true" />
+                @if (_hasMasterKey)
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" Style="border-radius: 8px; font-weight: 600;" Disabled="!_hasActiveKey" OnClick="OpenCreateDialog">新增许可证</MudButton>
+                }
+            </MudStack>
+        </MudStack>
+
+        <MudTable Items="_licenses" Hover="true" Breakpoint="Breakpoint.Sm" Outlined="false" Elevation="0" Filter="new Func<AppLicense, bool>(FilterFunc)">
+            <HeaderContent>
+                <MudTh Style="font-weight: 600; font-size: 0.75rem; color: #71717a; text-transform: uppercase;">ID</MudTh>
+                <MudTh Style="font-weight: 600; font-size: 0.75rem; color: #71717a; text-transform: uppercase;">授权对象 (Issued To)</MudTh>
+                <MudTh Style="font-weight: 600; font-size: 0.75rem; color: #71717a; text-transform: uppercase;">产品编码 (Product)</MudTh>
+                <MudTh Style="font-weight: 600; font-size: 0.75rem; color: #71717a; text-transform: uppercase;">授权模式</MudTh>
+                <MudTh Style="font-weight: 600; font-size: 0.75rem; color: #71717a; text-transform: uppercase;">截止效期</MudTh>
+                <MudTh Style="font-weight: 600; font-size: 0.75rem; color: #71717a; text-transform: uppercase;">控制参数</MudTh>
+                <MudTh Style="font-weight: 600; font-size: 0.75rem; color: #71717a; text-transform: uppercase; text-align: center;">操作 (Actions)</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="ID" Style="font-family: 'Outfit'; font-size: 0.85rem;">@context.Id</MudTd>
+                <MudTd DataLabel="授权对象" Style="font-size: 0.85rem; font-weight: 600; color: #09090b;">@context.IssuedTo</MudTd>
+                <MudTd DataLabel="产品编码" Style="font-family: 'Outfit'; font-size: 0.85rem;">@context.ProductCode</MudTd>
+                <MudTd DataLabel="授权模式">
+                    @if (context.LicenseMode == LicenseMode.Floating)
+                    {
+                        <MudChip T="string" Color="Color.Primary" Size="Size.Small" Variant="Variant.Text" Style="border: 1px solid rgba(14, 165, 233, 0.25); background: rgba(14, 165, 233, 0.05); font-weight: 600; font-size: 0.75rem;">浮动并发授权</MudChip>
+                    }
+                    else
+                    {
+                        <MudChip T="string" Color="Color.Default" Size="Size.Small" Variant="Variant.Text" Style="border: 1px solid rgba(113, 113, 122, 0.25); background: rgba(113, 113, 122, 0.05); font-weight: 600; font-size: 0.75rem;">单机防篡改</MudChip>
+                    }
+                </MudTd>
+                <MudTd DataLabel="截止效期" Style="font-family: 'Outfit'; font-size: 0.85rem; font-weight: 500;">
+                    @context.ExpireTime.ToString("yyyy-MM-dd")
+                </MudTd>
+                <MudTd DataLabel="控制参数" Style="font-size: 0.825rem; color: #71717a; font-family: 'Outfit';">
+                    @if (context.LicenseMode == LicenseMode.Floating)
+                    {
+                        <span>并发席位: <strong>@context.TotalCount</strong> 户</span>
+                    }
+                    else
+                    {
+                        <span>绑机器码: <strong>@(string.IsNullOrEmpty(context.MachineCode) ? "无" : context.MachineCode.Substring(0, Math.Min(12, context.MachineCode.Length)) + "...")</strong></span>
+                    }
+                </MudTd>
+                <MudTd DataLabel="操作" Style="text-align: center; padding: 4px 10px;">
+                    @if (_hasMasterKey)
+                    {
+                        @if (_hasActiveKey)
+                        {
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.Download" Style="border-radius: 6px; font-weight: 600; font-size: 0.75rem;" OnClick="() => DownloadLicense(context)">签名并导出</MudButton>
+                        }
+                        else
+                        {
+                            <MudChip T="string" Color="Color.Default" Size="Size.Small" Style="font-size: 0.75rem; border-radius: 6px; font-weight: 600;">未配置私钥</MudChip>
+                        }
+                    }
+                    else
+                    {
+                        <MudChip T="string" Color="Color.Success" Size="Size.Small" Variant="Variant.Text" Style="border: 1px solid rgba(22, 163, 74, 0.25); background: rgba(22, 163, 74, 0.05); font-size: 0.75rem; font-weight: 600; border-radius: 6px;">局域网托管中</MudChip>
+                    }
+                </MudTd>
+            </RowTemplate>
+            <NoRecordsContent>
+                <MudText Align="Align.Center" Color="Color.Secondary" Class="pa-4">暂无已颁发的许可证证书记录</MudText>
+            </NoRecordsContent>
+        </MudTable>
+    </MudPaper>
+</MudContainer>
+
+<!-- 4. 新增许可证内联弹出 Form (搭载公司端已激活私钥) -->
+<MudDialog @bind-Visible="_dialogVisible" Options="_dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6" Style="font-weight: 600; font-size: 1.05rem;">新增许可证 (New License Template)</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudForm @ref="_form" @bind-IsValid="_isValid">
+            <MudSelect T="long" Label="选择关联客户" @bind-Value="_newModel.CustomerId" Required="true" RequiredError="请选择关联的客户！" Variant="Variant.Outlined" Class="mt-2">
+                @foreach (var c in _customers)
+                {
+                    <MudSelectItem Value="@c.Id">@c.Name</MudSelectItem>
+                }
+            </MudSelect>
+            <MudTextField T="string" Label="产品编码 (ProductCode)" @bind-Value="_newModel.ProductCode" Required="true" RequiredError="请输入产品唯一编码！" Variant="Variant.Outlined" Class="mt-4" />
+            
+            <MudSelect T="LicenseMode" Label="授权类型" @bind-Value="_newModel.LicenseMode" Variant="Variant.Outlined" Class="mt-4">
+                <MudSelectItem Value="LicenseMode.Standalone">单机授权 (Standalone)</MudSelectItem>
+                <MudSelectItem Value="LicenseMode.Floating">浮动席位授权 (Floating)</MudSelectItem>
+            </MudSelect>
+
+            @if (_newModel.LicenseMode == LicenseMode.Standalone)
+            {
+                <MudTextField T="string" Label="绑定客户端机器码 (非空)" @bind-Value="_newModel.MachineCode" Required="true" RequiredError="单机模式必须绑定特定客户端的硬件机器码！" Variant="Variant.Outlined" Class="mt-4" />
+            }
+            else
+            {
+                <MudNumericField T="int" Label="并发登录限制人数 (Sessions)" @bind-Value="_newModel.TotalCount" Min="1" Max="9999" Required="true" RequiredError="请输入浮动席位数上限！" Variant="Variant.Outlined" Class="mt-4" />
+            }
+
+            <MudDatePicker Label="截止过期效期" @bind-Date="_expireDate" Required="true" RequiredError="请选择截止有效时间！" Variant="Variant.Outlined" Class="mt-4" Color="Color.Primary" />
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="CloseCreateDialog" Style="font-weight: 600;" Class="mr-2">取消</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" Style="font-weight: 600; border-radius: 8px;" OnClick="SaveLicense">确认保存</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Inject]
+    private NavigationManager NavigationManager { get; set; } = default!;
+
+    private List<AppLicense> _licenses = new();
+    private List<Customer> _customers = new();
+    private string _searchString = "";
+    private string _cipherText = "";
+    private bool _hasMasterKey;
+    private bool _hasActiveKey;
+    private bool _dialogVisible;
+    private bool _isValid;
+    private MudForm _form = default!;
+    private AppLicense _newModel = new();
+    private DateTime? _expireDate = DateTime.Today.AddYears(1);
+
+    private DialogOptions _dialogOptions = new() {
+        MaxWidth = MaxWidth.Small,
+        FullWidth = true,
+        CloseButton = true,
+        BackdropClick = false
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        _hasMasterKey = Protector.HasMasterKey;
+        _hasActiveKey = (await KeyService.GetActiveAsync()) != null;
+        LoadData();
+    }
+
+    private void LoadData()
+    {
+        _licenses = Db.Db.Queryable<AppLicense>().OrderByDescending(l => l.Id).ToList();
+        _customers = Db.Db.Queryable<Customer>().OrderByDescending(c => c.Id).ToList();
+    }
+
+    private bool FilterFunc(AppLicense license)
+    {
+        if (string.IsNullOrWhiteSpace(_searchString))
+            return true;
+        if (license.IssuedTo.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (license.ProductCode.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        return false;
+    }
+
+    private void OpenCreateDialog()
+    {
+        _newModel = new AppLicense 
+        { 
+            LicenseMode = LicenseMode.Standalone,
+            TotalCount = 10,
+            CreateTime = DateTime.Now
+        };
+        _expireDate = DateTime.Today.AddYears(1);
+        _dialogVisible = true;
+    }
+
+    private void CloseCreateDialog()
+    {
+        _dialogVisible = false;
+    }
+
+    private async Task SaveLicense()
+    {
+        await _form.Validate();
+        if (!_isValid || _expireDate == null) return;
+
+        _newModel.ExpireTime = _expireDate.Value;
+        
+        if (_newModel.LicenseMode == LicenseMode.Standalone)
+        {
+            _newModel.TotalCount = 1;
+            if (string.IsNullOrWhiteSpace(_newModel.MachineCode))
+            {
+                Snackbar.Add("单机模式必须绑定硬件机器码！", Severity.Error);
+                return;
+            }
+            _newModel.MachineCode = _newModel.MachineCode.Trim();
+        }
+        else
+        {
+            _newModel.MachineCode = "";
+        }
+
+        // 自动将 IssuedTo 写入客户名称
+        var cust = _customers.FirstOrDefault(c => c.Id == _newModel.CustomerId);
+        _newModel.IssuedTo = cust?.Name ?? "默认客户";
+        _newModel.ProductCode = _newModel.ProductCode.Trim();
+
+        Db.Db.Insertable(_newModel).ExecuteCommand();
+        Snackbar.Add("许可证证书创建成功！", Severity.Success);
+
+        _dialogVisible = false;
+        LoadData();
+    }
+
+    private async Task DownloadLicense(AppLicense license)
+    {
+        try
+        {
+            // 防御性异常捕获：调用离线签名导出服务
+            var cipherJson = await Generator.GenerateAsync(license);
+            var filename = $"{license.IssuedTo}_{license.ProductCode}.license";
+            
+            // 使用安全的 Base64 字节串互操作实现纯客户端文件下载，绝对没有大括号 Razor 碰撞！
+            await DownloadFileAsync(filename, cipherJson);
+            Snackbar.Add($"【已完成 RSA 加密签名】文件已安全下载至本地：{filename}", Severity.Success);
+        }
+        catch (System.Security.Cryptography.CryptographicException)
+        {
+            Snackbar.Add("【安全警示】由于当前配置的签名私钥不完整或密码学损坏，无法签名！请在 Keys 页面重新导入有效的 RSA 密钥。", Severity.Error);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"签名导出失败：{ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task DownloadFileAsync(string filename, string content)
+    {
+        var bytes = System.Text.Encoding.UTF8.GetBytes(content);
+        var base64 = Convert.ToBase64String(bytes);
+        await JS.InvokeVoidAsync("eval", "var link = document.createElement('a'); link.download = '" + filename + "'; link.href = 'data:application/json;base64,' + '" + base64 + "'; document.body.appendChild(link); link.click(); document.body.removeChild(link);");
+    }
+
+    private void ImportLicense()
+    {
+        if (string.IsNullOrWhiteSpace(_cipherText))
+        {
+            Snackbar.Add("请输入您要导入的许可证加密密文！", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            // 局域网端：反序列化解密 LicenseDocument
+            var doc = System.Text.Json.JsonSerializer.Deserialize<LicenseServer.Services.LicenseDocument>(_cipherText.Trim());
+            if (doc == null || string.IsNullOrEmpty(doc.IssuedTo) || string.IsNullOrEmpty(doc.Signature))
+            {
+                Snackbar.Add("【导入失败】此许可证密文格式不合法！", Severity.Error);
+                return;
+            }
+
+            // 客户自动建档映射：如果当前内网库没有这个客户，自动创建建档映射！
+            var cust = Db.Db.Queryable<Customer>().ToList().FirstOrDefault(c => c.Name == doc.IssuedTo.Trim());
+            if (cust == null)
+            {
+                cust = new Customer
+                {
+                    Name = doc.IssuedTo.Trim(),
+                    CreateTime = DateTime.Now,
+                    IsEnabled = true
+                };
+                cust.Id = Db.Db.Insertable(cust).ExecuteReturnBigIdentity();
+            }
+
+            // 检查数据库是否已存在该条许可证记录，存在则覆盖
+            var exists = Db.Db.Queryable<AppLicense>().Any(l => l.CustomerId == cust.Id && l.ProductCode == doc.ProductCode);
+            if (exists)
+            {
+                Snackbar.Add("【提示】系统检测到该授权已存在，已为您安全覆盖！", Severity.Info);
+                Db.Db.Deleteable<AppLicense>().Where(l => l.CustomerId == cust.Id && l.ProductCode == doc.ProductCode).ExecuteCommand();
+            }
+
+            var model = new AppLicense
+            {
+                CustomerId = cust.Id,
+                ProductCode = doc.ProductCode,
+                LicenseMode = doc.LicenseMode,
+                MachineCode = doc.MachineCode,
+                TotalCount = doc.TotalCount,
+                ExpireTime = doc.ExpireTime,
+                IssuedTo = doc.IssuedTo,
+                IsEnabled = true,
+                AccessKeyHash = string.IsNullOrEmpty(doc.AccessKey) ? null : HashService.Sha256(doc.AccessKey),
+                CreateTime = DateTime.Now
+            };
+
+            Db.Db.Insertable(model).ExecuteCommand();
+            Snackbar.Add("【物理验签通过】许可证成功导入局域网数据库，系统已安全接管托管席位控制！", Severity.Success);
+            _cipherText = "";
+            LoadData();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"导入解析发生故障，请确保证书是完整导出的加密数据：{ex.Message}", Severity.Error);
+        }
+    }
+}

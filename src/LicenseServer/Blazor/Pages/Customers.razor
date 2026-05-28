@@ -1,0 +1,130 @@
+@page "/customers"
+@attribute [Authorize]
+@inject LicenseServer.Infrastructure.LicenseDb Db
+@inject ISnackbar Snackbar
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-6 pa-md-8">
+    <MudPaper Class="pa-6" Outlined="true" Style="border-radius: 12px; border: 1px solid rgba(228, 228, 231, 0.8); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);">
+        <!-- 表格工具栏 -->
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-5">
+            <MudText Typo="Typo.h6" Style="font-weight: 600; font-size: 1rem; color: #09090b;">客户档案库 (Customers Database)</MudText>
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
+                <MudTextField @bind-Value="_searchString" Placeholder="搜索客户名称或备注..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Small" Class="mt-0" Style="width: 260px;" Margin="Margin.Dense" Variant="Variant.Outlined" Clearable="true" />
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" Style="border-radius: 8px; font-weight: 600;" OnClick="OpenCreateDialog">新增合作客户</MudButton>
+            </MudStack>
+        </MudStack>
+
+        <!-- 极简高雅客户 Table -->
+        <MudTable Items="_customers" Hover="true" Breakpoint="Breakpoint.Sm" Outlined="false" Elevation="0" Filter="new Func<Customer, bool>(FilterFunc)">
+            <HeaderContent>
+                <MudTh Style="font-weight: 600; font-size: 0.75rem; color: #71717a; text-transform: uppercase;">ID</MudTh>
+                <MudTh Style="font-weight: 600; font-size: 0.75rem; color: #71717a; text-transform: uppercase;">客户名称 (Name)</MudTh>
+                <MudTh Style="font-weight: 600; font-size: 0.75rem; color: #71717a; text-transform: uppercase;">联系方式 (Contact)</MudTh>
+                <MudTh Style="font-weight: 600; font-size: 0.75rem; color: #71717a; text-transform: uppercase;">备注信息 (Remark)</MudTh>
+                <MudTh Style="font-weight: 600; font-size: 0.75rem; color: #71717a; text-transform: uppercase;">创建时间 (Created Time)</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="ID" Style="font-family: 'Outfit'; font-size: 0.85rem;">@context.Id</MudTd>
+                <MudTd DataLabel="客户名称" Style="font-size: 0.85rem; font-weight: 600; color: #09090b;">@context.Name</MudTd>
+                <MudTd DataLabel="联系方式" Style="font-size: 0.85rem;">@(string.IsNullOrEmpty(context.Contact) ? "—" : context.Contact)</MudTd>
+                <MudTd DataLabel="备注信息" Style="font-size: 0.85rem; color: #71717a;">@(string.IsNullOrEmpty(context.Remark) ? "—" : context.Remark)</MudTd>
+                <MudTd DataLabel="创建时间" Style="font-family: 'Outfit'; font-size: 0.85rem; color: #71717a;">@context.CreateTime.ToString("yyyy-MM-dd HH:mm:ss")</MudTd>
+            </RowTemplate>
+            <NoRecordsContent>
+                <MudText Align="Align.Center" Color="Color.Secondary" Class="pa-4">暂无相关客户档案资料</MudText>
+            </NoRecordsContent>
+        </MudTable>
+    </MudPaper>
+</MudContainer>
+
+<!-- 内联高分子圆角弹出式客户新增 Form -->
+<MudDialog @bind-Visible="_dialogVisible" Options="_dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6" Style="font-weight: 600; font-size: 1.05rem;">新增合作客户档案</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudForm @ref="_form" @bind-IsValid="_isValid">
+            <MudTextField T="string" Label="客户全名" @bind-Value="_newModel.Name" Required="true" RequiredError="请输入客户全称！" MaxLength="120" Variant="Variant.Outlined" Class="mt-2" />
+            <MudTextField T="string" Label="联系方式 (选填)" @bind-Value="_newModel.Contact" MaxLength="100" Variant="Variant.Outlined" Class="mt-4" />
+            <MudTextField T="string" Label="备注说明 (选填)" @bind-Value="_newModel.Remark" MaxLength="500" Variant="Variant.Outlined" Class="mt-4" Lines="3" />
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="CloseCreateDialog" Style="font-weight: 600;" Class="mr-2">取消</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" Style="font-weight: 600; border-radius: 8px;" OnClick="SaveCustomer">确认保存</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private List<Customer> _customers = new();
+    private string _searchString = "";
+    private bool _dialogVisible;
+    private bool _isValid;
+    private MudForm _form = default!;
+    private Customer _newModel = new();
+
+    private DialogOptions _dialogOptions = new() {
+        MaxWidth = MaxWidth.Small,
+        FullWidth = true,
+        CloseButton = true,
+        BackdropClick = false
+    };
+
+    protected override void OnInitialized()
+    {
+        LoadData();
+    }
+
+    private void LoadData()
+    {
+        _customers = Db.Db.Queryable<Customer>().OrderByDescending(c => c.Id).ToList();
+    }
+
+    private bool FilterFunc(Customer customer)
+    {
+        if (string.IsNullOrWhiteSpace(_searchString))
+            return true;
+        if (customer.Name.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (customer.Remark != null && customer.Remark.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (customer.Contact != null && customer.Contact.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        return false;
+    }
+
+    private void OpenCreateDialog()
+    {
+        _newModel = new Customer { CreateTime = DateTime.Now, IsEnabled = true };
+        _dialogVisible = true;
+    }
+
+    private void CloseCreateDialog()
+    {
+        _dialogVisible = false;
+    }
+
+    private async Task SaveCustomer()
+    {
+        await _form.Validate();
+        if (!_isValid) return;
+
+        // 验证名称是否已重复
+        var exists = Db.Db.Queryable<Customer>().Any(c => c.Name == _newModel.Name.Trim());
+        if (exists)
+        {
+            Snackbar.Add("该客户全名已存在，请使用唯一的名称！", Severity.Error);
+            return;
+        }
+
+        _newModel.Name = _newModel.Name.Trim();
+        if (_newModel.Remark != null) _newModel.Remark = _newModel.Remark.Trim();
+        if (_newModel.Contact != null) _newModel.Contact = _newModel.Contact.Trim();
+
+        Db.Db.Insertable(_newModel).ExecuteCommand();
+        Snackbar.Add("客户档案保存成功！", Severity.Success);
+        
+        _dialogVisible = false;
+        LoadData();
+    }
+}

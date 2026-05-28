@@ -42,6 +42,6 @@ public sealed class LoginModel : PageModel
         await HttpContext.SignInAsync(
             CookieAuthenticationDefaults.AuthenticationScheme,
             new ClaimsPrincipal(new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme)));
-        return RedirectToPage("/Index");
+        return LocalRedirect("~/");
     }
 }

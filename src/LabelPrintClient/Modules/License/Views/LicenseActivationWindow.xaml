@@ -1,116 +1,290 @@
-<hc:Window x:Class="LabelPrintClient.Modules.License.Views.LicenseActivationWindow"
-           xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-           xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-           xmlns:hc="https://handyorg.github.io/handycontrol"
-           xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
-           Title="{DynamicResource License.WindowTitle}"
-           Width="560"
-           Height="560"
-           MinHeight="520"
-           WindowStartupLocation="CenterScreen"
-           ResizeMode="CanResize"
-           Foreground="{DynamicResource PrimaryTextBrush}">
-    <hc:Window.Background>
-        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-            <GradientStop Color="#FFF2F5FA" Offset="0.0"/>
-            <GradientStop Color="#FFFFFFFF" Offset="0.6"/>
-            <GradientStop Color="#FFEAF0FB" Offset="1.0"/>
-        </LinearGradientBrush>
-    </hc:Window.Background>
+<Window x:Class="LabelPrintClient.Modules.License.Views.LicenseActivationWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:hc="https://handyorg.github.io/handycontrol"
+        xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+        Title="{DynamicResource License.WindowTitle}"
+        Width="580"
+        Height="600"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        Foreground="{DynamicResource PrimaryTextBrush}">
 
-    <Grid Margin="24">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-            <RowDefinition Height="Auto" />
-        </Grid.RowDefinitions>
+    <Window.Resources>
+        <!-- 极细标题栏按钮样式 -->
+        <Style x:Key="TitleBarButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border CornerRadius="6" Background="{TemplateBinding Background}" SnapsToDevicePixels="True" Width="28" Height="28">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#0F000000"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#1A000000"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
 
-        <DockPanel Grid.Row="0" Margin="0,0,0,18">
-            <Border Width="46" Height="46" CornerRadius="10" Margin="0,0,12,0" VerticalAlignment="Center" Background="#120066FF">
-                <iconPacks:PackIconMaterial Kind="ShieldKey" Width="22" Height="22" Foreground="{DynamicResource PrimaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
-            </Border>
-            <StackPanel VerticalAlignment="Center">
-                <TextBlock Text="{DynamicResource License.Title}" Style="{StaticResource AppPageTitleStyle}" FontSize="18" FontWeight="Bold" Margin="0,0,0,3" />
-                <TextBlock Text="{DynamicResource License.Hint}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" />
-            </StackPanel>
-        </DockPanel>
+        <!-- 极细标题栏关闭按钮样式 -->
+        <Style x:Key="TitleBarCloseButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border CornerRadius="6" Background="{TemplateBinding Background}" SnapsToDevicePixels="True" Width="28" Height="28">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#FFF1F2"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#FFE4E6"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
 
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-            <StackPanel>
-                <Border CornerRadius="8" BorderThickness="1,0,0,0" BorderBrush="{DynamicResource PrimaryBrush}" Background="#0D0066FF" Padding="12" Margin="0,0,0,16">
-                    <StackPanel>
-                        <TextBlock Text="{DynamicResource License.MachineCode}" Style="{StaticResource AppFormLabelStyle}" Margin="0,0,0,6" FontWeight="SemiBold" />
-                        <TextBox x:Name="MachineCodeBox" IsReadOnly="True" TextWrapping="Wrap" Padding="8,6" />
+        <!-- 高分子流光焦点 TextBox 样式 -->
+        <Style x:Key="ModernTextBoxStyle" TargetType="TextBox">
+            <Setter Property="Background" Value="#F8FAFC"/>
+            <Setter Property="BorderBrush" Value="#E2E8F0"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Foreground" Value="#09090B"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border x:Name="border" CornerRadius="8" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" SnapsToDevicePixels="True">
+                            <ScrollViewer x:Name="PART_ContentHost" Focusable="false" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="BorderBrush" Value="#CBD5E1"/>
+                            </Trigger>
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter TargetName="border" Property="BorderBrush" Value="#0EA5E9"/>
+                                <Setter TargetName="border" Property="Background" Value="#FFFFFF"/>
+                                <Setter TargetName="border" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#0EA5E9" BlurRadius="6" ShadowDepth="0" Opacity="0.25"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                            <Trigger Property="IsReadOnly" Value="True">
+                                <Setter Property="Background" Value="#F1F5F9"/>
+                                <Setter Property="Foreground" Value="#64748B"/>
+                                <Setter TargetName="border" Property="BorderBrush" Value="#E2E8F0"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 高分子流光焦点 PasswordBox 样式 -->
+        <Style x:Key="ModernPasswordBoxStyle" TargetType="PasswordBox">
+            <Setter Property="Background" Value="#F8FAFC"/>
+            <Setter Property="BorderBrush" Value="#E2E8F0"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Foreground" Value="#09090B"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="PasswordBox">
+                        <Border x:Name="border" CornerRadius="8" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" SnapsToDevicePixels="True">
+                            <ScrollViewer x:Name="PART_ContentHost" Focusable="false" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="BorderBrush" Value="#CBD5E1"/>
+                            </Trigger>
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter TargetName="border" Property="BorderBrush" Value="#0EA5E9"/>
+                                <Setter TargetName="border" Property="Background" Value="#FFFFFF"/>
+                                <Setter TargetName="border" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#0EA5E9" BlurRadius="6" ShadowDepth="0" Opacity="0.25"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+
+    </Window.Resources>
+
+    <!-- 最外层高分子悬浮亚克力圆角边框，带微光投影 -->
+    <Border CornerRadius="16" Background="#FCFDFE" BorderThickness="1" BorderBrush="#FFD6E9FA" Margin="10">
+        <Border.Effect>
+            <DropShadowEffect Color="#0EA5E9" BlurRadius="20" ShadowDepth="0" Opacity="0.16"/>
+        </Border.Effect>
+
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <!-- 自定义精细标题栏，支持鼠标拖拽 -->
+            <Grid Grid.Row="0" x:Name="TitleBar" Height="50" Background="Transparent" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                <TextBlock Text="{DynamicResource License.WindowTitle}" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="20,0,0,0" FontWeight="SemiBold" Foreground="#64748B" FontSize="11" />
+                
+                <!-- 极细 SVG 自绘关闭/最小化按钮 -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,14,0">
+                    <Button Click="Minimize_Click" Style="{StaticResource TitleBarButtonStyle}" Margin="0,0,4,0">
+                        <Path Data="M4,12 H16" Stroke="#64748B" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="10" Height="10" Stretch="Uniform" />
+                    </Button>
+                    <Button Click="Cancel_Click" Style="{StaticResource TitleBarCloseButtonStyle}">
+                        <Path Data="M4,4 L16,16 M4,16 L16,4" Stroke="#64748B" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="9" Height="9" Stretch="Uniform" />
+                    </Button>
+                </StackPanel>
+            </Grid>
+
+            <!-- 核心交互区 -->
+            <Grid Grid.Row="1" Margin="24,0,24,10">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <!-- 页面标志流光 Header -->
+                <DockPanel Grid.Row="0" Margin="0,4,0,20">
+                    <Border Width="42" Height="42" CornerRadius="10" Margin="0,0,12,0" VerticalAlignment="Center" Background="#120066FF">
+                        <iconPacks:PackIconMaterial Kind="ShieldKey" Width="20" Height="20" Foreground="{DynamicResource PrimaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="{DynamicResource License.Title}" Style="{StaticResource AppPageTitleStyle}" FontSize="17" FontWeight="Bold" Margin="0,0,0,2" />
+                        <TextBlock Text="{DynamicResource License.Hint}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="11.5" />
                     </StackPanel>
-                </Border>
+                </DockPanel>
 
-                <StackPanel Margin="0,0,0,14">
-                    <TextBlock Text="{DynamicResource License.Mode}" Style="{StaticResource AppFormLabelStyle}" Margin="0,0,0,6" FontWeight="SemiBold" />
-                    <ComboBox x:Name="LicenseModeBox" Width="220" HorizontalAlignment="Left" SelectionChanged="LicenseModeBox_SelectionChanged">
-                        <ComboBoxItem Content="{DynamicResource License.ModeStandalone}" Tag="Standalone" />
-                        <ComboBoxItem Content="{DynamicResource License.ModeFloating}" Tag="Floating" />
-                    </ComboBox>
-                </StackPanel>
-
-                <StackPanel Margin="0,0,0,14">
-                    <TextBlock Text="{DynamicResource License.ProductCode}" Style="{StaticResource AppFormLabelStyle}" Margin="0,0,0,6" FontWeight="SemiBold" />
-                    <TextBox x:Name="ProductCodeBox" Padding="8,6" />
-                </StackPanel>
-
-                <StackPanel x:Name="StandalonePanel" Margin="0,0,0,14">
-                    <TextBlock Text="{DynamicResource License.FilePath}" Style="{StaticResource AppFormLabelStyle}" Margin="0,0,0,6" FontWeight="SemiBold" />
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <TextBox x:Name="LicenseFilePathBox" Grid.Column="0" Margin="0,0,8,0" Padding="8,6" />
-                        <Button Grid.Column="1" Width="86" Style="{StaticResource AppSecondaryButtonStyle}" Click="BrowseLicenseFile_Click">
-                            <StackPanel Orientation="Horizontal">
-                                <iconPacks:PackIconMaterial Kind="FolderOpen" Width="13" Height="13" Margin="0,0,4,0" VerticalAlignment="Center" />
-                                <TextBlock Text="{DynamicResource Settings.Browse}" VerticalAlignment="Center" />
+                <!-- 带垂直滑块的面板区 -->
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Disabled" Focusable="False">
+                    <StackPanel Margin="0,0,2,0">
+                        
+                        <!-- 机器码展示框（带高精冷灰边框） -->
+                        <Border CornerRadius="10" BorderThickness="1,0,0,0" BorderBrush="{DynamicResource PrimaryBrush}" Background="#0A0066FF" Padding="14,10" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="{DynamicResource License.MachineCode}" Style="{StaticResource AppFormLabelStyle}" Margin="0,0,0,6" FontSize="12.5" FontWeight="SemiBold" />
+                                <TextBox x:Name="MachineCodeBox" IsReadOnly="True" Style="{StaticResource ModernTextBoxStyle}" TextWrapping="Wrap" />
                             </StackPanel>
-                        </Button>
-                    </Grid>
-                </StackPanel>
+                        </Border>
 
-                <StackPanel x:Name="FloatingServerPanel" Margin="0,0,0,14">
-                    <TextBlock Text="{DynamicResource License.ServerUrl}" Style="{StaticResource AppFormLabelStyle}" Margin="0,0,0,6" FontWeight="SemiBold" />
-                    <TextBox x:Name="LicenseServerUrlBox" Padding="8,6" />
-                </StackPanel>
+                        <!-- 授权模式选择 -->
+                        <StackPanel Margin="0,0,0,8">
+                            <TextBlock Text="{DynamicResource License.Mode}" Style="{StaticResource AppFormLabelStyle}" Margin="0,0,0,6" FontSize="12.5" FontWeight="SemiBold" />
+                            <ComboBox x:Name="LicenseModeBox" Width="220" Height="36" HorizontalAlignment="Left" hc:BorderElement.CornerRadius="8" SelectionChanged="LicenseModeBox_SelectionChanged">
+                                <ComboBoxItem Content="{DynamicResource License.ModeStandalone}" Tag="Standalone" />
+                                <ComboBoxItem Content="{DynamicResource License.ModeFloating}" Tag="Floating" />
+                            </ComboBox>
+                        </StackPanel>
 
-                <StackPanel x:Name="FloatingKeyPanel" Margin="0,0,0,14">
-                    <TextBlock Text="{DynamicResource License.AccessKey}" Style="{StaticResource AppFormLabelStyle}" Margin="0,0,0,6" FontWeight="SemiBold" />
-                    <PasswordBox x:Name="LicenseAccessKeyBox" Padding="8,6" />
-                </StackPanel>
+                        <!-- 产品编码 -->
+                        <StackPanel Margin="0,0,0,8">
+                            <TextBlock Text="{DynamicResource License.ProductCode}" Style="{StaticResource AppFormLabelStyle}" Margin="0,0,0,6" FontSize="12.5" FontWeight="SemiBold" />
+                            <TextBox x:Name="ProductCodeBox" Style="{StaticResource ModernTextBoxStyle}" />
+                        </StackPanel>
 
-                <!-- 高科技磨砂警示卡片 -->
-                <Border x:Name="StatusBorder" CornerRadius="6" Background="#0DFD4E4E" BorderThickness="1" BorderBrush="#26FD4E4E" Padding="12,10" Margin="0,10,0,0" Visibility="Collapsed">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <iconPacks:PackIconMaterial Kind="AlertCircle" Grid.Column="0" Width="16" Height="16" Foreground="{DynamicResource AppDangerBrush}" Margin="0,0,8,0" VerticalAlignment="Top" />
-                        <TextBlock x:Name="StatusText" Grid.Column="1" Foreground="{DynamicResource AppDangerBrush}" TextWrapping="Wrap" FontSize="12" LineHeight="16" VerticalAlignment="Center" />
-                    </Grid>
-                </Border>
-            </StackPanel>
-        </ScrollViewer>
+                        <!-- [单机授权专属面板] 搭载弹性高度动画 -->
+                        <StackPanel x:Name="StandalonePanel" Margin="0,0,0,8" Height="60">
+                            <TextBlock Text="{DynamicResource License.FilePath}" Style="{StaticResource AppFormLabelStyle}" Margin="0,0,0,6" FontSize="12.5" FontWeight="SemiBold" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox x:Name="LicenseFilePathBox" Grid.Column="0" Margin="0,0,12,0" Height="36" Style="{StaticResource ModernTextBoxStyle}" />
+                                <Button Grid.Column="1" Width="90" Height="36" VerticalAlignment="Center" Style="{StaticResource AppSecondaryButtonStyle}" Click="BrowseLicenseFile_Click">
+                                    <StackPanel Orientation="Horizontal">
+                                        <iconPacks:PackIconMaterial Kind="FolderOpen" Width="12" Height="12" Margin="0,0,4,0" VerticalAlignment="Center" />
+                                        <TextBlock Text="{DynamicResource Settings.Browse}" VerticalAlignment="Center" FontSize="12" />
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+                        </StackPanel>
 
-        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,18,0,0">
-            <Button Width="105" Style="{StaticResource AppDialogCancelButtonStyle}" Click="Cancel_Click" Margin="0,0,12,0">
-                <StackPanel Orientation="Horizontal">
-                    <iconPacks:PackIconMaterial Kind="Close" Width="14" Height="14" Margin="0,0,6,0" VerticalAlignment="Center" />
-                    <TextBlock Text="{DynamicResource Common.Exit}" VerticalAlignment="Center" />
+                        <!-- [浮动服务URL面板] 搭载弹性高度动画 -->
+                        <StackPanel x:Name="FloatingServerPanel" Margin="0,0,0,8" Height="0" Opacity="0" Visibility="Collapsed">
+                            <TextBlock Text="{DynamicResource License.ServerUrl}" Style="{StaticResource AppFormLabelStyle}" Margin="0,0,0,6" FontSize="12.5" FontWeight="SemiBold" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox x:Name="LicenseServerUrlBox" Grid.Column="0" Margin="0,0,12,0" Height="36" Style="{StaticResource ModernTextBoxStyle}" />
+                                <Button Grid.Column="1" Width="94" Height="36" VerticalAlignment="Center" Style="{StaticResource AppSecondaryButtonStyle}" Click="TestConnection_Click">
+                                    <StackPanel Orientation="Horizontal">
+                                        <iconPacks:PackIconMaterial Kind="LanConnect" Width="13" Height="13" Margin="0,0,4,0" VerticalAlignment="Center" />
+                                        <TextBlock Text="测试连接" VerticalAlignment="Center" FontSize="12" />
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+                        </StackPanel>
+
+                        <!-- [浮动AccessKey面板] 搭载弹性高度动画 -->
+                        <StackPanel x:Name="FloatingKeyPanel" Margin="0,0,0,8" Height="0" Opacity="0" Visibility="Collapsed">
+                            <TextBlock Text="{DynamicResource License.AccessKey}" Style="{StaticResource AppFormLabelStyle}" Margin="0,0,0,6" FontSize="12.5" FontWeight="SemiBold" />
+                            <PasswordBox x:Name="LicenseAccessKeyBox" Style="{StaticResource ModernPasswordBoxStyle}" />
+                        </StackPanel>
+
+                        <!-- 磨砂警告警示卡片，搭载弹性展开淡入动画 -->
+                        <Border x:Name="StatusBorder" CornerRadius="8" Background="#0DFD4E4E" BorderThickness="1" BorderBrush="#26FD4E4E" Padding="14,10" Margin="0,4,0,8" Height="0" Opacity="0" Visibility="Collapsed">
+                            <Grid VerticalAlignment="Center">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <iconPacks:PackIconMaterial x:Name="StatusIcon" Kind="AlertCircle" Grid.Column="0" Width="15" Height="15" Foreground="{DynamicResource AppDangerBrush}" Margin="0,0,8,0" VerticalAlignment="Center" />
+                                <TextBlock x:Name="StatusText" Grid.Column="1" Foreground="{DynamicResource AppDangerBrush}" TextWrapping="Wrap" FontSize="12" LineHeight="16" VerticalAlignment="Center" />
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
+
+            <!-- 底部操作按钮栏 -->
+            <Border Grid.Row="2" Background="#F8FAFC" CornerRadius="0,0,16,16" BorderThickness="0,1,0,0" BorderBrush="#F1F5F9" Padding="24,14">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Width="96" Height="36" Style="{StaticResource AppDialogCancelButtonStyle}" Click="Cancel_Click" Margin="0,0,12,0">
+                        <StackPanel Orientation="Horizontal">
+                            <iconPacks:PackIconMaterial Kind="Close" Width="13" Height="13" Margin="0,0,6,0" VerticalAlignment="Center" />
+                            <TextBlock Text="{DynamicResource Common.Exit}" VerticalAlignment="Center" FontSize="12" />
+                        </StackPanel>
+                    </Button>
+                    <Button Width="136" Height="36" Style="{StaticResource AppDialogPrimaryButtonStyle}" Click="Validate_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <iconPacks:PackIconMaterial Kind="ShieldCheck" Width="13" Height="13" Margin="0,0,6,0" VerticalAlignment="Center" />
+                            <TextBlock Text="{DynamicResource License.Validate}" VerticalAlignment="Center" FontSize="12" />
+                        </StackPanel>
+                    </Button>
                 </StackPanel>
-            </Button>
-            <Button Width="145" Style="{StaticResource AppDialogPrimaryButtonStyle}" Click="Validate_Click">
-                <StackPanel Orientation="Horizontal">
-                    <iconPacks:PackIconMaterial Kind="ShieldCheck" Width="14" Height="14" Margin="0,0,6,0" VerticalAlignment="Center" />
-                    <TextBlock Text="{DynamicResource License.Validate}" VerticalAlignment="Center" />
-                </StackPanel>
-            </Button>
-        </StackPanel>
-    </Grid>
-</hc:Window>
+            </Border>
+        </Grid>
+    </Border>
+</Window>

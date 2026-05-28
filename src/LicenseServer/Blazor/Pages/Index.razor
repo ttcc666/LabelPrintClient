@@ -1,0 +1,177 @@
+@page "/"
+@attribute [Authorize]
+@inject LicenseServer.Infrastructure.LicenseDb Db
+@inject LicenseServer.Services.SigningKeyService KeyService
+@inject LicenseServer.Services.PrivateKeyProtector Protector
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-6 pa-md-8">
+    <!-- 顶部欢迎与工作模式卡 -->
+    <MudPaper Class="pa-6 mb-6" Outlined="true" Style="border-radius: 12px; border: 1px solid rgba(228, 228, 231, 0.8); background: linear-gradient(135deg, rgba(14, 165, 233, 0.02) 0%, rgba(99, 102, 241, 0.01) 100%); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.01);">
+        <div class="d-flex align-center justify-space-between flex-wrap gap-4">
+            <div>
+                <MudText Typo="Typo.h5" Style="font-weight: 700; color: #09090b; letter-spacing: -0.02em;">主控概览 (Dashboard)</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-1">
+                    基于高强度非对称密码学（RSA-2048）与数字签名算法的企业级许可证安全托管中继系统。
+                </MudText>
+            </div>
+            <div>
+                @if (!_hasMasterKey)
+                {
+                    <MudChip T="string" Icon="@Icons.Material.Filled.Router" Color="Color.Primary" Variant="Variant.Text" Style="border: 1px solid rgba(14, 165, 233, 0.25); background: rgba(14, 165, 233, 0.05); font-weight: 600; padding: 4px 12px;">局域网托管中转模式 (LAN Relayer)</MudChip>
+                }
+                else
+                {
+                    <MudChip T="string" Icon="@Icons.Material.Filled.Hub" Color="Color.Success" Variant="Variant.Text" Style="border: 1px solid rgba(22, 163, 74, 0.25); background: rgba(22, 163, 74, 0.05); font-weight: 600; padding: 4px 12px;">公司权威签发模式 (Company Authority)</MudChip>
+                }
+            </div>
+        </div>
+    </MudPaper>
+
+    <!-- 4 大指标卡展示网格 -->
+    <MudGrid Spacing="4">
+        <!-- 合作客户卡 -->
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="pa-6 d-flex align-center justify-space-between dashboard-hover-card" Outlined="true" Style="border-radius: 12px; border: 1px solid rgba(228, 228, 231, 0.8); height: 106px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02); cursor: default;">
+                <div>
+                    <MudText Color="Color.Secondary" Style="font-size: 0.825rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">合作客户总数</MudText>
+                    <MudText Typo="Typo.h4" Style="font-weight: 700; color: #09090b; font-family: 'Outfit'; margin-top: 2px;">@_customerCount</MudText>
+                </div>
+                <div style="width: 46px; height: 46px; background: rgba(14, 165, 233, 0.06); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #0ea5e9;">
+                    <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Medium" />
+                </div>
+            </MudPaper>
+        </MudItem>
+
+        <!-- 存量证书卡 -->
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="pa-6 d-flex align-center justify-space-between dashboard-hover-card" Outlined="true" Style="border-radius: 12px; border: 1px solid rgba(228, 228, 231, 0.8); height: 106px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02); cursor: default;">
+                <div>
+                    <MudText Color="Color.Secondary" Style="font-size: 0.825rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">存量许可证</MudText>
+                    <MudText Typo="Typo.h4" Style="font-weight: 700; color: #09090b; font-family: 'Outfit'; margin-top: 2px;">@_licenseCount</MudText>
+                </div>
+                <div style="width: 46px; height: 46px; background: rgba(22, 163, 74, 0.06); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #16a34a;">
+                    <MudIcon Icon="@Icons.Material.Filled.Security" Size="Size.Medium" />
+                </div>
+            </MudPaper>
+        </MudItem>
+
+        <!-- 在线浮动席位卡 -->
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="pa-6 d-flex align-center justify-space-between dashboard-hover-card" Outlined="true" Style="border-radius: 12px; border: 1px solid rgba(228, 228, 231, 0.8); height: 106px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02); cursor: default;">
+                <div>
+                    <MudText Color="Color.Secondary" Style="font-size: 0.825rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">实时活动会话</MudText>
+                    <MudText Typo="Typo.h4" Style="font-weight: 700; color: #09090b; font-family: 'Outfit'; margin-top: 2px;">@_sessionCount</MudText>
+                </div>
+                <div style="width: 46px; height: 46px; background: rgba(245, 158, 11, 0.06); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #f59e0b;">
+                    <MudIcon Icon="@Icons.Material.Filled.LeakAdd" Size="Size.Medium" />
+                </div>
+            </MudPaper>
+        </MudItem>
+
+        <!-- 离线签名状态卡 -->
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="pa-6 d-flex align-center justify-space-between dashboard-hover-card" Outlined="true" Style="border-radius: 12px; border: 1px solid rgba(228, 228, 231, 0.8); height: 106px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02); cursor: default;">
+                <div>
+                    <MudText Color="Color.Secondary" Style="font-size: 0.825rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">离线签名状态</MudText>
+                    <div class="mt-2 d-flex align-center gap-2">
+                        @if (_hasSigningKey)
+                        {
+                            <span class="d-inline-block" style="width: 7px; height: 7px; background-color: #16a34a; border-radius: 50%;"></span>
+                            <MudText Style="font-weight: 600; font-size: 0.85rem; color: #16a34a;">已导入私钥</MudText>
+                        }
+                        else
+                        {
+                            <span class="d-inline-block" style="width: 7px; height: 7px; background-color: #71717a; border-radius: 50%;"></span>
+                            <MudText Style="font-weight: 600; font-size: 0.85rem; color: #71717a;">局域网托管</MudText>
+                        }
+                    </div>
+                </div>
+                <div style="width: 46px; height: 46px; background: rgba(168, 85, 247, 0.06); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #a855f7;">
+                    <MudIcon Icon="@Icons.Material.Filled.VpnKey" Size="Size.Medium" />
+                </div>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    <!-- 下方快捷向导说明网格 -->
+    <MudGrid Spacing="4" Class="mt-2">
+        <!-- 运行原理说明 -->
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-6" Outlined="true" Style="border-radius: 12px; border: 1px solid rgba(228, 228, 231, 0.8); height: 100%; min-height: 250px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);">
+                <div class="d-flex align-center gap-2 mb-4">
+                    <MudIcon Icon="@Icons.Material.Filled.AutoAwesome" Color="Color.Primary" Size="Size.Small" />
+                    <MudText Typo="Typo.subtitle1" Style="font-weight: 600; color: #09090b;">平台核心运行机制</MudText>
+                </div>
+                <MudText Typo="Typo.body2" Color="Color.Secondary" Style="line-height: 1.8; font-size: 0.875rem;">
+                    本平台采用<strong>非对称加密（RSA）数字签名技术</strong>实现客户端授权的防篡改防护。公司签发端通过绝密私钥生成包含期限与席位限制的加密证书，而部署在受限局域网中的中转端（Relayer）无需私钥，仅凭借内置的公司公钥即可对导出的许可证密文进行安全验签。
+                    <br /><br />
+                    系统通过极其轻量级的心跳机制，在内网端实现对多台终端标签打印客户端的<strong>浮动并发登录席位控制</strong>，安全便捷。
+                </MudText>
+            </MudPaper>
+        </MudItem>
+
+        <!-- 极简模式导向说明 -->
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-6" Outlined="true" Style="border-radius: 12px; border: 1px solid rgba(228, 228, 231, 0.8); height: 100%; min-height: 250px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);">
+                <div class="d-flex align-center gap-2 mb-4">
+                    <MudIcon Icon="@Icons.Material.Filled.Layers" Color="Color.Success" Size="Size.Small" />
+                    <MudText Typo="Typo.subtitle1" Style="font-weight: 600; color: #09090b;">多态自锁隔离状态说明</MudText>
+                </div>
+                
+                @if (!_hasMasterKey)
+                {
+                    <MudText Typo="Typo.body2" Color="Color.Secondary" Style="line-height: 1.8; font-size: 0.875rem;">
+                        <strong>当前状态：【局域网受限中转端】</strong>
+                        <br />
+                        当前服务器作为局域网托管代理运行。系统出于安全性考虑，<strong>自适应锁死并隐藏了新增客户表单、数字签名私钥生成等高特权管理栏目</strong>。
+                        <br /><br />
+                        <strong>您的操作指引：</strong>
+                        前往左侧【证书管理】菜单，直接粘贴由公司总部所颁发的 <strong>数字签名许可证 JSON 密文</strong>，系统即可瞬间解锁局域网内所有终端设备的实时浮动并发鉴权服务。
+                    </MudText>
+                }
+                else
+                {
+                    <MudText Typo="Typo.body2" Color="Color.Secondary" Style="line-height: 1.8; font-size: 0.875rem;">
+                        <strong>当前状态：【公司权威签发端】</strong>
+                        <br />
+                        当前服务器作为根节点运行（持有 MasterKey 鉴权环境）。系统已解锁高特权管理功能。
+                        <br /><br />
+                        <strong>您的操作指引：</strong>
+                        1. 前往【签名密钥】页面，安全导入并保存公司持有的 PKCS#8 格式 RSA 私钥；
+                        2. 在【客户管理】建立客户建档；
+                        3. 前往【证书管理】签发授权并在线打包下载防篡改证书文件。
+                    </MudText>
+                }
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+<style>
+    .dashboard-hover-card {
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .dashboard-hover-card:hover {
+        transform: translateY(-2px);
+        border-color: rgba(14, 165, 233, 0.2) !important;
+        box-shadow: 0 12px 24px rgba(14, 165, 233, 0.04) !important;
+    }
+</style>
+
+@code {
+    private int _customerCount;
+    private int _licenseCount;
+    private int _sessionCount;
+    private bool _hasSigningKey;
+    private bool _hasMasterKey;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _hasMasterKey = Protector.HasMasterKey;
+        // 物理统计当前最新数据
+        _customerCount = Db.Db.Queryable<Customer>().Count();
+        _licenseCount = Db.Db.Queryable<AppLicense>().Count();
+        _sessionCount = Db.Db.Queryable<OnlineSession>().Count();
+        _hasSigningKey = (await KeyService.GetActiveAsync()) != null;
+    }
+}

@@ -1,0 +1,94 @@
+@page "/sessions"
+@attribute [Authorize]
+@inject LicenseServer.Infrastructure.LicenseDb Db
+@inject ISnackbar Snackbar
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-6 pa-md-8">
+    <MudPaper Class="pa-6" Outlined="true" Style="border-radius: 12px; border: 1px solid rgba(228, 228, 231, 0.8); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);">
+        <!-- 工具栏 -->
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-5">
+            <div>
+                <MudText Typo="Typo.h6" Style="font-weight: 600; font-size: 1rem; color: #09090b;">并发授权席位监视器 (Active Sessions Monitor)</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary" Style="font-size: 0.75rem;">用于实时审计内网并发使用浮动授权点数的客户端实例状态</MudText>
+            </div>
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
+                <MudTextField @bind-Value="_searchString" Placeholder="搜索设备识别码(MachineCode)..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Small" Class="mt-0" Style="width: 250px;" Margin="Margin.Dense" Variant="Variant.Outlined" Clearable="true" />
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Refresh" Style="border-radius: 8px; font-weight: 600;" OnClick="LoadData">刷新席位</MudButton>
+            </MudStack>
+        </MudStack>
+
+        <!-- 会话审计 Table -->
+        <MudTable Items="_sessions" Hover="true" Breakpoint="Breakpoint.Sm" Outlined="false" Elevation="0" Filter="new Func<OnlineSession, bool>(FilterFunc)">
+            <HeaderContent>
+                <MudTh Style="font-weight: 600; font-size: 0.75rem; color: #71717a; text-transform: uppercase;">会话 ID</MudTh>
+                <MudTh Style="font-weight: 600; font-size: 0.75rem; color: #71717a; text-transform: uppercase;">设备识别码 (MachineCode)</MudTh>
+                <MudTh Style="font-weight: 600; font-size: 0.75rem; color: #71717a; text-transform: uppercase;">设备名称 (MachineName)</MudTh>
+                <MudTh Style="font-weight: 600; font-size: 0.75rem; color: #71717a; text-transform: uppercase;">关联许可证 ID</MudTh>
+                <MudTh Style="font-weight: 600; font-size: 0.75rem; color: #71717a; text-transform: uppercase;">剩余租期保活时长 (Time Left)</MudTh>
+                <MudTh Style="font-weight: 600; font-size: 0.75rem; color: #71717a; text-transform: uppercase;">租赁激活时间 (Login Time)</MudTh>
+                <MudTh Style="font-weight: 600; font-size: 0.75rem; color: #71717a; text-transform: uppercase; text-align: center;">操作 (Actions)</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="会话 ID" Style="font-family: 'Outfit'; font-size: 0.85rem;">@context.Id</MudTd>
+                <MudTd DataLabel="设备识别码" Style="font-weight: 600; font-family: 'Outfit'; font-size: 0.85rem;">@context.MachineCode</MudTd>
+                <MudTd DataLabel="设备名称" Style="font-size: 0.85rem;">@(string.IsNullOrEmpty(context.MachineName) ? "—" : context.MachineName)</MudTd>
+                <MudTd DataLabel="关联许可证 ID" Style="font-family: 'Outfit'; font-size: 0.85rem;">@context.LicenseId</MudTd>
+                <MudTd DataLabel="剩余租期" Style="font-family: 'Outfit'; font-size: 0.85rem; font-weight: 600;">
+                    @{
+                        var secondsLeft = (context.ExpireTime - DateTime.Now).TotalSeconds;
+                        if (secondsLeft <= 0)
+                        {
+                            <span class="text-danger">已过期</span>
+                        }
+                        else
+                        {
+                            <span style="color: #16a34a;">@(Math.Ceiling(secondsLeft)) 秒</span>
+                        }
+                    }
+                </MudTd>
+                <MudTd DataLabel="首次激活时间" Style="font-family: 'Outfit'; font-size: 0.85rem; color: #71717a;">
+                    @context.LoginTime.ToString("yyyy-MM-dd HH:mm:ss")
+                </MudTd>
+                <MudTd DataLabel="操作" Style="text-align: center;">
+                    <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small" Style="border-radius: 6px; font-weight: 600; font-size: 0.75rem;" OnClick="() => TerminateSession(context)">物理强退席位</MudButton>
+                </MudTd>
+            </RowTemplate>
+            <NoRecordsContent>
+                <MudText Align="Align.Center" Color="Color.Secondary" Class="pa-4">当前局域网内无任何活动的浮动并发会话席位</MudText>
+            </NoRecordsContent>
+        </MudTable>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private List<OnlineSession> _sessions = new();
+    private string _searchString = "";
+
+    protected override void OnInitialized()
+    {
+        LoadData();
+    }
+
+    private void LoadData()
+    {
+        _sessions = Db.Db.Queryable<OnlineSession>().OrderByDescending(s => s.LoginTime).ToList();
+    }
+
+    private bool FilterFunc(OnlineSession session)
+    {
+        if (string.IsNullOrWhiteSpace(_searchString))
+            return true;
+        if (session.MachineCode.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (session.MachineName != null && session.MachineName.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        return false;
+    }
+
+    private void TerminateSession(OnlineSession session)
+    {
+        Db.Db.Deleteable<OnlineSession>().Where(s => s.Id == session.Id).ExecuteCommand();
+        Snackbar.Add("【已物理强退】该客户端浮动授权席位已强制释放，已在局域网内退还点数空余！", Severity.Info);
+        LoadData();
+    }
+}

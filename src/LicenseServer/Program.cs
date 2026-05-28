@@ -3,6 +3,7 @@ using LicenseServer.Config;
 using LicenseServer.Infrastructure;
 using LicenseServer.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,6 +22,8 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.AccessDeniedPath = "/login";
     });
 builder.Services.AddAuthorization();
+builder.Services.AddServerSideBlazor();
+builder.Services.AddMudServices();
 builder.Services.AddRazorPages(options =>
 {
     options.Conventions.AuthorizeFolder("/");
@@ -47,6 +50,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapLicenseApi();
 app.MapRazorPages();
+app.MapBlazorHub();
+app.MapFallbackToPage("/_Host");
 app.Run();
 
 public partial class Program;
