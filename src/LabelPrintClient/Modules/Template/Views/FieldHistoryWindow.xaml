@@ -105,22 +105,61 @@
                       HorizontalScrollBarVisibility="Auto"
                       VerticalScrollBarVisibility="Auto">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="{DynamicResource FieldHistory.Time}"
-                                        Binding="{Binding CreateTime, StringFormat=\{0:yyyy-MM-dd HH:mm:ss\}}"
+                    <DataGridTextColumn Binding="{Binding CreateTime, StringFormat=\{0:yyyy-MM-dd HH:mm:ss\}}"
                                         Width="170"
-                                        ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
-                    <DataGridTemplateColumn Header="{DynamicResource Common.Operation}" Width="82" MinWidth="82" SortMemberPath="OperationType">
+                                        ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}">
+                        <DataGridTextColumn.HeaderTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{DynamicResource FieldHistory.Time}" />
+                            </DataTemplate>
+                        </DataGridTextColumn.HeaderTemplate>
+                    </DataGridTextColumn>
+                    <DataGridTemplateColumn Width="82" MinWidth="82" SortMemberPath="OperationType">
+                        <DataGridTemplateColumn.HeaderTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{DynamicResource Common.Operation}" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.HeaderTemplate>
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <ContentControl Content="{Binding}" ContentTemplate="{StaticResource HistoryOperationBadgeTemplate}" />
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
-                    <DataGridTextColumn Header="{DynamicResource Field.Name}" Binding="{Binding FieldName}" Width="130" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
-                    <DataGridTextColumn Header="{DynamicResource Field.Code}" Binding="{Binding FieldCode}" Width="130" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
-                    <DataGridTextColumn Header="{DynamicResource FieldHistory.ChangeSummary}" Binding="{Binding ChangeSummary}" Width="*" MinWidth="260" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
-                    <DataGridTextColumn Header="{DynamicResource PrintCenter.Operator}" Binding="{Binding OperatorName}" Width="100" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
-                    <DataGridTemplateColumn Header="{DynamicResource Common.Operation}" Width="92" MinWidth="92">
+                    <DataGridTextColumn Binding="{Binding FieldName}" Width="130" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}">
+                        <DataGridTextColumn.HeaderTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{DynamicResource Field.Name}" />
+                            </DataTemplate>
+                        </DataGridTextColumn.HeaderTemplate>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding FieldCode}" Width="130" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}">
+                        <DataGridTextColumn.HeaderTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{DynamicResource Field.Code}" />
+                            </DataTemplate>
+                        </DataGridTextColumn.HeaderTemplate>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding ChangeSummary}" Width="*" MinWidth="260" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}">
+                        <DataGridTextColumn.HeaderTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{DynamicResource FieldHistory.ChangeSummary}" />
+                            </DataTemplate>
+                        </DataGridTextColumn.HeaderTemplate>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding OperatorName}" Width="100" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}">
+                        <DataGridTextColumn.HeaderTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{DynamicResource PrintCenter.Operator}" />
+                            </DataTemplate>
+                        </DataGridTextColumn.HeaderTemplate>
+                    </DataGridTextColumn>
+                    <DataGridTemplateColumn Width="92" MinWidth="92">
+                        <DataGridTemplateColumn.HeaderTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{DynamicResource Common.Operation}" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.HeaderTemplate>
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">

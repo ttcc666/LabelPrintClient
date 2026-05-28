@@ -102,7 +102,7 @@ public partial class ImportPreviewWindow : Window
 
         PreviewGrid.Columns.Add(new DataGridCheckBoxColumn
         {
-            Header = AppLanguageService.GetString("PrintCenter.IsValid"),
+            Header = CreateHeader("PrintCenter.IsValid"),
             Binding = new System.Windows.Data.Binding(nameof(ImportPreviewRowGridItem.IsValid)),
             CellStyle = centerCellStyle,
             HeaderStyle = centerHeaderStyle,
@@ -122,12 +122,19 @@ public partial class ImportPreviewWindow : Window
 
         PreviewGrid.Columns.Add(new DataGridTextColumn
         {
-            Header = AppLanguageService.GetString("PrintHistory.ErrorMessage"),
+            Header = CreateHeader("PrintHistory.ErrorMessage"),
             Binding = new System.Windows.Data.Binding(nameof(ImportPreviewRowGridItem.ErrorMessage)),
             Width = new DataGridLength(1, DataGridLengthUnitType.Star),
             MinWidth = 220,
             ElementStyle = BuildWrappingTextStyle()
         });
+    }
+
+    private static object CreateHeader(string resourceKey)
+    {
+        var tb = new TextBlock();
+        tb.SetResourceReference(TextBlock.TextProperty, resourceKey);
+        return tb;
     }
 
     private static Style FindAppStyle(string resourceKey)

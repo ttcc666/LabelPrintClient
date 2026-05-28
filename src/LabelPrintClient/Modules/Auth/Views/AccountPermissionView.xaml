@@ -85,10 +85,34 @@
                                   ColumnHeaderStyle="{StaticResource AppDataGridColumnHeaderStyle}"
                                   SelectionChanged="UserGrid_SelectionChanged">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="{DynamicResource Account.UserName}" Binding="{Binding UserName}" Width="110" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
-                                <DataGridTextColumn Header="{DynamicResource Account.DisplayName}" Binding="{Binding DisplayName}" Width="110" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
-                                <DataGridCheckBoxColumn Header="{DynamicResource Common.Enabled}" Binding="{Binding IsEnabled}" Width="55" ElementStyle="{StaticResource AppDataGridReadOnlyCheckBoxStyle}" />
-                                <DataGridTextColumn Header="{DynamicResource Account.LastLogin}" Binding="{Binding LastLoginTime, StringFormat=\{0:yyyy-MM-dd HH:mm\}}" Width="*" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
+                                <DataGridTextColumn Binding="{Binding UserName}" Width="110" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}">
+                                    <DataGridTextColumn.HeaderTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{DynamicResource Account.UserName}" />
+                                        </DataTemplate>
+                                    </DataGridTextColumn.HeaderTemplate>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Binding="{Binding DisplayName}" Width="110" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}">
+                                    <DataGridTextColumn.HeaderTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{DynamicResource Account.DisplayName}" />
+                                        </DataTemplate>
+                                    </DataGridTextColumn.HeaderTemplate>
+                                </DataGridTextColumn>
+                                <DataGridCheckBoxColumn Binding="{Binding IsEnabled}" Width="55" ElementStyle="{StaticResource AppDataGridReadOnlyCheckBoxStyle}">
+                                    <DataGridCheckBoxColumn.HeaderTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{DynamicResource Common.Enabled}" />
+                                        </DataTemplate>
+                                    </DataGridCheckBoxColumn.HeaderTemplate>
+                                </DataGridCheckBoxColumn>
+                                <DataGridTextColumn Binding="{Binding LastLoginTime, StringFormat=\{0:yyyy-MM-dd HH:mm\}}" Width="*" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}">
+                                    <DataGridTextColumn.HeaderTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{DynamicResource Account.LastLogin}" />
+                                        </DataTemplate>
+                                    </DataGridTextColumn.HeaderTemplate>
+                                </DataGridTextColumn>
                             </DataGrid.Columns>
                         </DataGrid>
                     </Border>
@@ -139,10 +163,34 @@
                                   ColumnHeaderStyle="{StaticResource AppDataGridColumnHeaderStyle}"
                                   SelectionChanged="RoleGrid_SelectionChanged">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="{DynamicResource Common.Name}" Binding="{Binding Name}" Width="100" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
-                                <DataGridTextColumn Header="{DynamicResource Common.Code}" Binding="{Binding Code}" Width="120" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
-                                <DataGridCheckBoxColumn Header="{DynamicResource Account.SystemRole}" Binding="{Binding IsSystem}" Width="55" ElementStyle="{StaticResource AppDataGridReadOnlyCheckBoxStyle}" />
-                                <DataGridCheckBoxColumn Header="{DynamicResource Common.Enabled}" Binding="{Binding IsEnabled}" Width="55" ElementStyle="{StaticResource AppDataGridReadOnlyCheckBoxStyle}" />
+                                <DataGridTextColumn Binding="{Binding Name}" Width="100" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}">
+                                    <DataGridTextColumn.HeaderTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{DynamicResource Common.Name}" />
+                                        </DataTemplate>
+                                    </DataGridTextColumn.HeaderTemplate>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Binding="{Binding Code}" Width="120" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}">
+                                    <DataGridTextColumn.HeaderTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{DynamicResource Common.Code}" />
+                                        </DataTemplate>
+                                    </DataGridTextColumn.HeaderTemplate>
+                                </DataGridTextColumn>
+                                <DataGridCheckBoxColumn Binding="{Binding IsSystem}" Width="55" ElementStyle="{StaticResource AppDataGridReadOnlyCheckBoxStyle}">
+                                    <DataGridCheckBoxColumn.HeaderTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{DynamicResource Account.SystemRole}" />
+                                        </DataTemplate>
+                                    </DataGridCheckBoxColumn.HeaderTemplate>
+                                </DataGridCheckBoxColumn>
+                                <DataGridCheckBoxColumn Binding="{Binding IsEnabled}" Width="55" ElementStyle="{StaticResource AppDataGridReadOnlyCheckBoxStyle}">
+                                    <DataGridCheckBoxColumn.HeaderTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{DynamicResource Common.Enabled}" />
+                                        </DataTemplate>
+                                    </DataGridCheckBoxColumn.HeaderTemplate>
+                                </DataGridCheckBoxColumn>
                             </DataGrid.Columns>
                         </DataGrid>
                     </Border>

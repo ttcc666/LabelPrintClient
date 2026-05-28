@@ -76,17 +76,16 @@ public partial class FieldEditWindow : Window
             AppMessageBox.Show(AppLanguageService.GetString("Field.CodeRequired"), AppLanguageService.GetString("Common.Prompt"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
-
-        if (TemplateSystemFields.IsSystemField(code))
+        if (TemplateSystemFields.IsSystemField(code))
         {
             AppMessageBox.Show(AppLanguageService.GetString("Field.SystemFieldReadonly"), AppLanguageService.GetString("Common.Prompt"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
-        if (!TryReadNullableInt(MinLengthBox.Text, "最小长度", out var minLength) ||
-            !TryReadNullableInt(MaxLengthBox.Text, "最大长度", out var maxLength) ||
-            !TryReadNullableDecimal(MinValueBox.Text, "最小数值", out var minValue) ||
-            !TryReadNullableDecimal(MaxValueBox.Text, "最大数值", out var maxValue))
+        if (!TryReadNullableInt(MinLengthBox.Text, AppLanguageService.GetString("Field.MinLength"), out var minLength) ||
+            !TryReadNullableInt(MaxLengthBox.Text, AppLanguageService.GetString("Field.MaxLength"), out var maxLength) ||
+            !TryReadNullableDecimal(MinValueBox.Text, AppLanguageService.GetString("Field.MinValue"), out var minValue) ||
+            !TryReadNullableDecimal(MaxValueBox.Text, AppLanguageService.GetString("Field.MaxValue"), out var maxValue))
         {
             return;
         }

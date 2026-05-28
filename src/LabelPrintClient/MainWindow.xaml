@@ -118,8 +118,8 @@
             <!-- 语言切换 (下拉选择) -->
             <TextBlock Text="{DynamicResource Settings.Language}" VerticalAlignment="Center" Margin="10,0,8,0" Foreground="{DynamicResource PrimaryTextBrush}" />
             <ComboBox x:Name="LanguageComboBox" Width="95" Height="28" VerticalAlignment="Center" Margin="0,0,12,0" SelectionChanged="LanguageComboBox_SelectionChanged">
-                <ComboBoxItem Content="中文" Tag="ZhCn" />
-                <ComboBoxItem Content="English" Tag="EnUs" />
+                <ComboBoxItem Content="{DynamicResource Settings.LanguageZhCn}" Tag="ZhCn" />
+                <ComboBoxItem Content="{DynamicResource Settings.LanguageEnUs}" Tag="EnUs" />
             </ComboBox>
 
             <!-- 主题切换 (下拉选择) -->

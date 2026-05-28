@@ -1,3 +1,5 @@
+using LabelPrintClient.Services;
+
 namespace LabelPrintClient.Modules.Template.Models;
 
 public static class TemplateSystemFields
@@ -20,9 +22,9 @@ public static class TemplateSystemFields
     public static string GetDisplayName(string fieldCode)
     {
         if (string.Equals(fieldCode, BatchNo, StringComparison.OrdinalIgnoreCase))
-            return "批号";
+            return AppLanguageService.GetString("SystemField.BatchNo");
         if (string.Equals(fieldCode, SerialNo, StringComparison.OrdinalIgnoreCase))
-            return "序列号";
+            return AppLanguageService.GetString("SystemField.SerialNo");
         return fieldCode;
     }
 }

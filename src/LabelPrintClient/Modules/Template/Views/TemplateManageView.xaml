@@ -121,7 +121,7 @@
             </DockPanel>
         </Border>
 
-        <!-- 主从三栏大网格 (采用大Grid行级轨道物理对齐，确保所有表格与卡片在同一水平线) -->
+        <!-- 主从三栏大网格 -->
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="0.8*" MinWidth="200" />
@@ -131,18 +131,15 @@
                 <ColumnDefinition Width="2.8*" MinWidth="600" />
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" /> <!-- 行 0：标题栏 -->
-                <RowDefinition Height="Auto" /> <!-- 行 1：按钮控制与过滤面板 (自动对齐最高高度) -->
-                <RowDefinition Height="*" />    <!-- 行 2：表格数据卡片栏 (顶端100%在同一水平线) -->
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
             <!-- ================= 第一栏：标签分类 ================= -->
-            <!-- 标题 -->
             <TextBlock Grid.Column="0" Grid.Row="0" Style="{StaticResource SectionTitleStyle}" Text="{DynamicResource Template.Categories}" Margin="0,0,0,6" />
             
-            <!-- 按钮控制面板 -->
             <StackPanel Grid.Column="0" Grid.Row="1" Margin="0,0,6,8" VerticalAlignment="Top">
-                <!-- 分类操作按钮 -->
                 <WrapPanel Margin="0,0,0,4">
                     <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="AddCategory_Click" Margin="0,0,8,8" auth:PermissionAssist.PermissionKey="Button.Template.Category.Create">
                         <StackPanel Orientation="Horizontal">
@@ -164,7 +161,6 @@
                     </Button>
                 </WrapPanel>
 
-                <!-- 分类搜索过滤 -->
                 <WrapPanel Margin="0,0,0,4">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,8,8">
                         <TextBlock Style="{StaticResource AppFormLabelStyle}" Text="{DynamicResource Common.Keyword}" />
@@ -185,7 +181,6 @@
                 </WrapPanel>
             </StackPanel>
 
-            <!-- 表格卡片 (顶端绝对齐平) -->
             <Border Grid.Column="0" Grid.Row="2" Margin="0,0,6,0" Style="{StaticResource AppCardStyle}" VerticalAlignment="Stretch">
                 <Grid>
                     <DataGrid x:Name="CategoryGrid"
@@ -196,12 +191,25 @@
                               HorizontalScrollBarVisibility="Auto"
                               VerticalScrollBarVisibility="Auto">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="{DynamicResource Common.Name}" Binding="{Binding Name}" Width="*" MinWidth="120" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
-                            <DataGridTemplateColumn Header="{DynamicResource Common.Status}"
-                                                    Width="76"
+                            <!-- 1. 分类名称 (HeaderTemplate 完美动态多语言) -->
+                            <DataGridTextColumn Binding="{Binding Name}" Width="*" MinWidth="120" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}">
+                                <DataGridTextColumn.HeaderTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{DynamicResource Common.Name}" />
+                                    </DataTemplate>
+                                </DataGridTextColumn.HeaderTemplate>
+                            </DataGridTextColumn>
+
+                            <!-- 2. 分类状态 (HeaderTemplate 完美动态多语言) -->
+                            <DataGridTemplateColumn Width="76"
                                                     CellStyle="{StaticResource AppDataGridCenterCellStyle}"
                                                     HeaderStyle="{StaticResource AppDataGridCenterColumnHeaderStyle}"
                                                     SortMemberPath="IsEnabled">
+                                <DataGridTemplateColumn.HeaderTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{DynamicResource Common.Status}" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.HeaderTemplate>
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <ContentControl Content="{Binding}" ContentTemplate="{StaticResource CategoryStatusBadgeTemplate}" />
@@ -221,18 +229,13 @@
                 </Grid>
             </Border>
 
-
             <!-- 拖拽条 1 -->
             <GridSplitter Grid.Column="1" Grid.Row="0" Grid.RowSpan="3" Width="6" HorizontalAlignment="Center" VerticalAlignment="Stretch" Background="Transparent" Cursor="SizeWE" Margin="2,0" />
 
-
             <!-- ================= 第二栏：标签模板 ================= -->
-            <!-- 标题 -->
             <TextBlock Grid.Column="2" Grid.Row="0" Style="{StaticResource SectionTitleStyle}" Text="{DynamicResource Template.Templates}" Margin="6,0,0,6" />
             
-            <!-- 按钮控制面板 -->
             <StackPanel Grid.Column="2" Grid.Row="1" Margin="6,0,6,8" VerticalAlignment="Top">
-                <!-- 模板操作按钮 -->
                 <WrapPanel Margin="0,0,0,2">
                     <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="AddTemplate_Click" Margin="0,0,8,8" auth:PermissionAssist.PermissionKey="Button.Template.Create">
                         <StackPanel Orientation="Horizontal">
@@ -266,7 +269,6 @@
                     </Button>
                 </WrapPanel>
 
-                <!-- 模板搜索过滤 -->
                 <WrapPanel Margin="0,0,0,2">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,8,8">
                         <TextBlock Style="{StaticResource AppFormLabelStyle}" Text="{DynamicResource Common.Keyword}" />
@@ -287,7 +289,6 @@
                 </WrapPanel>
             </StackPanel>
 
-            <!-- 表格卡片 (顶端绝对齐平) -->
             <Border Grid.Column="2" Grid.Row="2" Margin="6,0,6,0" Style="{StaticResource AppCardStyle}" VerticalAlignment="Stretch">
                 <Grid>
                     <Grid.RowDefinitions>
@@ -304,16 +305,36 @@
                               HorizontalScrollBarVisibility="Auto"
                               VerticalScrollBarVisibility="Auto">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="{DynamicResource Common.Name}" Binding="{Binding Name}" Width="130" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
-                            <DataGridTemplateColumn Header="{DynamicResource Template.Mode}" Width="82" SortMemberPath="TemplateMode">
+                            <!-- 1. 模板名称 (HeaderTemplate 完美动态多语言) -->
+                            <DataGridTextColumn Binding="{Binding Name}" Width="130" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}">
+                                <DataGridTextColumn.HeaderTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{DynamicResource Common.Name}" />
+                                    </DataTemplate>
+                                </DataGridTextColumn.HeaderTemplate>
+                            </DataGridTextColumn>
+
+                            <!-- 2. 打印模式 (HeaderTemplate 完美动态多语言) -->
+                            <DataGridTemplateColumn Width="82" SortMemberPath="TemplateMode">
+                                <DataGridTemplateColumn.HeaderTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{DynamicResource Template.Mode}" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.HeaderTemplate>
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <ContentControl Content="{Binding}" ContentTemplate="{StaticResource TemplateModeBadgeTemplate}" />
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <!-- 存储介质 Badge 胶囊列 -->
-                            <DataGridTemplateColumn Header="{DynamicResource Template.Storage}" Width="96">
+
+                            <!-- 3. 存储介质 (HeaderTemplate 完美动态多语言) -->
+                            <DataGridTemplateColumn Width="96">
+                                <DataGridTemplateColumn.HeaderTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{DynamicResource Template.Storage}" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.HeaderTemplate>
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <Border x:Name="BadgeBorder" CornerRadius="12" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="8,3" Background="#12FF5722">
@@ -334,8 +355,14 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <!-- 重置周期 Badge 胶囊列 -->
-                            <DataGridTemplateColumn Header="{DynamicResource Template.ResetPeriod}" Width="90" SortMemberPath="SerialResetPeriod">
+
+                            <!-- 4. 重置周期 (HeaderTemplate 完美动态多语言) -->
+                            <DataGridTemplateColumn Width="90" SortMemberPath="SerialResetPeriod">
+                                <DataGridTemplateColumn.HeaderTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{DynamicResource Template.ResetPeriod}" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.HeaderTemplate>
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <Grid>
@@ -372,7 +399,15 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTextColumn Header="{DynamicResource Template.File}" Binding="{Binding TemplateFileName}" Width="*" MinWidth="120" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
+
+                            <!-- 5. 模板文件 (HeaderTemplate 完美动态多语言) -->
+                            <DataGridTextColumn Binding="{Binding TemplateFileName}" Width="*" MinWidth="120" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}">
+                                <DataGridTextColumn.HeaderTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{DynamicResource Template.File}" />
+                                    </DataTemplate>
+                                </DataGridTextColumn.HeaderTemplate>
+                            </DataGridTextColumn>
                         </DataGrid.Columns>
                     </DataGrid>
                     <StackPanel Grid.Row="0"
@@ -410,18 +445,13 @@
                 </Grid>
             </Border>
 
-
             <!-- 拖拽条 2 -->
             <GridSplitter Grid.Column="3" Grid.Row="0" Grid.RowSpan="3" Width="6" HorizontalAlignment="Center" VerticalAlignment="Stretch" Background="Transparent" Cursor="SizeWE" Margin="2,0" />
 
-
             <!-- ================= 第三栏：模板字段 ================= -->
-            <!-- 标题 -->
             <TextBlock Grid.Column="4" Grid.Row="0" Style="{StaticResource SectionTitleStyle}" Text="{DynamicResource Template.Fields}" Margin="6,0,0,6" />
             
-            <!-- 按钮控制面板 -->
             <StackPanel Grid.Column="4" Grid.Row="1" Margin="6,0,0,8" VerticalAlignment="Top">
-                <!-- 字段操作按钮 -->
                 <WrapPanel Margin="0,0,0,2">
                     <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="AddField_Click" Margin="0,0,8,8" auth:PermissionAssist.PermissionKey="Button.Template.Field.Create">
                         <StackPanel Orientation="Horizontal">
@@ -469,7 +499,6 @@
                     </Button>
                 </WrapPanel>
 
-                <!-- 字段搜索过滤 -->
                 <WrapPanel Margin="0,0,0,2">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,8,8">
                         <TextBlock Style="{StaticResource AppFormLabelStyle}" Text="{DynamicResource Common.Keyword}" />
@@ -490,7 +519,6 @@
                 </WrapPanel>
             </StackPanel>
 
-            <!-- 表格卡片 (顶端绝对齐平) -->
             <Border Grid.Column="4" Grid.Row="2" Margin="6,0,0,0" Style="{StaticResource AppCardStyle}" VerticalAlignment="Stretch">
                 <Grid>
                     <DataGrid x:Name="FieldGrid"
@@ -501,11 +529,40 @@
                               HorizontalScrollBarVisibility="Auto"
                               VerticalScrollBarVisibility="Auto">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="{DynamicResource Template.Sort}" Binding="{Binding Sort}" Width="52" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
-                            <DataGridTextColumn Header="{DynamicResource Template.FieldName}" Binding="{Binding FieldName}" Width="110" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
-                            <DataGridTextColumn Header="{DynamicResource Template.FieldCode}" Binding="{Binding FieldCode}" Width="120" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
-                            <!-- 字段数据类型 Badge 胶囊列 -->
-                            <DataGridTemplateColumn Header="{DynamicResource Template.Type}" Width="76">
+                            <!-- 1. 字段排序 (HeaderTemplate 完美动态多语言) -->
+                            <DataGridTextColumn Binding="{Binding Sort}" Width="52" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}">
+                                <DataGridTextColumn.HeaderTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{DynamicResource Template.Sort}" />
+                                    </DataTemplate>
+                                </DataGridTextColumn.HeaderTemplate>
+                            </DataGridTextColumn>
+
+                            <!-- 2. 字段中文名称 (HeaderTemplate 完美动态多语言) -->
+                            <DataGridTextColumn Binding="{Binding FieldName}" Width="110" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}">
+                                <DataGridTextColumn.HeaderTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{DynamicResource Template.FieldName}" />
+                                    </DataTemplate>
+                                </DataGridTextColumn.HeaderTemplate>
+                            </DataGridTextColumn>
+
+                            <!-- 3. 字段代码 (HeaderTemplate 完美动态多语言) -->
+                            <DataGridTextColumn Binding="{Binding FieldCode}" Width="120" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}">
+                                <DataGridTextColumn.HeaderTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{DynamicResource Template.FieldCode}" />
+                                    </DataTemplate>
+                                </DataGridTextColumn.HeaderTemplate>
+                            </DataGridTextColumn>
+
+                            <!-- 4. 字段数据类型 (HeaderTemplate 完美动态多语言) -->
+                            <DataGridTemplateColumn Width="76">
+                                <DataGridTemplateColumn.HeaderTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{DynamicResource Template.Type}" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.HeaderTemplate>
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <ContentControl Content="{Binding}" ContentTemplate="{StaticResource FieldTypeBadgeTemplate}" />
@@ -513,16 +570,37 @@
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
 
-                            <!-- 字段必填属性 Badge 胶囊列 -->
-                            <DataGridTemplateColumn Header="{DynamicResource Template.Required}" Width="70">
+                            <!-- 5. 字段必填属性 (HeaderTemplate 完美动态多语言) -->
+                            <DataGridTemplateColumn Width="70">
+                                <DataGridTemplateColumn.HeaderTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{DynamicResource Template.Required}" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.HeaderTemplate>
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <ContentControl Content="{Binding}" ContentTemplate="{StaticResource FieldRequiredBadgeTemplate}" />
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTextColumn Header="{DynamicResource Template.ValidationRule}" Binding="{Binding ValidationRuleSummary}" Width="160" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
-                            <DataGridTextColumn Header="{DynamicResource Template.Remark}" Binding="{Binding Remark}" Width="*" MinWidth="140" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}" />
+
+                            <!-- 6. 验证规则 (HeaderTemplate 完美动态多语言) -->
+                            <DataGridTextColumn Binding="{Binding ValidationRuleSummary}" Width="160" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}">
+                                <DataGridTextColumn.HeaderTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{DynamicResource Template.ValidationRule}" />
+                                    </DataTemplate>
+                                </DataGridTextColumn.HeaderTemplate>
+                            </DataGridTextColumn>
+
+                            <!-- 7. 字段备注 (HeaderTemplate 完美动态多语言) -->
+                            <DataGridTextColumn Binding="{Binding Remark}" Width="*" MinWidth="140" ElementStyle="{StaticResource AppDataGridTextColumnElementStyle}">
+                                <DataGridTextColumn.HeaderTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{DynamicResource Template.Remark}" />
+                                    </DataTemplate>
+                                </DataGridTextColumn.HeaderTemplate>
+                            </DataGridTextColumn>
                         </DataGrid.Columns>
                     </DataGrid>
                     <StackPanel Style="{StaticResource AppDataGridEmptyStatePanelStyle}"

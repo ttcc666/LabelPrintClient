@@ -45,6 +45,8 @@
     <sys:String x:Key="Theme.SwitchTitle">Theme Switch</sys:String>
     <sys:String x:Key="Theme.SwitchFailed">Theme switch failed: {0}</sys:String>
     <sys:String x:Key="Language.SwitchFailed">Language switch failed: {0}</sys:String>
+    <sys:String x:Key="SystemField.BatchNo">Batch No.</sys:String>
+    <sys:String x:Key="SystemField.SerialNo">Serial No.</sys:String>
 
     <sys:String x:Key="Nav.Toggle">Collapse / Expand</sys:String>
     <sys:String x:Key="Nav.PrintCenter">Print Center</sys:String>
@@ -496,6 +498,12 @@
     <sys:String x:Key="Field.ConfirmRestore">Restore field {0} ({1})?</sys:String>
     <sys:String x:Key="Field.ConfirmRestoreTitle">Confirm Restore</sys:String>
     <sys:String x:Key="Field.RestoreSummary">Restored field: {0} ({1})</sys:String>
+    <sys:String x:Key="Field.FieldNameExists">Field name already exists. Do not add a duplicate.</sys:String>
+    <sys:String x:Key="Field.FieldCodeExists">Field code already exists. Do not add a duplicate.</sys:String>
+    <sys:String x:Key="Field.HistoricalUsageConfirm">Field code "{0}" has been used by historical import or print data.&#x0a;Continuing to {1} may cause historical data to show as deprecated or affect traceability.&#x0a;Do you want to continue?</sys:String>
+    <sys:String x:Key="Field.HistoricalUsageTitle">Field Code Used by Historical Data</sys:String>
+    <sys:String x:Key="Field.ModifyFieldCode">modify field code</sys:String>
+    <sys:String x:Key="Field.DeleteField">delete field</sys:String>
     <sys:String x:Key="Field.LoadHistoryFailed">Failed to load field history: {0}</sys:String>
     <sys:String x:Key="Field.HistoryTemplateName">Template: {0}</sys:String>
     <sys:String x:Key="Field.HistoryStatus">Current page: {0}; total history rows: {1}</sys:String>

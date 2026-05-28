@@ -286,6 +286,13 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
         return TemplateSystemFields.GetDisplayName(fieldCode);
     }
 
+    private static object CreateHeader(string resourceKey)
+    {
+        var tb = new TextBlock();
+        tb.SetResourceReference(TextBlock.TextProperty, resourceKey);
+        return tb;
+    }
+
     private void BuildRowGridColumns(
         IReadOnlyList<LabelTemplateField> fields,
         IEnumerable<string> extraKeys,
@@ -295,16 +302,24 @@ public partial class PrintHistoryView : System.Windows.Controls.UserControl
 
         RowGrid.Columns.Add(new DataGridTemplateColumn
         {
-            Header = AppLanguageService.GetString("Common.Operation"),
+            Header = CreateHeader("Common.Operation"),
             Width = DataGridLength.Auto,
             CellTemplate = BuildRowActionTemplate()
         });
 
         foreach (var key in systemKeys)
         {
+            object header;
+            if (string.Equals(key, TemplateSystemFields.BatchNo, StringComparison.OrdinalIgnoreCase))
+                header = CreateHeader("SystemField.BatchNo");
+            else if (string.Equals(key, TemplateSystemFields.SerialNo, StringComparison.OrdinalIgnoreCase))
+                header = CreateHeader("SystemField.SerialNo");
+            else
+                header = GetSystemFieldHeader(key);
+
             RowGrid.Columns.Add(new DataGridTextColumn
             {
-                Header = GetSystemFieldHeader(key),
+                Header = header,
                 Binding = new System.Windows.Data.Binding($"Data[{key}]"),
                 Width = 150,
                 IsReadOnly = true

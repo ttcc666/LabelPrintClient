@@ -49,7 +49,21 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
             LoadPrinters();
             await RefreshAllAsync();
         };
-        Unloaded += (_, _) => CancelPendingLoads();
+        Loaded += (_, _) => AppLanguageService.LanguageChanged += AppLanguageService_LanguageChanged;
+        Unloaded += (_, _) =>
+        {
+            CancelPendingLoads();
+            AppLanguageService.LanguageChanged -= AppLanguageService_LanguageChanged;
+        };
+    }
+
+    private void AppLanguageService_LanguageChanged(object? sender, LabelPrintClient.Config.AppLanguage language)
+    {
+        BatchGrid?.Items.Refresh();
+        RowGrid?.Items.Refresh();
+        UpdateBatchEmptyState();
+        UpdateRowEmptyState(SelectedBatch);
+        UpdateSummary();
     }
 
     private LabelCategory? SelectedCategory => CategoryBox.SelectedItem as LabelCategory;
@@ -530,6 +544,13 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         }
     }
 
+    private static object CreateHeader(string resourceKey)
+    {
+        var tb = new TextBlock();
+        tb.SetResourceReference(TextBlock.TextProperty, resourceKey);
+        return tb;
+    }
+
     private void BuildRowGridColumns(LabelTemplate template, IReadOnlyList<LabelTemplateField> fields)
     {
         RowGrid.Columns.Clear();
@@ -538,13 +559,13 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
 
         RowGrid.Columns.Add(new DataGridTemplateColumn
         {
-            Header = AppLanguageService.GetString("Common.Operation"),
+            Header = CreateHeader("Common.Operation"),
             Width = DataGridLength.Auto,
             CellTemplate = BuildRowActionTemplate()
         });
         RowGrid.Columns.Add(new DataGridTemplateColumn
         {
-            Header = AppLanguageService.GetString("Common.Select"),
+            Header = CreateHeader("Common.Select"),
             CellTemplate = BuildBooleanCheckBoxTemplate(nameof(ImportRowGridItem.IsSelected), true),
             CellStyle = centerCellStyle,
             HeaderStyle = centerHeaderStyle,
@@ -552,7 +573,7 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         });
         RowGrid.Columns.Add(new DataGridTemplateColumn
         {
-            Header = AppLanguageService.GetString("PrintCenter.IsValid"),
+            Header = CreateHeader("PrintCenter.IsValid"),
             CellTemplate = (DataTemplate)this.FindResource("RowValidBadgeTemplate"),
             CellStyle = centerCellStyle,
             HeaderStyle = centerHeaderStyle,
@@ -560,21 +581,34 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
         });
         RowGrid.Columns.Add(new DataGridTemplateColumn
         {
-            Header = AppLanguageService.GetString("PrintCenter.Printed"),
+            Header = CreateHeader("PrintCenter.Printed"),
             CellTemplate = (DataTemplate)this.FindResource("RowPrintedBadgeTemplate"),
             CellStyle = centerCellStyle,
             HeaderStyle = centerHeaderStyle,
             Width = 90
         });
-        RowGrid.Columns.Add(new DataGridTextColumn { Header = AppLanguageService.GetString("PrintCenter.PrintCount"), Binding = new System.Windows.Data.Binding(nameof(ImportRowGridItem.PrintCount)), Width = 90, IsReadOnly = true });
+        RowGrid.Columns.Add(new DataGridTextColumn { Header = CreateHeader("PrintCenter.PrintCount"), Binding = new System.Windows.Data.Binding(nameof(ImportRowGridItem.PrintCount)), Width = 90, IsReadOnly = true });
 
         foreach (var field in GetVisibleRowFields(template, fields))
         {
+            object header;
+            if (TemplateSystemFields.IsSystemField(field.FieldCode))
+            {
+                if (string.Equals(field.FieldCode, TemplateSystemFields.BatchNo, StringComparison.OrdinalIgnoreCase))
+                    header = CreateHeader("SystemField.BatchNo");
+                else if (string.Equals(field.FieldCode, TemplateSystemFields.SerialNo, StringComparison.OrdinalIgnoreCase))
+                    header = CreateHeader("SystemField.SerialNo");
+                else
+                    header = TemplateSystemFields.GetDisplayName(field.FieldCode);
+            }
+            else
+            {
+                header = field.FieldName;
+            }
+
             RowGrid.Columns.Add(new DataGridTextColumn
             {
-                Header = TemplateSystemFields.IsSystemField(field.FieldCode)
-                    ? TemplateSystemFields.GetDisplayName(field.FieldCode)
-                    : field.FieldName,
+                Header = header,
                 Binding = new System.Windows.Data.Binding($"Data[{field.FieldCode}]"),
                 Width = 150,
                 IsReadOnly = true
@@ -583,7 +617,7 @@ public partial class PrintCenterView : System.Windows.Controls.UserControl
 
         RowGrid.Columns.Add(new DataGridTextColumn
         {
-            Header = AppLanguageService.GetString("PrintHistory.ErrorMessage"),
+            Header = CreateHeader("PrintHistory.ErrorMessage"),
             Binding = new System.Windows.Data.Binding(nameof(ImportRowGridItem.ErrorMessage)),
             Width = new DataGridLength(1, DataGridLengthUnitType.Star),
             IsReadOnly = true

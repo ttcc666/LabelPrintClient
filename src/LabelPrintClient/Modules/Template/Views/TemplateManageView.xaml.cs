@@ -623,7 +623,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
         }
 
         if (!string.Equals(before.FieldCode, edited.FieldCode, StringComparison.OrdinalIgnoreCase) &&
-            !await ConfirmHistoricalFieldCodeUsageAsync(template.Id, before.FieldCode, "修改字段编码"))
+            !await ConfirmHistoricalFieldCodeUsageAsync(template.Id, before.FieldCode, AppLanguageService.GetString("Field.ModifyFieldCode")))
         {
             return;
         }
@@ -702,7 +702,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
             return;
         }
 
-        if (!await ConfirmHistoricalFieldCodeUsageAsync(template.Id, before.FieldCode, "删除字段"))
+        if (!await ConfirmHistoricalFieldCodeUsageAsync(template.Id, before.FieldCode, AppLanguageService.GetString("Field.DeleteField")))
             return;
 
         var history = NewFieldHistory(
@@ -1500,10 +1500,10 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
             : fields;
 
         if (candidates.Any(x => string.Equals(x.FieldName.Trim(), name, StringComparison.OrdinalIgnoreCase)))
-            return "字段名已存在，请勿重复新增。";
+            return AppLanguageService.GetString("Field.FieldNameExists");
 
         if (candidates.Any(x => string.Equals(x.FieldCode.Trim(), code, StringComparison.OrdinalIgnoreCase)))
-            return "字段编码已存在，请勿重复新增。";
+            return AppLanguageService.GetString("Field.FieldCodeExists");
 
         return null;
     }
@@ -1530,8 +1530,8 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
             return true;
 
         var result = AppMessageBox.Show(
-            $"字段编码“{fieldCode}”已被历史导入或打印数据使用。\n继续{actionText}后，历史数据可能会以废弃字段显示，或影响追溯查看。\n是否继续？",
-            "字段编码已被历史数据使用",
+            AppLanguageService.Format("Field.HistoricalUsageConfirm", fieldCode, actionText),
+            AppLanguageService.GetString("Field.HistoricalUsageTitle"),
             MessageBoxButton.YesNo,
             MessageBoxImage.Warning);
 

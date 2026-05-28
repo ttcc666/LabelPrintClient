@@ -190,7 +190,12 @@
                                      HorizontalScrollBarVisibility="Auto"
                                      VerticalScrollBarVisibility="Auto">
                             <DataGrid.Columns>
-                                <DataGridTemplateColumn Header="{DynamicResource Common.Operation}" Width="Auto">
+                                <DataGridTemplateColumn Width="Auto">
+                                    <DataGridTemplateColumn.HeaderTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{DynamicResource Common.Operation}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.HeaderTemplate>
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <Button Click="VoidBatch_Click" Height="24" Padding="6,0" auth:PermissionAssist.PermissionKey="Button.PrintCenter.VoidBatch">
@@ -217,19 +222,60 @@
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTextColumn Header="{DynamicResource PrintCenter.ImportTime}" Binding="{Binding ImportTime, StringFormat=\{0:yyyy-MM-dd HH:mm:ss\}}" Width="170" />
-                                <DataGridTextColumn Header="Excel" Binding="{Binding ExcelFileName}" Width="*" MinWidth="130" />
-                                <DataGridTextColumn Header="{DynamicResource PrintCenter.BatchNo}" Binding="{Binding BatchNo}" Width="120" />
-                                <DataGridTemplateColumn Header="{DynamicResource Common.Status}" Width="96" SortMemberPath="Status">
+                                <DataGridTextColumn Binding="{Binding ImportTime, StringFormat=\{0:yyyy-MM-dd HH:mm:ss\}}" Width="170">
+                                    <DataGridTextColumn.HeaderTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{DynamicResource PrintCenter.ImportTime}" />
+                                        </DataTemplate>
+                                    </DataGridTextColumn.HeaderTemplate>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Binding="{Binding ExcelFileName}" Width="*" MinWidth="130">
+                                    <DataGridTextColumn.HeaderTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="Excel" />
+                                        </DataTemplate>
+                                    </DataGridTextColumn.HeaderTemplate>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Binding="{Binding BatchNo}" Width="120">
+                                    <DataGridTextColumn.HeaderTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{DynamicResource PrintCenter.BatchNo}" />
+                                        </DataTemplate>
+                                    </DataGridTextColumn.HeaderTemplate>
+                                </DataGridTextColumn>
+                                <DataGridTemplateColumn Width="96" SortMemberPath="Status">
+                                    <DataGridTemplateColumn.HeaderTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{DynamicResource Common.Status}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.HeaderTemplate>
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <ContentControl Content="{Binding Status}" ContentTemplate="{StaticResource AppStatusBadgeTemplate}" />
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTextColumn Header="{DynamicResource PrintCenter.TotalRows}" Binding="{Binding TotalRows}" Width="80" />
-                                <DataGridTextColumn Header="{DynamicResource PrintCenter.InvalidRows}" Binding="{Binding InvalidRows}" Width="80" />
-                                <DataGridTextColumn Header="{DynamicResource PrintCenter.Operator}" Binding="{Binding OperatorName}" Width="100" />
+                                <DataGridTextColumn Binding="{Binding TotalRows}" Width="80">
+                                    <DataGridTextColumn.HeaderTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{DynamicResource PrintCenter.TotalRows}" />
+                                        </DataTemplate>
+                                    </DataGridTextColumn.HeaderTemplate>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Binding="{Binding InvalidRows}" Width="80">
+                                    <DataGridTextColumn.HeaderTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{DynamicResource PrintCenter.InvalidRows}" />
+                                        </DataTemplate>
+                                    </DataGridTextColumn.HeaderTemplate>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Binding="{Binding OperatorName}" Width="100">
+                                    <DataGridTextColumn.HeaderTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{DynamicResource PrintCenter.Operator}" />
+                                        </DataTemplate>
+                                    </DataGridTextColumn.HeaderTemplate>
+                                </DataGridTextColumn>
                             </DataGrid.Columns>
                         </DataGrid>
                         <StackPanel Grid.Row="0"

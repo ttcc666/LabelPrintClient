@@ -45,6 +45,8 @@
     <sys:String x:Key="Theme.SwitchTitle">主题切换</sys:String>
     <sys:String x:Key="Theme.SwitchFailed">主题切换失败：{0}</sys:String>
     <sys:String x:Key="Language.SwitchFailed">语言切换失败：{0}</sys:String>
+    <sys:String x:Key="SystemField.BatchNo">批次号</sys:String>
+    <sys:String x:Key="SystemField.SerialNo">序列号</sys:String>
 
     <sys:String x:Key="Nav.Toggle">收起 / 展开</sys:String>
     <sys:String x:Key="Nav.PrintCenter">标签打印中心</sys:String>
@@ -496,6 +498,12 @@
     <sys:String x:Key="Field.ConfirmRestore">确定恢复字段 {0}（{1}）？</sys:String>
     <sys:String x:Key="Field.ConfirmRestoreTitle">确认恢复</sys:String>
     <sys:String x:Key="Field.RestoreSummary">恢复字段：{0}（{1}）</sys:String>
+    <sys:String x:Key="Field.FieldNameExists">字段名已存在，请勿重复新增。</sys:String>
+    <sys:String x:Key="Field.FieldCodeExists">字段编码已存在，请勿重复新增。</sys:String>
+    <sys:String x:Key="Field.HistoricalUsageConfirm">字段编码“{0}”已被历史导入或打印数据使用。&#x0a;继续{1}后，历史数据可能会以废弃字段显示，或影响追溯查看。&#x0a;是否继续？</sys:String>
+    <sys:String x:Key="Field.HistoricalUsageTitle">字段编码已被历史数据使用</sys:String>
+    <sys:String x:Key="Field.ModifyFieldCode">修改字段编码</sys:String>
+    <sys:String x:Key="Field.DeleteField">删除字段</sys:String>
     <sys:String x:Key="Field.LoadHistoryFailed">加载字段履历失败：{0}</sys:String>
     <sys:String x:Key="Field.HistoryTemplateName">模板：{0}</sys:String>
     <sys:String x:Key="Field.HistoryStatus">当前页 {0} 条；共 {1} 条履历</sys:String>
