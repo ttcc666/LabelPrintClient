@@ -51,7 +51,7 @@
                             <ComboBoxItem Content="{DynamicResource TaskCenter.StatusRunning}" Tag="Running" />
                             <ComboBoxItem Content="{DynamicResource TaskCenter.StatusCompleted}" Tag="Completed" />
                             <ComboBoxItem Content="{DynamicResource TaskCenter.StatusFailed}" Tag="Failed" />
-                            <ComboBoxItem Content="{DynamicResource TaskCenter.StatusCancelled}" Tag="Cancelled" />
+                            <ComboBoxItem Content="{DynamicResource TaskCenter.StatusCancelled}" Tag="Canceled" />
                         </ComboBox>
                     </StackPanel>
 

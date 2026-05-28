@@ -18,6 +18,15 @@ public class ViewConstructionSmokeTests
     [Trait("Category", "UiSmoke")]
     public async Task ModuleViewsAndEditWindows_CanBeConstructedOnStaThread()
     {
+        await BackgroundTaskQueue.Shared.EnqueueAsync(
+            BackgroundTaskKind.Print,
+            $"任务中心渲染测试-{Guid.NewGuid():N}",
+            context =>
+            {
+                context.Report(1, 2, "处理中");
+                return Task.CompletedTask;
+            });
+
         using var database = TestDatabase.Create();
 
         await StaThreadRunner.RunAsync(() =>
@@ -25,6 +34,7 @@ public class ViewConstructionSmokeTests
             EnsureApplicationResources();
             AssertConstructsModuleViews(AppLanguage.ZhCn);
             AssertConstructsModuleViews(AppLanguage.EnUs);
+            AssertRendersTaskCenterWithExistingTask();
 
             var windows = new Window[]
             {
@@ -81,5 +91,25 @@ public class ViewConstructionSmokeTests
         };
 
         Assert.All(views, Assert.NotNull);
+    }
+
+    private static void AssertRendersTaskCenterWithExistingTask()
+    {
+        var view = new TaskCenterView
+        {
+            Width = 1000,
+            Height = 700
+        };
+        var window = new Window
+        {
+            Content = view,
+            Width = 1000,
+            Height = 700,
+            ShowInTaskbar = false
+        };
+
+        window.Show();
+        window.UpdateLayout();
+        window.Close();
     }
 }
