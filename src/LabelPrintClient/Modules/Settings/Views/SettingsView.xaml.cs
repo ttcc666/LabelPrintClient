@@ -4,6 +4,7 @@ using System.Drawing.Printing;
 using System.Windows;
 using System.Windows.Controls;
 using LabelPrintClient.Config;
+using LabelPrintClient.Database;
 using LabelPrintClient.Modules.Auth.Services;
 using LabelPrintClient.Modules.Settings.Services;
 using LabelPrintClient.Services;
@@ -102,7 +103,7 @@ public partial class SettingsView : System.Windows.Controls.UserControl
         RestartApplication();
     }
 
-    private void Save_Click(object sender, RoutedEventArgs e)
+    private async void Save_Click(object sender, RoutedEventArgs e)
     {
         if (!AuthorizationService.EnsurePermission(Permissions.SettingsSave, "保存配置")) return;
 
@@ -114,6 +115,22 @@ public partial class SettingsView : System.Windows.Controls.UserControl
 
         try
         {
+            bool dbChanged = settings.RunMode != App.Settings.RunMode ||
+                             settings.SqliteConnection != App.Settings.SqliteConnection ||
+                             settings.PostgreSqlConnection != App.Settings.PostgreSqlConnection;
+
+            if (dbChanged)
+            {
+                // 1. 尝试使用新连接进行可用性预测试，若连通失败则会抛异常被 catch，不予写入配置
+                StatusText.Text = AppLanguageService.GetString("Settings.DatabaseSwitchingPending");
+                var testConnectionString = settings.RunMode == AppRunMode.LocalSqlite
+                    ? settings.SqliteConnection
+                    : settings.PostgreSqlConnection;
+
+                await ConnectionTestService.TestAsync(settings.RunMode, testConnectionString);
+            }
+
+            // 2. 预校验连通成功，写入物理 appsettings.json 配置文件
             AppConfigService.Save(settings);
 
             if (!AppThemeService.TryApplyAndSetRuntime(settings.ThemeMode, out var themeErrorMessage))
@@ -130,12 +147,50 @@ public partial class SettingsView : System.Windows.Controls.UserControl
                 return;
             }
 
+            if (dbChanged)
+            {
+                // 3. 激活新数据库连接并应用架构建表、资源同步
+                AppDb.Init(settings);
+                DbInitializer.InitTables();
+                await PermissionBootstrapper.SyncAsync().ConfigureAwait(true);
+
+                // 4. 检索目标数据库是否已经拥有系统管理员用户
+                var hasAdmin = await PermissionBootstrapper.HasAdministratorUserAsync().ConfigureAwait(true);
+
+                ApplyToRuntimeSettings(settings);
+                StatusText.Text = AppLanguageService.Format("Settings.Saved", DateTime.Now);
+
+                if (!hasAdmin)
+                {
+                    // 检测到是空库，引导并强行重启，以便在下一次 OnStartup 时无缝展示 InitialAdminWindow
+                    AppMessageBox.Show(
+                        AppLanguageService.GetString("Settings.DbSwitchEmptyRestart"),
+                        AppLanguageService.GetString("Settings.SaveSuccess"),
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+                    RestartApplication();
+                    return;
+                }
+                else
+                {
+                    // 检测到已有管理员账号，为保证内存会话等上下文百分之百干净同步，优雅引导重启
+                    AppMessageBox.Show(
+                        AppLanguageService.GetString("Settings.DbSwitchSuccessRestart"),
+                        AppLanguageService.GetString("Settings.SaveSuccess"),
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+                    RestartApplication();
+                    return;
+                }
+            }
+
             ApplyToRuntimeSettings(settings);
             StatusText.Text = AppLanguageService.Format("Settings.Saved", DateTime.Now);
             AppMessageBox.Show(AppLanguageService.GetString("Settings.SavedMessage"), AppLanguageService.GetString("Settings.SaveSuccess"), MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (Exception ex)
         {
+            StatusText.Text = AppLanguageService.Format("Settings.SaveFailed", ex.Message);
             AppMessageBox.Show(AppLanguageService.Format("Settings.SaveFailed", ex.Message), AppLanguageService.GetString("Common.Error"), MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }

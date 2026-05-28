@@ -21,6 +21,9 @@ public partial class App : System.Windows.Application
         // 尽早挂载全局未处理异常捕获，确保启动阶段其他异常也能被记录
         RegisterGlobalExceptionHandlers();
 
+        // 启用 Npgsql 的旧版时间戳兼容行为，避免在 PostgreSQL 下写入 Kind=Local 的 DateTime.Now 抛出 timestamp 报错
+        AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
         base.OnStartup(e);
         ShutdownMode = ShutdownMode.OnExplicitShutdown;
 

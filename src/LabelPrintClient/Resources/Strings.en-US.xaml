@@ -121,6 +121,9 @@
     <sys:String x:Key="Settings.Saved">Settings saved: {0:HH:mm:ss}. Theme and language applied; other runtime settings fully take effect after restart.</sys:String>
     <sys:String x:Key="Settings.SavedMessage">Settings saved. Run mode, database connections, and template folder settings fully take effect after restart.</sys:String>
     <sys:String x:Key="Settings.SaveSuccess">Saved</sys:String>
+    <sys:String x:Key="Settings.DbSwitchEmptyRestart">Database switched successfully! A new empty database has been detected. The application will restart automatically to guide you through the initial setup of the system administrator (System).</sys:String>
+    <sys:String x:Key="Settings.DbSwitchSuccessRestart">Database switched successfully! The application will restart automatically to ensure the active session is properly synchronized with the new database.</sys:String>
+    <sys:String x:Key="Settings.DatabaseSwitchingPending">Testing new database connection and synchronizing schema...</sys:String>
     <sys:String x:Key="Settings.LanguageSwitch">Language</sys:String>
     <sys:String x:Key="Settings.LanguageSwitchFailed">Settings were saved, but language failed to apply: {0}</sys:String>
     <sys:String x:Key="Settings.ThemeSwitch">Theme</sys:String>

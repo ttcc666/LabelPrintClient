@@ -121,6 +121,9 @@
     <sys:String x:Key="Settings.Saved">配置已保存：{0:HH:mm:ss}。主题和语言已应用，其余运行配置重启后完全生效。</sys:String>
     <sys:String x:Key="Settings.SavedMessage">配置已保存。运行模式、数据库连接和模板目录相关配置需要重启应用后完全生效。</sys:String>
     <sys:String x:Key="Settings.SaveSuccess">保存成功</sys:String>
+    <sys:String x:Key="Settings.DbSwitchEmptyRestart">数据库切换成功！检测到目标数据库是一个全新的空数据库。系统将自动重启，引导您进行首个系统管理员（System）的初始化部署。</sys:String>
+    <sys:String x:Key="Settings.DbSwitchSuccessRestart">数据库已成功切换！为确保当前用户内存会话与新数据库同步，应用将自动重新启动。</sys:String>
+    <sys:String x:Key="Settings.DatabaseSwitchingPending">正在测试新数据库连接并应用架构同步...</sys:String>
     <sys:String x:Key="Settings.LanguageSwitch">语言切换</sys:String>
     <sys:String x:Key="Settings.LanguageSwitchFailed">配置已保存，但语言应用失败：{0}</sys:String>
     <sys:String x:Key="Settings.ThemeSwitch">主题切换</sys:String>
