@@ -2,6 +2,7 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using LabelPrintClient.Config;
 using LabelPrintClient.Modules.License.Models;
 
@@ -24,7 +25,8 @@ xwIDAQAB
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
-        WriteIndented = false
+        WriteIndented = false,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
 
     public async Task<LicenseResult> VerifyAsync(AppSettings settings, CancellationToken cancellationToken = default)
@@ -77,12 +79,14 @@ xwIDAQAB
     public static string CreateSignedPayload(LicenseDocument document)
     {
         var payload = new LicensePayload(
+            document.Id,
             document.ProductCode,
             document.LicenseMode,
             document.MachineCode,
             document.TotalCount,
             document.ExpireTime,
-            document.IssuedTo);
+            document.IssuedTo,
+            document.AccessKey);
 
         return JsonSerializer.Serialize(payload, JsonOptions);
     }
@@ -111,10 +115,12 @@ xwIDAQAB
     }
 
     private sealed record LicensePayload(
+        long? Id,
         string ProductCode,
         LicenseMode LicenseMode,
         string MachineCode,
         int TotalCount,
         DateTime ExpireTime,
-        string IssuedTo);
+        string IssuedTo,
+        string? AccessKey = null);
 }

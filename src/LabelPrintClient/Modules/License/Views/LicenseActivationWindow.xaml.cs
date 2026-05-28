@@ -20,7 +20,8 @@ public partial class LicenseActivationWindow : HandyControl.Controls.Window
         LicenseServerUrlBox.Text = settings.LicenseServerUrl;
         LicenseAccessKeyBox.Password = settings.LicenseAccessKey;
         SelectMode(settings.LicenseMode);
-        StatusText.Text = initialResult?.Message ?? string.Empty;
+        UpdateModeVisibility();
+        ShowStatus(initialResult?.Message);
     }
 
     private void BrowseLicenseFile_Click(object sender, RoutedEventArgs e)
@@ -38,7 +39,7 @@ public partial class LicenseActivationWindow : HandyControl.Controls.Window
     {
         if (!TryBuildSettings(out var errorMessage))
         {
-            StatusText.Text = errorMessage;
+            ShowStatus(errorMessage);
             return;
         }
 
@@ -51,7 +52,7 @@ public partial class LicenseActivationWindow : HandyControl.Controls.Window
             return;
         }
 
-        StatusText.Text = result.Message;
+        ShowStatus(result.Message);
     }
 
     private void Cancel_Click(object sender, RoutedEventArgs e)
@@ -102,5 +103,48 @@ public partial class LicenseActivationWindow : HandyControl.Controls.Window
         mode = LicenseMode.Standalone;
         return LicenseModeBox.SelectedItem is ComboBoxItem item &&
                Enum.TryParse(item.Tag?.ToString(), out mode);
+    }
+
+    private void LicenseModeBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        UpdateModeVisibility();
+    }
+
+    private void UpdateModeVisibility()
+    {
+        if (LicenseModeBox == null) return;
+        
+        if (TryGetSelectedMode(out var mode))
+        {
+            // 切换授权模式时，自动清空旧模式产生的过期报错卡片，彻底避免视觉混淆
+            ShowStatus(null);
+
+            if (mode == LicenseMode.Standalone)
+            {
+                if (StandalonePanel != null) StandalonePanel.Visibility = Visibility.Visible;
+                if (FloatingServerPanel != null) FloatingServerPanel.Visibility = Visibility.Collapsed;
+                if (FloatingKeyPanel != null) FloatingKeyPanel.Visibility = Visibility.Collapsed;
+            }
+            else
+            {
+                if (StandalonePanel != null) StandalonePanel.Visibility = Visibility.Collapsed;
+                if (FloatingServerPanel != null) FloatingServerPanel.Visibility = Visibility.Visible;
+                if (FloatingKeyPanel != null) FloatingKeyPanel.Visibility = Visibility.Visible;
+            }
+        }
+    }
+
+    private void ShowStatus(string? message)
+    {
+        if (string.IsNullOrWhiteSpace(message))
+        {
+            StatusText.Text = string.Empty;
+            if (StatusBorder != null) StatusBorder.Visibility = Visibility.Collapsed;
+        }
+        else
+        {
+            StatusText.Text = message;
+            if (StatusBorder != null) StatusBorder.Visibility = Visibility.Visible;
+        }
     }
 }

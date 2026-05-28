@@ -1,19 +1,51 @@
 @page
 @model LicenseServer.Pages.LoginModel
 @{
+    Layout = null;
     ViewData["Title"] = "Login";
 }
-
-<h1>管理员登录</h1>
-<form method="post" class="w-50">
-    <div class="mb-3">
-        <label asp-for="UserName" class="form-label"></label>
-        <input asp-for="UserName" class="form-control" />
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>管理员登录 - LicenseServer Console</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body class="login-body">
+    <div class="login-glass-card">
+        <div class="d-flex align-items-center justify-content-center gap-2 mb-4">
+            <div class="sidebar-logo-icon" style="width: 32px; height: 32px; font-size: 1rem; border-radius: 8px;">LS</div>
+            <span style="font-size: 1.45rem; font-weight: 700; background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">LicenseServer</span>
+        </div>
+        
+        <h5 class="mb-4 text-center text-dark" style="font-weight: 600; letter-spacing: -0.01em;">安全凭证验证登录</h5>
+        
+        <form method="post" class="text-start">
+            <div class="mb-3">
+                <label asp-for="UserName" class="form-label">管理员用户名</label>
+                <input asp-for="UserName" class="form-control" placeholder="输入管理员账户名" required autocomplete="username" />
+            </div>
+            <div class="mb-4">
+                <label asp-for="Password" class="form-label">系统管理密码</label>
+                <input asp-for="Password" type="password" class="form-control" placeholder="输入管理安全密码" required autocomplete="current-password" />
+            </div>
+            
+            @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+            {
+                <div class="alert alert-danger py-2 mb-3 text-center">
+                    @Model.ErrorMessage
+                </div>
+            }
+            
+            <button class="btn btn-primary w-100 py-2.5" type="submit" style="font-size: 0.95rem; font-weight: 600;">
+                验证并进入控制台
+            </button>
+        </form>
     </div>
-    <div class="mb-3">
-        <label asp-for="Password" class="form-label"></label>
-        <input asp-for="Password" type="password" class="form-control" />
-    </div>
-    <div class="text-danger">@Model.ErrorMessage</div>
-    <button class="btn btn-primary" type="submit">登录</button>
-</form>
+</body>
+</html>

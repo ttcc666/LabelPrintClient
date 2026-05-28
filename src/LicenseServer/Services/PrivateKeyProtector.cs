@@ -20,7 +20,7 @@ public sealed class PrivateKeyProtector
     {
         var masterKey = ReadMasterKey();
         if (string.IsNullOrWhiteSpace(masterKey))
-            throw new InvalidOperationException($"缺少环境变量 {_options.MasterKeyEnvironmentName}，不能保存签名私钥。");
+            throw new InvalidOperationException($"缺少 MasterKey 配置或环境变量 {_options.MasterKeyEnvironmentName}，不能保存签名私钥。");
 
         var key = SHA256.HashData(Encoding.UTF8.GetBytes(masterKey));
         var nonce = RandomNumberGenerator.GetBytes(12);
@@ -36,7 +36,7 @@ public sealed class PrivateKeyProtector
     {
         var masterKey = ReadMasterKey();
         if (string.IsNullOrWhiteSpace(masterKey))
-            throw new InvalidOperationException($"缺少环境变量 {_options.MasterKeyEnvironmentName}，不能读取签名私钥。");
+            throw new InvalidOperationException($"缺少 MasterKey 配置或环境变量 {_options.MasterKeyEnvironmentName}，不能读取签名私钥。");
 
         var parts = protectedText.Split('.');
         if (parts.Length != 3)
@@ -54,6 +54,9 @@ public sealed class PrivateKeyProtector
 
     private string? ReadMasterKey()
     {
+        if (!string.IsNullOrWhiteSpace(_options.MasterKey))
+            return _options.MasterKey;
+
         return Environment.GetEnvironmentVariable(_options.MasterKeyEnvironmentName);
     }
 }

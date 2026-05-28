@@ -6,6 +6,7 @@ using System.Text.Json;
 using LicenseServer.Config;
 using LicenseServer.Infrastructure;
 using LicenseServer.Models;
+using LicenseServer.Pages;
 using LicenseServer.Services;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Options;
@@ -147,6 +148,134 @@ cRTwWdAfC5+A4G/GxvXHJuR+0tzh/v2WK9sjSEzynIHFQOAHWWKdOb2Km+yXgv1o
         Assert.Equal(401, invalidKey.StatusCode);
     }
 
+    [Fact]
+    public async Task FloatingLicense_EndToEndMixedAuthFlow_Succeeds()
+    {
+        // 1. 公司端：导入私钥并创建许可证
+        using var company = TestFixture.Create();
+        await company.SigningKeys.ImportAsync(PrivateKeyPem);
+        
+        var companyCustomer = await company.InsertCustomerAsync();
+        var companyLicense = await company.InsertLicenseAsync(
+            companyCustomer.Id, 
+            LicenseMode.Floating, 
+            accessKey: "my-custom-access-key", 
+            totalCount: 2);
+
+        // 在公司端，使用 Generator 生成浮动许可证密文
+        var signedLicenseJson = await company.Generator.GenerateAsync(companyLicense, "my-custom-access-key");
+
+        // 2. 局域网端：充当部署在客户局域网的只读服务器（无私钥）
+        // 并且我们在配置里设置 PublicKeyPem 从而模拟只读公钥校验
+        using var lan = TestFixture.Create(setMasterKey: false); // 无 MasterKey
+        
+        var validator = new LicenseValidator(Options.Create(new LicenseServerOptions
+        {
+            PublicKeyPem = ClientPublicKeyPem // 设置为公司端的公钥
+        }));
+        
+        var model = new LicensesModel(lan.Db, lan.Generator, lan.SigningKeys, validator, lan.Protector);
+        model.ImportLicenseContent = signedLicenseJson;
+
+        await model.OnPostImportAsync();
+
+        // 验证导入成功提示
+        Assert.Contains("成功", model.ErrorMessage);
+
+        // 检查局域网端的数据库是否自动建好了客户记录和许可证记录
+        var importedLicense = await lan.Db.Db.Queryable<AppLicense>().FirstAsync(x => x.Id == companyLicense.Id);
+        Assert.NotNull(importedLicense);
+        Assert.Equal(LicenseMode.Floating, importedLicense.LicenseMode);
+        Assert.Equal(2, importedLicense.TotalCount);
+        Assert.Equal(HashService.Sha256("my-custom-access-key"), importedLicense.AccessKeyHash);
+
+        var importedCustomer = await lan.Db.Db.Queryable<Customer>().FirstAsync(x => x.Id == importedLicense.CustomerId);
+        Assert.NotNull(importedCustomer);
+        Assert.Equal("ACME", importedCustomer.Name); // 自动创建了公司端的 "ACME" 客户
+
+        // 3. 客户端：测试能否成功通过局域网端获取浮动授权
+        var acquire = await lan.Floating.AcquireAsync(new LicenseAcquireRequest("LABEL_PRINT_CLIENT", "my-custom-access-key", "MACHINE-1", "PC-1"));
+        Assert.True(acquire.Success);
+        Assert.NotNull(acquire.Token);
+
+        // 席位限制测试：席位是 2
+        var second = await lan.Floating.AcquireAsync(new LicenseAcquireRequest("LABEL_PRINT_CLIENT", "my-custom-access-key", "MACHINE-2", "PC-2"));
+        var third = await lan.Floating.AcquireAsync(new LicenseAcquireRequest("LABEL_PRINT_CLIENT", "my-custom-access-key", "MACHINE-3", "PC-3"));
+        
+        Assert.True(second.Success);
+        Assert.False(third.Success); // 席位满，超限失败
+        Assert.Equal(409, third.StatusCode);
+    }
+
+    [Fact]
+    public async Task FloatingLicense_ImportInvalidLicense_IsRejected()
+    {
+        using var lan = TestFixture.Create(setMasterKey: false);
+        var validator = new LicenseValidator(Options.Create(new LicenseServerOptions
+        {
+            PublicKeyPem = ClientPublicKeyPem
+        }));
+        var model = new LicensesModel(lan.Db, lan.Generator, lan.SigningKeys, validator, lan.Protector);
+
+        // 1. 无效签名
+        model.ImportLicenseContent = "{\"ProductCode\":\"LABEL_PRINT_CLIENT\",\"Signature\":\"bad-sig\"}";
+        await model.OnPostImportAsync();
+        Assert.Contains("验证失败", model.ErrorMessage);
+
+        // 2. 过期证书
+        using var company = TestFixture.Create();
+        await company.SigningKeys.ImportAsync(PrivateKeyPem);
+        var companyCustomer = await company.InsertCustomerAsync();
+        var expiredLicense = await company.InsertLicenseAsync(
+            companyCustomer.Id, 
+            LicenseMode.Floating, 
+            accessKey: "key", 
+            expireTime: DateTime.Now.AddDays(-1));
+        var expiredJson = await company.Generator.GenerateAsync(expiredLicense, "key");
+
+        model.ImportLicenseContent = expiredJson;
+        await model.OnPostImportAsync();
+        Assert.Contains("已过期", model.ErrorMessage);
+
+        // 3. 局域网端导入单机版证书（应该拒绝）
+        var standaloneLicense = await company.InsertLicenseAsync(
+            companyCustomer.Id,
+            LicenseMode.Standalone,
+            machineCode: "M1");
+        var standaloneJson = await company.Generator.GenerateAsync(standaloneLicense);
+
+        model.ImportLicenseContent = standaloneJson;
+        await model.OnPostImportAsync();
+        Assert.Contains("仅支持导入浮动授权", model.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task LegacyStandaloneLicense_IsBackwardCompatible()
+    {
+        var doc = new LicenseDocument
+        {
+            ProductCode = "LABEL_PRINT_CLIENT",
+            LicenseMode = LicenseMode.Standalone,
+            MachineCode = "MACHINE-001",
+            TotalCount = 1,
+            ExpireTime = DateTime.Now.AddDays(30),
+            IssuedTo = "ACME"
+        };
+
+        using var rsa = RSA.Create();
+        rsa.ImportFromPem(PrivateKeyPem);
+        
+        var newPayloadJson = StandaloneLicenseGenerator.CreateSignedPayload(doc);
+        var payloadBytes = Encoding.UTF8.GetBytes(newPayloadJson);
+        doc.Signature = Convert.ToBase64String(rsa.SignData(payloadBytes, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1));
+
+        var validator = new LicenseValidator(Options.Create(new LicenseServerOptions
+        {
+            PublicKeyPem = ClientPublicKeyPem
+        }));
+        Assert.True(validator.Verify(doc));
+    }
+
     private static bool VerifyClientSignature(LicenseDocument document)
     {
         using var rsa = RSA.Create();
@@ -160,7 +289,7 @@ cRTwWdAfC5+A4G/GxvXHJuR+0tzh/v2WK9sjSEzynIHFQOAHWWKdOb2Km+yXgv1o
         private readonly string _root;
         private readonly string? _previousMasterKey;
 
-        private TestFixture(string root, string? previousMasterKey, LicenseDb db, SigningKeyService signingKeys, StandaloneLicenseGenerator generator, FloatingLicenseService floating)
+        private TestFixture(string root, string? previousMasterKey, LicenseDb db, SigningKeyService signingKeys, StandaloneLicenseGenerator generator, FloatingLicenseService floating, PrivateKeyProtector protector)
         {
             _root = root;
             _previousMasterKey = previousMasterKey;
@@ -168,12 +297,14 @@ cRTwWdAfC5+A4G/GxvXHJuR+0tzh/v2WK9sjSEzynIHFQOAHWWKdOb2Km+yXgv1o
             SigningKeys = signingKeys;
             Generator = generator;
             Floating = floating;
+            Protector = protector;
         }
 
         public LicenseDb Db { get; }
         public SigningKeyService SigningKeys { get; }
         public StandaloneLicenseGenerator Generator { get; }
         public FloatingLicenseService Floating { get; }
+        public PrivateKeyProtector Protector { get; }
 
         public static TestFixture Create(bool setMasterKey = true)
         {
@@ -187,7 +318,8 @@ cRTwWdAfC5+A4G/GxvXHJuR+0tzh/v2WK9sjSEzynIHFQOAHWWKdOb2Km+yXgv1o
                 SqliteConnection = $"DataSource={Path.Combine(root, "license_server_test.db")}",
                 HeartbeatIntervalSeconds = 30,
                 SessionTimeoutSeconds = 120,
-                MasterKeyEnvironmentName = MasterKeyName
+                MasterKeyEnvironmentName = MasterKeyName,
+                MasterKey = setMasterKey ? MasterKeyValue : null
             });
             var db = new LicenseDb(options);
             DbInitializer.InitTables(db);
@@ -195,7 +327,7 @@ cRTwWdAfC5+A4G/GxvXHJuR+0tzh/v2WK9sjSEzynIHFQOAHWWKdOb2Km+yXgv1o
             var signingKeys = new SigningKeyService(db, protector);
             var generator = new StandaloneLicenseGenerator(signingKeys);
             var floating = new FloatingLicenseService(db, options);
-            return new TestFixture(root, previous, db, signingKeys, generator, floating);
+            return new TestFixture(root, previous, db, signingKeys, generator, floating, protector);
         }
 
         public async Task<Customer> InsertCustomerAsync()

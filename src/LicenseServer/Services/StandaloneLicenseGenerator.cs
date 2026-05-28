@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using LicenseServer.Models;
 
 namespace LicenseServer.Services;
@@ -20,21 +21,21 @@ public sealed class StandaloneLicenseGenerator
         _signingKeys = signingKeys;
     }
 
-    public async Task<string> GenerateAsync(AppLicense license)
+    public async Task<string> GenerateAsync(AppLicense license, string? accessKey = null)
     {
-        if (license.LicenseMode != LicenseMode.Standalone)
-            throw new InvalidOperationException("只有单机授权可以生成授权文件。");
-        if (string.IsNullOrWhiteSpace(license.MachineCode))
+        if (license.LicenseMode == LicenseMode.Standalone && string.IsNullOrWhiteSpace(license.MachineCode))
             throw new InvalidOperationException("单机授权必须填写机器码。");
 
         var document = new LicenseDocument
         {
+            Id = license.Id,
             ProductCode = license.ProductCode,
-            LicenseMode = LicenseMode.Standalone,
-            MachineCode = license.MachineCode,
-            TotalCount = 1,
+            LicenseMode = license.LicenseMode,
+            MachineCode = license.MachineCode ?? string.Empty,
+            TotalCount = license.LicenseMode == LicenseMode.Standalone ? 1 : license.TotalCount,
             ExpireTime = license.ExpireTime,
-            IssuedTo = license.IssuedTo
+            IssuedTo = license.IssuedTo,
+            AccessKey = license.LicenseMode == LicenseMode.Floating ? accessKey : null
         };
 
         using var rsa = await _signingKeys.OpenActivePrivateKeyAsync();
@@ -46,21 +47,31 @@ public sealed class StandaloneLicenseGenerator
     public static string CreateSignedPayload(LicenseDocument document)
     {
         var payload = new LicensePayload(
+            document.Id,
             document.ProductCode,
             document.LicenseMode,
             document.MachineCode,
             document.TotalCount,
             document.ExpireTime,
-            document.IssuedTo);
+            document.IssuedTo,
+            document.AccessKey);
 
-        return JsonSerializer.Serialize(payload, new JsonSerializerOptions { PropertyNameCaseInsensitive = true, WriteIndented = false });
+        var options = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true,
+            WriteIndented = false,
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+        };
+        return JsonSerializer.Serialize(payload, options);
     }
 
     private sealed record LicensePayload(
+        long? Id,
         string ProductCode,
         LicenseMode LicenseMode,
         string MachineCode,
         int TotalCount,
         DateTime ExpireTime,
-        string IssuedTo);
+        string IssuedTo,
+        string? AccessKey = null);
 }

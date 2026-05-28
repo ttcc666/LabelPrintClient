@@ -12,6 +12,7 @@ builder.Services.AddScoped<AdminAuthService>();
 builder.Services.AddScoped<PrivateKeyProtector>();
 builder.Services.AddScoped<SigningKeyService>();
 builder.Services.AddScoped<StandaloneLicenseGenerator>();
+builder.Services.AddScoped<LicenseValidator>();
 builder.Services.AddScoped<FloatingLicenseService>();
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>

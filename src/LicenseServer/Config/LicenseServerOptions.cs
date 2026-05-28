@@ -13,4 +13,8 @@ public sealed class LicenseServerOptions
     public int SessionTimeoutSeconds { get; set; } = 120;
 
     public string MasterKeyEnvironmentName { get; set; } = "LICENSE_SERVER_MASTER_KEY";
+
+    public string? MasterKey { get; set; }
+
+    public string? PublicKeyPem { get; set; }
 }

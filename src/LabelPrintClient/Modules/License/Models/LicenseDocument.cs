@@ -4,6 +4,9 @@ namespace LabelPrintClient.Modules.License.Models;
 
 public sealed class LicenseDocument
 {
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public long? Id { get; set; }
+
     public string ProductCode { get; set; } = string.Empty;
 
     [JsonConverter(typeof(JsonStringEnumConverter))]
@@ -16,6 +19,9 @@ public sealed class LicenseDocument
     public DateTime ExpireTime { get; set; }
 
     public string IssuedTo { get; set; } = string.Empty;
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? AccessKey { get; set; }
 
     public string Signature { get; set; } = string.Empty;
 }

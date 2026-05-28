@@ -2,54 +2,227 @@
 @using LicenseServer.Models
 @model LicenseServer.Pages.LicensesModel
 @{
-    ViewData["Title"] = "Licenses";
+    ViewData["Title"] = "许可证证书维护 (Licenses)";
 }
 
-<h1>许可证维护</h1>
-<form method="post" class="row g-2 mb-4">
-    <div class="col-md-2">
-        <select asp-for="Input.CustomerId" class="form-select">
-            @foreach (var customer in Model.Customers)
-            {
-                <option value="@customer.Id">@customer.Name</option>
-            }
-        </select>
-    </div>
-    <div class="col-md-2"><input asp-for="Input.ProductCode" class="form-control" placeholder="产品编码" /></div>
-    <div class="col-md-2">
-        <select asp-for="Input.LicenseMode" class="form-select">
-            <option value="@LicenseMode.Standalone">单机</option>
-            <option value="@LicenseMode.Floating">浮动</option>
-        </select>
-    </div>
-    <div class="col-md-2"><input asp-for="Input.ExpireTime" type="date" class="form-control" /></div>
-    <div class="col-md-2"><input asp-for="Input.MachineCode" class="form-control" placeholder="单机机器码" /></div>
-    <div class="col-md-1"><input asp-for="Input.TotalCount" class="form-control" placeholder="席位" /></div>
-    <div class="col-md-1"><button class="btn btn-primary" type="submit">新增</button></div>
-    <div class="col-md-3"><input asp-for="Input.IssuedTo" class="form-control" placeholder="签发对象" /></div>
-</form>
-
-<div class="text-danger mb-2">@Model.ErrorMessage</div>
-
-<table class="table table-sm table-striped">
-    <thead><tr><th>客户</th><th>模式</th><th>产品</th><th>过期</th><th>席位</th><th>AccessKey</th><th>操作</th></tr></thead>
-    <tbody>
-    @foreach (var item in Model.Items)
+@if (Model.HasMasterKey)
+{
+    if (Model.HasActiveKey)
     {
-        <tr>
-            <td>@item.CustomerName</td>
-            <td>@item.License.LicenseMode</td>
-            <td>@item.License.ProductCode</td>
-            <td>@item.License.ExpireTime.ToString("yyyy-MM-dd")</td>
-            <td>@item.License.TotalCount</td>
-            <td><code>@item.AccessKeyPreview</code></td>
-            <td>
-                @if (item.License.LicenseMode == LicenseMode.Standalone)
-                {
-                    <a class="btn btn-sm btn-outline-primary" asp-page-handler="Download" asp-route-id="@item.License.Id">下载 .license</a>
-                }
-            </td>
-        </tr>
+        <div class="console-card">
+            <div class="card-title-bar">
+                <h5 class="card-heading">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                    </svg>
+                    公司离线签名签发控制面板
+                </h5>
+            </div>
+            <form method="post" class="row g-3">
+                <div class="col-md-3">
+                    <label asp-for="Input.CustomerId" class="form-label">目标客户</label>
+                    <select asp-for="Input.CustomerId" class="form-select">
+                        @foreach (var customer in Model.Customers)
+                        {
+                            <option value="@customer.Id">@customer.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="Input.ProductCode" class="form-label">产品编码</label>
+                    <input asp-for="Input.ProductCode" class="form-control" placeholder="产品唯一代号" />
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="Input.LicenseMode" class="form-label">授权模式</label>
+                    <select asp-for="Input.LicenseMode" class="form-select">
+                        <option value="@LicenseMode.Standalone">单机授权 (Standalone)</option>
+                        <option value="@LicenseMode.Floating">浮动授权 (Floating)</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="Input.ExpireTime" class="form-label">有效期截止截止</label>
+                    <input asp-for="Input.ExpireTime" type="date" class="form-control" />
+                </div>
+                
+                <div class="col-md-3">
+                    <label asp-for="Input.MachineCode" class="form-label">绑定机器码 (单机专填)</label>
+                    <input asp-for="Input.MachineCode" class="form-control" placeholder="单机激活绑定机器码" />
+                </div>
+                <div class="col-md-2">
+                    <label asp-for="Input.TotalCount" class="form-label">并发最大席位数 (浮动专填)</label>
+                    <input asp-for="Input.TotalCount" class="form-control" type="number" min="1" />
+                </div>
+                <div class="col-md-5">
+                    <label asp-for="Input.IssuedTo" class="form-label">签发授予对象 (IssuedTo)</label>
+                    <input asp-for="Input.IssuedTo" class="form-control" placeholder="客户企业工商全称" />
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button class="btn btn-primary w-100" type="submit" style="height: 42px;">新增并启用</button>
+                </div>
+            </form>
+        </div>
     }
-    </tbody>
-</table>
+    else
+    {
+        <div class="console-card border-warning" style="border-left: 4px solid var(--warning);">
+            <div class="card-title-bar">
+                <h5 class="card-heading text-warning">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                    未检测到激活的签名密钥 (Signing Key)
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <p class="mb-3 text-muted" style="line-height: 1.6;">
+                    当前系统运行在<strong>公司签发模式</strong>下，但数据库中尚未导入可用于证书签发与离线签名的私钥明文。
+                    请先前往左侧菜单的 <strong><a asp-page="/Keys" class="text-primary" style="font-weight: 500; text-decoration: underline;">签名密钥 (Signing Key)</a></strong> 页面导入有效的 RSA 签发私钥，方可解锁证书签发和导出面板。
+                </p>
+                <div class="d-flex">
+                    <a class="btn btn-primary btn-sm px-4" asp-page="/Keys">
+                        立即前往导入私钥 &rarr;
+                    </a>
+                </div>
+            </div>
+        </div>
+    }
+}
+else
+{
+    <div class="console-card">
+        <div class="card-title-bar">
+            <h5 class="card-heading">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                </svg>
+                导入公司已签名许可证 (局域网端)
+            </h5>
+        </div>
+        <form method="post" asp-page-handler="Import">
+            <div class="mb-3">
+                <label asp-for="ImportLicenseContent" class="form-label">密文 JSON 凭证内容</label>
+                <textarea asp-for="ImportLicenseContent" rows="5" class="form-control font-monospace" placeholder="请在此粘贴由公司使用开发端私钥签名生成的许可证密文 JSON 完整串..."></textarea>
+            </div>
+            <button class="btn btn-success" type="submit">验证数字签名并导入数据库</button>
+        </form>
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    var isSuccess = Model.ErrorMessage.Contains("成功");
+    <div class="alert @(isSuccess ? "alert-success" : "alert-danger") py-2 mb-4">
+        <div class="d-flex align-items-center gap-2">
+            @if (isSuccess)
+            {
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            }
+            else
+            {
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+            }
+            <span>@Model.ErrorMessage</span>
+        </div>
+    </div>
+}
+
+<div class="table-responsive">
+    <table class="console-table align-middle">
+        <thead>
+            <tr>
+                <th>授予客户</th>
+                <th>授权模式</th>
+                <th>关联产品</th>
+                <th>过期时间截止</th>
+                <th>席位总数</th>
+                <th>验证 AccessKey</th>
+                <th style="width: 320px;">操作</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var item in Model.Items)
+        {
+            <tr>
+                <td style="font-weight: 600;">@item.CustomerName</td>
+                <td>
+                    @if (item.License.LicenseMode == LicenseMode.Standalone)
+                    {
+                        <span class="badge bg-secondary">单机 (Standalone)</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-success">浮动 (Floating)</span>
+                    }
+                </td>
+                <td><code style="font-size: 0.85rem; color: #0284c7; background-color: var(--primary-light); padding: 0.15rem 0.45rem; border-radius: 4px;">@item.License.ProductCode</code></td>
+                <td>
+                    @if (item.License.ExpireTime <= DateTime.Now)
+                    {
+                        <span class="text-danger" style="font-weight: 500;">
+                            @item.License.ExpireTime.ToString("yyyy-MM-dd") (已过期)
+                        </span>
+                    }
+                    else
+                    {
+                        <span>@item.License.ExpireTime.ToString("yyyy-MM-dd")</span>
+                    }
+                </td>
+                <td><strong>@item.License.TotalCount</strong> 席</td>
+                <td><code style="font-size: 0.825rem;">@item.AccessKeyPreview</code></td>
+                <td>
+                    @if (Model.HasMasterKey)
+                    {
+                        if (Model.HasActiveKey)
+                        {
+                            if (item.License.LicenseMode == LicenseMode.Standalone)
+                            {
+                                <a class="btn btn-sm btn-outline-primary py-1.5" asp-page-handler="Download" asp-route-id="@item.License.Id">
+                                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                        <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                                    </svg>
+                                    导出单机证书
+                                </a>
+                            }
+                            else if (item.License.LicenseMode == LicenseMode.Floating)
+                            {
+                                <form method="post" asp-page-handler="Download" class="d-inline-flex gap-1.5 align-items-center m-0">
+                                    <input type="hidden" name="id" value="@item.License.Id" />
+                                    <input type="text" name="accessKey" placeholder="输入 AccessKey" class="form-control form-control-sm" style="width: 130px; height: 32px;" required />
+                                    <button type="submit" class="btn btn-sm btn-outline-primary py-1.5" style="height: 32px;">
+                                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                            <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                                        </svg>
+                                        签名并导出
+                                    </button>
+                                </form>
+                            }
+                        }
+                        else
+                        {
+                            <span class="text-danger small d-inline-flex align-items-center gap-1" style="font-weight: 500;">
+                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                </svg>
+                                未导入私钥，无法导出
+                            </span>
+                        }
+                    }
+                    else
+                    {
+                        <span class="text-muted small d-inline-flex align-items-center gap-1">
+                            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                            </svg>
+                            局域网中转运行托管中
+                        </span>
+                    }
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>
