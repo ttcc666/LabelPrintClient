@@ -34,35 +34,49 @@ public static class AuthService
 
     public static async Task<CurrentUserSession> BuildSessionAsync(AuthUser user)
     {
-        var userRoles = await AppDb.Db.Queryable<AuthUserRole>()
-            .Where(x => x.UserId == user.Id)
-            .ToListAsync()
-            .ConfigureAwait(false);
-        var roleIds = userRoles.Select(x => x.RoleId).Distinct().ToList();
+        System.Collections.Generic.List<string> roleCodes;
+        System.Collections.Generic.HashSet<string> permissionKeys;
 
-        var roles = roleIds.Count == 0
-            ? new List<AuthRole>()
-            : await AppDb.Db.Queryable<AuthRole>()
-                .Where(x => roleIds.Contains(x.Id) && x.IsEnabled)
+        if (string.Equals(user.UserName, "System", StringComparison.OrdinalIgnoreCase))
+        {
+            roleCodes = new System.Collections.Generic.List<string> { AuthRoleCodes.Administrator };
+            permissionKeys = Permissions.All.Select(x => x.Key).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        }
+        else
+        {
+            var userRoles = await AppDb.Db.Queryable<AuthUserRole>()
+                .Where(x => x.UserId == user.Id)
                 .ToListAsync()
                 .ConfigureAwait(false);
-        var enabledRoleIds = roles.Select(x => x.Id).ToList();
+            var roleIds = userRoles.Select(x => x.RoleId).Distinct().ToList();
 
-        var permissions = enabledRoleIds.Count == 0
-            ? new List<string>()
-            : await AppDb.Db.Queryable<AuthRolePermission>()
-                .Where(x => enabledRoleIds.Contains(x.RoleId))
-                .Select(x => x.PermissionKey)
-                .ToListAsync()
-                .ConfigureAwait(false);
+            var roles = roleIds.Count == 0
+                ? new System.Collections.Generic.List<AuthRole>()
+                : await AppDb.Db.Queryable<AuthRole>()
+                    .Where(x => roleIds.Contains(x.Id) && x.IsEnabled)
+                    .ToListAsync()
+                    .ConfigureAwait(false);
+            var enabledRoleIds = roles.Select(x => x.Id).ToList();
+
+            var permissions = enabledRoleIds.Count == 0
+                ? new System.Collections.Generic.List<string>()
+                : await AppDb.Db.Queryable<AuthRolePermission>()
+                    .Where(x => enabledRoleIds.Contains(x.RoleId))
+                    .Select(x => x.PermissionKey)
+                    .ToListAsync()
+                    .ConfigureAwait(false);
+
+            roleCodes = roles.Select(x => x.Code).ToList();
+            permissionKeys = permissions.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        }
 
         return new CurrentUserSession
         {
             UserId = user.Id,
             UserName = user.UserName,
             DisplayName = user.DisplayName,
-            RoleCodes = roles.Select(x => x.Code).ToList(),
-            PermissionKeys = permissions.ToHashSet(StringComparer.OrdinalIgnoreCase)
+            RoleCodes = roleCodes,
+            PermissionKeys = permissionKeys
         };
     }
 

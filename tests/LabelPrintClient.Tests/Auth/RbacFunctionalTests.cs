@@ -33,7 +33,7 @@ public class RbacFunctionalTests
     {
         using var database = TestDatabase.Create();
 
-        var user = await PermissionBootstrapper.CreateInitialAdministratorAsync("admin", "管理员", "secret123");
+        var user = await PermissionBootstrapper.CreateInitialAdministratorAsync("System", "管理员", "secret123");
 
         Assert.True(await PermissionBootstrapper.HasAnyUserAsync());
         Assert.True(await PermissionBootstrapper.HasAdministratorUserAsync());
@@ -41,7 +41,7 @@ public class RbacFunctionalTests
         Assert.True(PasswordHasher.Verify("secret123", user.PasswordHash, user.PasswordSalt, user.PasswordIterations));
         Assert.False(PasswordHasher.Verify("bad-secret", user.PasswordHash, user.PasswordSalt, user.PasswordIterations));
 
-        var session = await AuthService.LoginAsync("admin", "secret123");
+        var session = await AuthService.LoginAsync("System", "secret123");
         Assert.Equal("管理员", session.OperatorName);
         Assert.Contains(Permissions.MenuAccountPermission, session.PermissionKeys);
     }
@@ -138,9 +138,9 @@ public class RbacFunctionalTests
     public async Task CurrentUserService_OperatorName_UsesCurrentLoginUser()
     {
         using var database = TestDatabase.Create();
-        await PermissionBootstrapper.CreateInitialAdministratorAsync("admin", "管理员", "secret123");
+        await PermissionBootstrapper.CreateInitialAdministratorAsync("System", "管理员", "secret123");
 
-        await AuthService.LoginAsync("admin", "secret123");
+        await AuthService.LoginAsync("System", "secret123");
 
         Assert.Equal("管理员", CurrentUserService.OperatorName);
     }
