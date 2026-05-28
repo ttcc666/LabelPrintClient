@@ -1,0 +1,55 @@
+@page
+@using LicenseServer.Models
+@model LicenseServer.Pages.LicensesModel
+@{
+    ViewData["Title"] = "Licenses";
+}
+
+<h1>许可证维护</h1>
+<form method="post" class="row g-2 mb-4">
+    <div class="col-md-2">
+        <select asp-for="Input.CustomerId" class="form-select">
+            @foreach (var customer in Model.Customers)
+            {
+                <option value="@customer.Id">@customer.Name</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-2"><input asp-for="Input.ProductCode" class="form-control" placeholder="产品编码" /></div>
+    <div class="col-md-2">
+        <select asp-for="Input.LicenseMode" class="form-select">
+            <option value="@LicenseMode.Standalone">单机</option>
+            <option value="@LicenseMode.Floating">浮动</option>
+        </select>
+    </div>
+    <div class="col-md-2"><input asp-for="Input.ExpireTime" type="date" class="form-control" /></div>
+    <div class="col-md-2"><input asp-for="Input.MachineCode" class="form-control" placeholder="单机机器码" /></div>
+    <div class="col-md-1"><input asp-for="Input.TotalCount" class="form-control" placeholder="席位" /></div>
+    <div class="col-md-1"><button class="btn btn-primary" type="submit">新增</button></div>
+    <div class="col-md-3"><input asp-for="Input.IssuedTo" class="form-control" placeholder="签发对象" /></div>
+</form>
+
+<div class="text-danger mb-2">@Model.ErrorMessage</div>
+
+<table class="table table-sm table-striped">
+    <thead><tr><th>客户</th><th>模式</th><th>产品</th><th>过期</th><th>席位</th><th>AccessKey</th><th>操作</th></tr></thead>
+    <tbody>
+    @foreach (var item in Model.Items)
+    {
+        <tr>
+            <td>@item.CustomerName</td>
+            <td>@item.License.LicenseMode</td>
+            <td>@item.License.ProductCode</td>
+            <td>@item.License.ExpireTime.ToString("yyyy-MM-dd")</td>
+            <td>@item.License.TotalCount</td>
+            <td><code>@item.AccessKeyPreview</code></td>
+            <td>
+                @if (item.License.LicenseMode == LicenseMode.Standalone)
+                {
+                    <a class="btn btn-sm btn-outline-primary" asp-page-handler="Download" asp-route-id="@item.License.Id">下载 .license</a>
+                }
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>

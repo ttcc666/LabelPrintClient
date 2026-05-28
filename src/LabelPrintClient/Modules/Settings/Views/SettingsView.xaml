@@ -156,6 +156,78 @@
                             </WrapPanel>
                         </StackPanel>
                     </Border>
+
+                    <!-- 卡片 3：授权使用配置 -->
+                    <Border Style="{StaticResource AppCardStyle}" Padding="20" Margin="0,0,0,16">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                                <iconPacks:PackIconMaterial Kind="ShieldKey" Foreground="{DynamicResource PrimaryBrush}" Width="16" Height="16" VerticalAlignment="Center" />
+                                <TextBlock Style="{StaticResource ConfigTitleStyle}" Text="{DynamicResource License.SettingsTitle}" />
+                            </StackPanel>
+
+                            <StackPanel Margin="0,0,0,14">
+                                <TextBlock Text="{DynamicResource License.Status}" Style="{StaticResource ConfigLabelStyle}" />
+                                <TextBlock x:Name="LicenseStatusText" TextWrapping="Wrap" FontSize="12.5" LineHeight="18" />
+                            </StackPanel>
+
+                            <StackPanel Margin="0,0,0,14">
+                                <TextBlock Text="{DynamicResource License.MachineCode}" Style="{StaticResource ConfigLabelStyle}" />
+                                <TextBox x:Name="MachineCodeBox" IsReadOnly="True" TextWrapping="Wrap" Padding="8,6" />
+                            </StackPanel>
+
+                            <Grid Margin="0,0,0,14">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="1*" />
+                                    <ColumnDefinition Width="1*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                    <TextBlock Text="{DynamicResource License.Mode}" Style="{StaticResource ConfigLabelStyle}" />
+                                    <ComboBox x:Name="LicenseModeBox">
+                                        <ComboBoxItem Content="{DynamicResource License.ModeStandalone}" Tag="Standalone" />
+                                        <ComboBoxItem Content="{DynamicResource License.ModeFloating}" Tag="Floating" />
+                                    </ComboBox>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                                    <TextBlock Text="{DynamicResource License.ProductCode}" Style="{StaticResource ConfigLabelStyle}" />
+                                    <TextBox x:Name="ProductCodeBox" Padding="8,6" />
+                                </StackPanel>
+                            </Grid>
+
+                            <StackPanel Margin="0,0,0,14">
+                                <TextBlock Text="{DynamicResource License.FilePath}" Style="{StaticResource ConfigLabelStyle}" />
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox x:Name="LicenseFilePathBox" Grid.Column="0" Margin="0,0,8,0" Padding="8,6" />
+                                    <Button Grid.Column="1" Style="{StaticResource AppSecondaryButtonStyle}" Click="BrowseLicenseFile_Click" Width="72" auth:PermissionAssist.PermissionKey="Button.Settings.Save">
+                                        <StackPanel Orientation="Horizontal">
+                                            <iconPacks:PackIconMaterial Kind="FolderOpen" Margin="0,0,4,0" VerticalAlignment="Center" Width="12" Height="12" />
+                                            <TextBlock Text="{DynamicResource Settings.Browse}" VerticalAlignment="Center" FontSize="12" />
+                                        </StackPanel>
+                                    </Button>
+                                </Grid>
+                            </StackPanel>
+
+                            <StackPanel Margin="0,0,0,14">
+                                <TextBlock Text="{DynamicResource License.ServerUrl}" Style="{StaticResource ConfigLabelStyle}" />
+                                <TextBox x:Name="LicenseServerUrlBox" Padding="8,6" />
+                            </StackPanel>
+
+                            <StackPanel Margin="0,0,0,14">
+                                <TextBlock Text="{DynamicResource License.AccessKey}" Style="{StaticResource ConfigLabelStyle}" />
+                                <PasswordBox x:Name="LicenseAccessKeyBox" Padding="8,6" />
+                            </StackPanel>
+
+                            <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="ValidateLicense_Click" HorizontalAlignment="Left" auth:PermissionAssist.PermissionKey="Button.Settings.Save">
+                                <StackPanel Orientation="Horizontal">
+                                    <iconPacks:PackIconMaterial Kind="ShieldCheck" Margin="0,0,6,0" VerticalAlignment="Center" Width="14" Height="14" />
+                                    <TextBlock Text="{DynamicResource License.Validate}" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
 
                 <!-- 右栏：打印默认预设与个性化基础配置 -->

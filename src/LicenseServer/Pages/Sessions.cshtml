@@ -1,0 +1,28 @@
+@page
+@model LicenseServer.Pages.SessionsModel
+@{
+    ViewData["Title"] = "Sessions";
+}
+
+<h1>在线会话</h1>
+<table class="table table-sm table-striped">
+    <thead><tr><th>产品</th><th>机器码</th><th>机器名</th><th>登录时间</th><th>最后心跳</th><th>过期</th><th>操作</th></tr></thead>
+    <tbody>
+    @foreach (var item in Model.Items)
+    {
+        <tr>
+            <td>@item.ProductCode</td>
+            <td><code>@item.Session.MachineCode</code></td>
+            <td>@item.Session.MachineName</td>
+            <td>@item.Session.LoginTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
+            <td>@item.Session.LastHeartbeat.ToString("yyyy-MM-dd HH:mm:ss")</td>
+            <td>@item.Session.ExpireTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
+            <td>
+                <form method="post" asp-page-handler="Release" asp-route-id="@item.Session.Id">
+                    <button class="btn btn-sm btn-outline-danger" type="submit">强制释放</button>
+                </form>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>

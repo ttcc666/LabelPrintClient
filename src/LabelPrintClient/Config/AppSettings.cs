@@ -1,4 +1,6 @@
-﻿namespace LabelPrintClient.Config;
+using LabelPrintClient.Modules.License.Models;
+
+namespace LabelPrintClient.Config;
 
 public class AppSettings
 {
@@ -23,4 +25,18 @@ public class AppSettings
     public AppThemeMode ThemeMode { get; set; } = AppThemeMode.System;
 
     public AppLanguage Language { get; set; } = AppLanguage.ZhCn;
+
+    public LicenseMode LicenseMode { get; set; } = LicenseMode.Standalone;
+
+    public string ProductCode { get; set; } = "LABEL_PRINT_CLIENT";
+
+    public string LicenseServerUrl { get; set; } = "https://127.0.0.1:5001/";
+
+    public string LicenseAccessKey { get; set; } = string.Empty;
+
+    public string StandaloneLicenseFilePath { get; set; } = "license.json";
+
+    public int LicenseHeartbeatIntervalSeconds { get; set; } = 30;
+
+    public int LicenseHeartbeatTimeoutSeconds { get; set; } = 120;
 }

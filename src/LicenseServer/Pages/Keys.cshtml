@@ -1,0 +1,31 @@
+@page
+@model LicenseServer.Pages.KeysModel
+@{
+    ViewData["Title"] = "Signing Key";
+}
+
+<h1>签名密钥</h1>
+<div class="alert @(Model.HasMasterKey ? "alert-success" : "alert-danger")">
+    环境变量 LICENSE_SERVER_MASTER_KEY：@(Model.HasMasterKey ? "已配置" : "未配置，不能导入或使用私钥")
+</div>
+
+@if (Model.ActiveKey != null)
+{
+    <dl class="row">
+        <dt class="col-sm-2">公钥指纹</dt><dd class="col-sm-10"><code>@Model.ActiveKey.PublicKeyFingerprint</code></dd>
+        <dt class="col-sm-2">创建时间</dt><dd class="col-sm-10">@Model.ActiveKey.CreateTime.ToString("yyyy-MM-dd HH:mm:ss")</dd>
+    </dl>
+}
+else
+{
+    <p>尚未导入签名私钥。</p>
+}
+
+<form method="post">
+    <div class="mb-3">
+        <label asp-for="PrivateKeyPem" class="form-label">RSA 私钥 PEM</label>
+        <textarea asp-for="PrivateKeyPem" class="form-control" rows="10"></textarea>
+    </div>
+    <div class="text-danger">@Model.ErrorMessage</div>
+    <button class="btn btn-primary" type="submit">导入并启用</button>
+</form>

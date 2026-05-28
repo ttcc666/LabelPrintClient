@@ -1,6 +1,7 @@
 using System.IO.Compression;
 using LabelPrintClient.Config;
 using LabelPrintClient.Database;
+using LabelPrintClient.Modules.License.Models;
 using LabelPrintClient.Modules.Settings.Services;
 using LabelPrintClient.Modules.Template.Models;
 using LabelPrintClient.Tests.Infrastructure;
@@ -109,7 +110,14 @@ public class SettingsFunctionalTests
                 ConfirmBeforePrint = false,
                 EnableSqlLogging = true,
                 ThemeMode = AppThemeMode.Dark,
-                Language = AppLanguage.EnUs
+                Language = AppLanguage.EnUs,
+                LicenseMode = LicenseMode.Floating,
+                ProductCode = "TEST_PRODUCT",
+                LicenseServerUrl = "https://license.example/",
+                LicenseAccessKey = "access-key",
+                StandaloneLicenseFilePath = "license-test.json",
+                LicenseHeartbeatIntervalSeconds = 15,
+                LicenseHeartbeatTimeoutSeconds = 60
             };
 
             AppConfigService.Save(settings);
@@ -125,6 +133,13 @@ public class SettingsFunctionalTests
             Assert.True(loaded.EnableSqlLogging);
             Assert.Equal(AppThemeMode.Dark, loaded.ThemeMode);
             Assert.Equal(AppLanguage.EnUs, loaded.Language);
+            Assert.Equal(LicenseMode.Floating, loaded.LicenseMode);
+            Assert.Equal("TEST_PRODUCT", loaded.ProductCode);
+            Assert.Equal("https://license.example/", loaded.LicenseServerUrl);
+            Assert.Equal("access-key", loaded.LicenseAccessKey);
+            Assert.Equal("license-test.json", loaded.StandaloneLicenseFilePath);
+            Assert.Equal(15, loaded.LicenseHeartbeatIntervalSeconds);
+            Assert.Equal(60, loaded.LicenseHeartbeatTimeoutSeconds);
         }
         finally
         {

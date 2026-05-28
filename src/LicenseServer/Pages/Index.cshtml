@@ -1,0 +1,13 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<h1>授权服务控制台</h1>
+<div class="row g-3">
+    <div class="col-md-3"><div class="card"><div class="card-body"><h5>客户</h5><div class="display-6">@Model.CustomerCount</div></div></div></div>
+    <div class="col-md-3"><div class="card"><div class="card-body"><h5>许可证</h5><div class="display-6">@Model.LicenseCount</div></div></div></div>
+    <div class="col-md-3"><div class="card"><div class="card-body"><h5>在线会话</h5><div class="display-6">@Model.SessionCount</div></div></div></div>
+    <div class="col-md-3"><div class="card"><div class="card-body"><h5>签名密钥</h5><div>@(Model.HasSigningKey ? "已导入" : "未导入")</div></div></div></div>
+</div>

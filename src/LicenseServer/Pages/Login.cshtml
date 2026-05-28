@@ -1,0 +1,19 @@
+@page
+@model LicenseServer.Pages.LoginModel
+@{
+    ViewData["Title"] = "Login";
+}
+
+<h1>管理员登录</h1>
+<form method="post" class="w-50">
+    <div class="mb-3">
+        <label asp-for="UserName" class="form-label"></label>
+        <input asp-for="UserName" class="form-control" />
+    </div>
+    <div class="mb-3">
+        <label asp-for="Password" class="form-label"></label>
+        <input asp-for="Password" type="password" class="form-control" />
+    </div>
+    <div class="text-danger">@Model.ErrorMessage</div>
+    <button class="btn btn-primary" type="submit">登录</button>
+</form>

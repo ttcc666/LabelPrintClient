@@ -6,6 +6,8 @@ using System.Windows.Controls;
 using LabelPrintClient.Config;
 using LabelPrintClient.Database;
 using LabelPrintClient.Modules.Auth.Services;
+using LabelPrintClient.Modules.License.Models;
+using LabelPrintClient.Modules.License.Services;
 using LabelPrintClient.Modules.Settings.Services;
 using LabelPrintClient.Services;
 using WinForms = System.Windows.Forms;
@@ -214,6 +216,7 @@ public partial class SettingsView : System.Windows.Controls.UserControl
             ConfigPathText.Text = AppConfigService.GetConfigPath();
             FillForm(AppConfigService.LoadOrCreateDefault());
             UpdateBackupState();
+            UpdateLicenseStatusText();
             StatusText.Text = AppLanguageService.Format("Settings.Loaded", DateTime.Now);
         }
         catch (Exception ex)
@@ -234,6 +237,12 @@ public partial class SettingsView : System.Windows.Controls.UserControl
         ConfirmBeforePrintBox.IsChecked = settings.ConfirmBeforePrint;
         SelectThemeMode(settings.ThemeMode);
         SelectLanguage(settings.Language);
+        SelectLicenseMode(settings.LicenseMode);
+        ProductCodeBox.Text = settings.ProductCode;
+        LicenseFilePathBox.Text = settings.StandaloneLicenseFilePath;
+        LicenseServerUrlBox.Text = settings.LicenseServerUrl;
+        LicenseAccessKeyBox.Password = settings.LicenseAccessKey;
+        MachineCodeBox.Text = LicenseManager.MachineCode;
     }
 
     private bool TryBuildSettings(out AppSettings settings, out string errorMessage)
@@ -253,6 +262,11 @@ public partial class SettingsView : System.Windows.Controls.UserControl
         var defaultPrinterName = GetSelectedDefaultPrinterName();
         var themeMode = GetSelectedThemeMode();
         var language = GetSelectedLanguage();
+        var licenseMode = GetSelectedLicenseMode();
+        var productCode = ProductCodeBox.Text.Trim();
+        var licenseFilePath = LicenseFilePathBox.Text.Trim();
+        var licenseServerUrl = LicenseServerUrlBox.Text.Trim();
+        var licenseAccessKey = LicenseAccessKeyBox.Password.Trim();
 
         if (runMode == AppRunMode.LocalSqlite && string.IsNullOrWhiteSpace(sqliteConnection))
         {
@@ -269,6 +283,12 @@ public partial class SettingsView : System.Windows.Controls.UserControl
         if (string.IsNullOrWhiteSpace(localTemplateFolder))
         {
             errorMessage = AppLanguageService.GetString("Settings.TemplateFolderRequired");
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(productCode))
+        {
+            errorMessage = AppLanguageService.GetString("License.ProductCodeRequired");
             return false;
         }
 
@@ -291,6 +311,13 @@ public partial class SettingsView : System.Windows.Controls.UserControl
         settings.EnableSqlLogging = App.Settings.EnableSqlLogging;
         settings.ThemeMode = themeMode;
         settings.Language = language;
+        settings.LicenseMode = licenseMode;
+        settings.ProductCode = productCode;
+        settings.StandaloneLicenseFilePath = licenseFilePath;
+        settings.LicenseServerUrl = licenseServerUrl;
+        settings.LicenseAccessKey = licenseAccessKey;
+        settings.LicenseHeartbeatIntervalSeconds = App.Settings.LicenseHeartbeatIntervalSeconds;
+        settings.LicenseHeartbeatTimeoutSeconds = App.Settings.LicenseHeartbeatTimeoutSeconds;
         return true;
     }
 
@@ -406,6 +433,31 @@ public partial class SettingsView : System.Windows.Controls.UserControl
         return AppLanguage.ZhCn;
     }
 
+    private void SelectLicenseMode(LicenseMode mode)
+    {
+        foreach (var item in LicenseModeBox.Items.OfType<ComboBoxItem>())
+        {
+            if (string.Equals(item.Tag?.ToString(), mode.ToString(), StringComparison.OrdinalIgnoreCase))
+            {
+                LicenseModeBox.SelectedItem = item;
+                return;
+            }
+        }
+
+        LicenseModeBox.SelectedIndex = 0;
+    }
+
+    private LicenseMode GetSelectedLicenseMode()
+    {
+        if (LicenseModeBox.SelectedItem is ComboBoxItem item &&
+            Enum.TryParse<LicenseMode>(item.Tag?.ToString(), out var mode))
+        {
+            return mode;
+        }
+
+        return LicenseMode.Standalone;
+    }
+
     private static void ApplyToRuntimeSettings(AppSettings settings)
     {
         App.Settings.RunMode = settings.RunMode;
@@ -419,6 +471,68 @@ public partial class SettingsView : System.Windows.Controls.UserControl
         App.Settings.EnableSqlLogging = settings.EnableSqlLogging;
         App.Settings.ThemeMode = settings.ThemeMode;
         App.Settings.Language = settings.Language;
+        App.Settings.LicenseMode = settings.LicenseMode;
+        App.Settings.ProductCode = settings.ProductCode;
+        App.Settings.LicenseServerUrl = settings.LicenseServerUrl;
+        App.Settings.LicenseAccessKey = settings.LicenseAccessKey;
+        App.Settings.StandaloneLicenseFilePath = settings.StandaloneLicenseFilePath;
+        App.Settings.LicenseHeartbeatIntervalSeconds = settings.LicenseHeartbeatIntervalSeconds;
+        App.Settings.LicenseHeartbeatTimeoutSeconds = settings.LicenseHeartbeatTimeoutSeconds;
+        LicenseManager.Initialize(App.Settings);
+    }
+
+    private void BrowseLicenseFile_Click(object sender, RoutedEventArgs e)
+    {
+        if (!AuthorizationService.EnsurePermission(Permissions.SettingsSave, "导入授权文件")) return;
+
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Filter = "License files|*.json;*.license|All files|*.*"
+        };
+
+        if (dialog.ShowDialog() == true)
+            LicenseFilePathBox.Text = dialog.FileName;
+    }
+
+    private async void ValidateLicense_Click(object sender, RoutedEventArgs e)
+    {
+        if (!AuthorizationService.EnsurePermission(Permissions.SettingsSave, "重新校验授权")) return;
+
+        if (!TryBuildSettings(out var settings, out var errorMessage))
+        {
+            AppMessageBox.Show(errorMessage, AppLanguageService.GetString("Settings.ValidationFailedTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        var element = sender as UIElement;
+        if (element != null)
+            element.IsEnabled = false;
+
+        try
+        {
+            LicenseManager.Initialize(settings);
+            var result = await LicenseManager.ValidateStartupAsync();
+            LicenseStatusText.Text = result.Message;
+            LicenseStatusText.Foreground = result.IsValid
+                ? System.Windows.Media.Brushes.ForestGreen
+                : System.Windows.Media.Brushes.IndianRed;
+        }
+        finally
+        {
+            if (element != null)
+                element.IsEnabled = true;
+        }
+    }
+
+    private void UpdateLicenseStatusText()
+    {
+        var result = LicenseManager.Current;
+        LicenseStatusText.Text = result == null
+            ? AppLanguageService.GetString("License.StatusUnknown")
+            : result.Message;
+        LicenseStatusText.Foreground = result?.IsValid == true
+            ? System.Windows.Media.Brushes.ForestGreen
+            : System.Windows.Media.Brushes.IndianRed;
     }
 
     private void UpdateBackupState()

@@ -4,6 +4,8 @@ using LabelPrintClient.Config;
 using LabelPrintClient.Database;
 using LabelPrintClient.Modules.Auth.Services;
 using LabelPrintClient.Modules.Auth.Views;
+using LabelPrintClient.Modules.License.Services;
+using LabelPrintClient.Modules.License.Views;
 using LabelPrintClient.Services;
 using LabelPrintClient.Infrastructure;
 using Stimulsoft.Report;
@@ -49,6 +51,20 @@ public partial class App : System.Windows.Application
             await PermissionBootstrapper.SyncAsync();
             AppLogger.LogInfo("数据库表与权限资源初始化完成");
 
+            LicenseManager.Initialize(Settings);
+            var licenseResult = await LicenseManager.ValidateStartupAsync();
+            if (!licenseResult.IsValid)
+            {
+                AppLogger.LogInfo($"授权校验未通过：{licenseResult.Status} - {licenseResult.Message}");
+                var licenseWindow = new LicenseActivationWindow(Settings, licenseResult);
+                if (licenseWindow.ShowDialog() != true)
+                {
+                    AppLogger.LogInfo("用户取消授权，应用退出");
+                    Shutdown();
+                    return;
+                }
+            }
+
             if (!await ShowAuthFlowAsync())
             {
                 AppLogger.LogInfo("用户取消登录，应用退出");
@@ -59,6 +75,7 @@ public partial class App : System.Windows.Application
             var mainWindow = new MainWindow();
             MainWindow = mainWindow;
             mainWindow.Show();
+            LicenseManager.StartHeartbeat(Settings, OnLicenseExpired);
             ShutdownMode = ShutdownMode.OnMainWindowClose;
             AppLogger.LogInfo("主窗口已显示");
         }
@@ -72,6 +89,33 @@ public partial class App : System.Windows.Application
                 MessageBoxImage.Error);
             Shutdown();
         }
+    }
+
+    protected override void OnExit(ExitEventArgs e)
+    {
+        try
+        {
+            LicenseManager.ReleaseAsync().GetAwaiter().GetResult();
+        }
+        catch
+        {
+        }
+
+        base.OnExit(e);
+    }
+
+    private void OnLicenseExpired(LabelPrintClient.Modules.License.Models.LicenseResult result)
+    {
+        Dispatcher.Invoke(() =>
+        {
+            AppLogger.LogInfo($"授权运行时失效：{result.Status} - {result.Message}");
+            AppMessageBox.Show(
+                AppLanguageService.Format("License.RuntimeExpired", result.Message),
+                AppLanguageService.GetString("License.WindowTitle"),
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning);
+            Shutdown();
+        });
     }
 
     private static async Task<bool> ShowAuthFlowAsync()

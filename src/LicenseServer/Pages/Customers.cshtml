@@ -1,0 +1,25 @@
+@page
+@model LicenseServer.Pages.CustomersModel
+@{
+    ViewData["Title"] = "Customers";
+}
+
+<h1>客户维护</h1>
+<form method="post" class="row g-2 mb-4">
+    <input type="hidden" asp-for="Input.Id" />
+    <div class="col-md-3"><input asp-for="Input.Name" class="form-control" placeholder="客户名称" /></div>
+    <div class="col-md-2"><input asp-for="Input.Contact" class="form-control" placeholder="联系人" /></div>
+    <div class="col-md-4"><input asp-for="Input.Remark" class="form-control" placeholder="备注" /></div>
+    <div class="col-md-1 form-check pt-2"><input asp-for="Input.IsEnabled" class="form-check-input" /> <label class="form-check-label">启用</label></div>
+    <div class="col-md-2"><button class="btn btn-primary" type="submit">保存</button></div>
+</form>
+
+<table class="table table-sm table-striped">
+    <thead><tr><th>客户</th><th>联系人</th><th>状态</th><th>备注</th></tr></thead>
+    <tbody>
+    @foreach (var item in Model.Customers)
+    {
+        <tr><td>@item.Name</td><td>@item.Contact</td><td>@(item.IsEnabled ? "启用" : "禁用")</td><td>@item.Remark</td></tr>
+    }
+    </tbody>
+</table>

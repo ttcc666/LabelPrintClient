@@ -86,6 +86,24 @@
     <sys:String x:Key="App.FatalError">A fatal error occurred and the application will close.&#x0a;Error: {0}&#x0a;&#x0a;See log files under the local logs folder for details.</sys:String>
     <sys:String x:Key="App.UnknownException">Unknown exception</sys:String>
 
+    <sys:String x:Key="License.WindowTitle">License</sys:String>
+    <sys:String x:Key="License.Title">Software License Check</sys:String>
+    <sys:String x:Key="License.Hint">Import a standalone license file, or configure a floating license server and validate again.</sys:String>
+    <sys:String x:Key="License.SettingsTitle">License Configuration</sys:String>
+    <sys:String x:Key="License.Status">License status</sys:String>
+    <sys:String x:Key="License.StatusUnknown">License has not been checked.</sys:String>
+    <sys:String x:Key="License.Mode">License mode</sys:String>
+    <sys:String x:Key="License.ModeStandalone">Standalone</sys:String>
+    <sys:String x:Key="License.ModeFloating">Floating / concurrent</sys:String>
+    <sys:String x:Key="License.ProductCode">Product code</sys:String>
+    <sys:String x:Key="License.ProductCodeRequired">Product code is required.</sys:String>
+    <sys:String x:Key="License.MachineCode">Machine code</sys:String>
+    <sys:String x:Key="License.FilePath">Standalone license file</sys:String>
+    <sys:String x:Key="License.ServerUrl">Floating license server</sys:String>
+    <sys:String x:Key="License.AccessKey">Floating license AccessKey</sys:String>
+    <sys:String x:Key="License.Validate">Validate license</sys:String>
+    <sys:String x:Key="License.RuntimeExpired">License is no longer valid. The application will exit.&#x0a;Reason: {0}</sys:String>
+
     <sys:String x:Key="Settings.Title">Settings</sys:String>
     <sys:String x:Key="Settings.DataSource">Data Source</sys:String>
     <sys:String x:Key="Settings.RunMode">Run mode</sys:String>

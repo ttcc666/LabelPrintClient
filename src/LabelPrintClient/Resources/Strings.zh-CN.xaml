@@ -86,6 +86,24 @@
     <sys:String x:Key="App.FatalError">程序遭遇严重致命错误，即将关闭。&#x0a;错误信息：{0}&#x0a;&#x0a;详情请查看本地 logs 文件夹下的日志文件。</sys:String>
     <sys:String x:Key="App.UnknownException">未知异常</sys:String>
 
+    <sys:String x:Key="License.WindowTitle">授权使用</sys:String>
+    <sys:String x:Key="License.Title">软件授权校验</sys:String>
+    <sys:String x:Key="License.Hint">请导入单机授权文件，或配置浮动许可授权服务器后重新校验。</sys:String>
+    <sys:String x:Key="License.SettingsTitle">授权使用配置</sys:String>
+    <sys:String x:Key="License.Status">授权状态</sys:String>
+    <sys:String x:Key="License.StatusUnknown">尚未执行授权校验。</sys:String>
+    <sys:String x:Key="License.Mode">授权模式</sys:String>
+    <sys:String x:Key="License.ModeStandalone">单机授权</sys:String>
+    <sys:String x:Key="License.ModeFloating">浮动许可 / 并发授权</sys:String>
+    <sys:String x:Key="License.ProductCode">产品编码</sys:String>
+    <sys:String x:Key="License.ProductCodeRequired">产品编码不能为空。</sys:String>
+    <sys:String x:Key="License.MachineCode">机器码</sys:String>
+    <sys:String x:Key="License.FilePath">单机授权文件</sys:String>
+    <sys:String x:Key="License.ServerUrl">浮动授权服务器</sys:String>
+    <sys:String x:Key="License.AccessKey">浮动许可 AccessKey</sys:String>
+    <sys:String x:Key="License.Validate">重新校验授权</sys:String>
+    <sys:String x:Key="License.RuntimeExpired">授权已失效，应用即将退出。&#x0a;原因：{0}</sys:String>
+
     <sys:String x:Key="Settings.Title">系统配置</sys:String>
     <sys:String x:Key="Settings.DataSource">数据源连接配置</sys:String>
     <sys:String x:Key="Settings.RunMode">运行模式</sys:String>
