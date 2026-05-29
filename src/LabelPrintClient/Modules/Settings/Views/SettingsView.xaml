@@ -319,6 +319,54 @@
                         </StackPanel>
                     </Border>
 
+                    <!-- 卡片 5：客户端更新 -->
+                    <Border Style="{StaticResource AppCardStyle}" Padding="20" Margin="0,0,0,16">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                                <iconPacks:PackIconMaterial Kind="Update" Foreground="{DynamicResource PrimaryBrush}" Width="16" Height="16" VerticalAlignment="Center" />
+                                <TextBlock Style="{StaticResource ConfigTitleStyle}" Text="{DynamicResource Update.SettingsTitle}" />
+                            </StackPanel>
+
+                            <StackPanel Margin="0,0,0,14">
+                                <TextBlock Text="{DynamicResource Update.CurrentVersion}" Style="{StaticResource ConfigLabelStyle}" />
+                                <TextBlock x:Name="CurrentVersionText"
+                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                           FontSize="12.5"
+                                           TextWrapping="Wrap" />
+                            </StackPanel>
+
+                            <StackPanel Margin="0,0,0,14">
+                                <TextBlock Text="{DynamicResource Update.ServerUrl}" Style="{StaticResource ConfigLabelStyle}" />
+                                <TextBox x:Name="UpdateServerUrlBox" Padding="8,6" />
+                            </StackPanel>
+
+                            <Grid Margin="0,0,0,14">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="1*" />
+                                    <ColumnDefinition Width="1.2*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                                    <TextBlock Text="{DynamicResource Update.Channel}" Style="{StaticResource ConfigLabelStyle}" />
+                                    <TextBox x:Name="UpdateChannelBox" Padding="8,6" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Bottom" Margin="12,0,0,8">
+                                    <CheckBox x:Name="AutoCheckUpdatesBox" Content="{DynamicResource Update.AutoCheck}" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Grid>
+
+                            <Button x:Name="CheckUpdatesButton"
+                                    Style="{StaticResource AppSecondaryButtonStyle}"
+                                    Click="CheckUpdates_Click"
+                                    HorizontalAlignment="Left"
+                                    auth:PermissionAssist.PermissionKey="Button.Settings.Save">
+                                <StackPanel Orientation="Horizontal">
+                                    <iconPacks:PackIconMaterial Kind="CloudSync" Margin="0,0,6,0" VerticalAlignment="Center" Width="14" Height="14" />
+                                    <TextBlock Text="{DynamicResource Update.CheckNow}" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Border>
+
                     <!-- 运行模式重启生效警告 -->
                     <Border CornerRadius="8" 
                             Background="#0D0066FF" 

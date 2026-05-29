@@ -17,4 +17,8 @@ public sealed class LicenseServerOptions
     public string? MasterKey { get; set; }
 
     public string? PublicKeyPem { get; set; }
+
+    public string UpdatePackageRoot { get; set; } = "Data/updates";
+
+    public long MaxUpdateUploadBytes { get; set; } = 500L * 1024 * 1024;
 }

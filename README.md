@@ -124,3 +124,11 @@ STI 文本组件可以绑定：
 当前应用主体仍是 WPF，Stimulsoft 预览和设计器使用 WinForms 独立窗口打开。Stimulsoft 调用集中在 `Services/Stimulsoft` 和打印服务中；如果你的本地 Stimulsoft 版本 API 有微小差异，只需要调整这一层。
 
 Stimulsoft 设计器和预览默认加载 `Localization/zh-CHS.xml` 简体中文语言文件；该文件在构建时从 `Stimulsoft.Reports.Engine` NuGet 包复制到输出目录。
+
+## 客户端更新发布
+
+客户端自动更新使用 `LicenseServer` 托管 Velopack release。发布新版时参考：
+
+```text
+docs/update-release.md
+```

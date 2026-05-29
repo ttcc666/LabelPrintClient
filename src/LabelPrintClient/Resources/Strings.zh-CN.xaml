@@ -176,6 +176,28 @@
     <sys:String x:Key="Settings.ConnectionTestTitle">连接测试</sys:String>
     <sys:String x:Key="Settings.BackupRestoreTitle">数据备份 / 恢复</sys:String>
 
+    <sys:String x:Key="Update.Title">客户端更新</sys:String>
+    <sys:String x:Key="Update.SettingsTitle">客户端更新</sys:String>
+    <sys:String x:Key="Update.CurrentVersion">当前版本</sys:String>
+    <sys:String x:Key="Update.ServerUrl">更新服务器</sys:String>
+    <sys:String x:Key="Update.Channel">更新通道</sys:String>
+    <sys:String x:Key="Update.AutoCheck">启动后自动检查更新</sys:String>
+    <sys:String x:Key="Update.CheckNow">检查更新</sys:String>
+    <sys:String x:Key="Update.Checking">正在检查客户端更新...</sys:String>
+    <sys:String x:Key="Update.Checked">更新检查完成：{0:HH:mm:ss}</sys:String>
+    <sys:String x:Key="Update.AlreadyRunning">已有更新检查或安装正在执行。</sys:String>
+    <sys:String x:Key="Update.NoUpdate">当前已是最新版本：{0}</sys:String>
+    <sys:String x:Key="Update.CheckFailed">检查更新失败：{0}</sys:String>
+    <sys:String x:Key="Update.ServerUrlInvalid">更新服务器必须是有效的 http/https 地址。</sys:String>
+    <sys:String x:Key="Update.ChannelRequired">更新通道不能为空。</sys:String>
+    <sys:String x:Key="Update.NoReleaseNotes">本次更新未填写更新说明。</sys:String>
+    <sys:String x:Key="Update.AvailablePrompt">发现新版本 {0}。&#x0a;&#x0a;更新说明：&#x0a;{1}&#x0a;&#x0a;是否立即下载并安装？</sys:String>
+    <sys:String x:Key="Update.MandatoryPrompt">发现强制更新版本 {0}。必须更新后才能继续使用。&#x0a;&#x0a;更新说明：&#x0a;{1}&#x0a;&#x0a;是否立即下载并安装？</sys:String>
+    <sys:String x:Key="Update.NotVelopackInstalled">当前程序不是通过 Velopack 安装的版本，无法自动应用更新。请使用正式安装包安装后再使用自动更新。</sys:String>
+    <sys:String x:Key="Update.Downloading">正在下载版本 {0} 更新包...</sys:String>
+    <sys:String x:Key="Update.VelopackNoUpdate">更新源未返回可安装的 Velopack 更新包。</sys:String>
+    <sys:String x:Key="Update.ReadyRestart">版本 {0} 已下载完成。是否立即重启并完成安装？</sys:String>
+
     <sys:String x:Key="PrintCenter.Title">标签打印中心</sys:String>
     <sys:String x:Key="PrintCenter.Category">分类</sys:String>
     <sys:String x:Key="PrintCenter.Template">模板</sys:String>

@@ -39,4 +39,10 @@ public class AppSettings
     public int LicenseHeartbeatIntervalSeconds { get; set; } = 30;
 
     public int LicenseHeartbeatTimeoutSeconds { get; set; } = 120;
+
+    public string UpdateServerUrl { get; set; } = "https://127.0.0.1:5001/";
+
+    public string UpdateChannel { get; set; } = "stable";
+
+    public bool AutoCheckUpdates { get; set; } = true;
 }

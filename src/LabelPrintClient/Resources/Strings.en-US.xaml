@@ -176,6 +176,28 @@
     <sys:String x:Key="Settings.ConnectionTestTitle">Connection Test</sys:String>
     <sys:String x:Key="Settings.BackupRestoreTitle">Backup / Restore</sys:String>
 
+    <sys:String x:Key="Update.Title">Client Update</sys:String>
+    <sys:String x:Key="Update.SettingsTitle">Client Update</sys:String>
+    <sys:String x:Key="Update.CurrentVersion">Current version</sys:String>
+    <sys:String x:Key="Update.ServerUrl">Update server</sys:String>
+    <sys:String x:Key="Update.Channel">Update channel</sys:String>
+    <sys:String x:Key="Update.AutoCheck">Check for updates after startup</sys:String>
+    <sys:String x:Key="Update.CheckNow">Check for updates</sys:String>
+    <sys:String x:Key="Update.Checking">Checking for client updates...</sys:String>
+    <sys:String x:Key="Update.Checked">Update check completed: {0:HH:mm:ss}</sys:String>
+    <sys:String x:Key="Update.AlreadyRunning">An update check or installation is already running.</sys:String>
+    <sys:String x:Key="Update.NoUpdate">You are already on the latest version: {0}</sys:String>
+    <sys:String x:Key="Update.CheckFailed">Update check failed: {0}</sys:String>
+    <sys:String x:Key="Update.ServerUrlInvalid">Update server must be a valid http/https URL.</sys:String>
+    <sys:String x:Key="Update.ChannelRequired">Update channel is required.</sys:String>
+    <sys:String x:Key="Update.NoReleaseNotes">No release notes were provided for this update.</sys:String>
+    <sys:String x:Key="Update.AvailablePrompt">New version {0} is available.&#x0a;&#x0a;Release notes:&#x0a;{1}&#x0a;&#x0a;Download and install now?</sys:String>
+    <sys:String x:Key="Update.MandatoryPrompt">Mandatory version {0} is available. You must update before continuing.&#x0a;&#x0a;Release notes:&#x0a;{1}&#x0a;&#x0a;Download and install now?</sys:String>
+    <sys:String x:Key="Update.NotVelopackInstalled">This program was not installed by Velopack, so automatic update installation is unavailable. Install the official setup package first.</sys:String>
+    <sys:String x:Key="Update.Downloading">Downloading update package for version {0}...</sys:String>
+    <sys:String x:Key="Update.VelopackNoUpdate">The update source did not return an installable Velopack package.</sys:String>
+    <sys:String x:Key="Update.ReadyRestart">Version {0} has been downloaded. Restart now to complete installation?</sys:String>
+
     <sys:String x:Key="PrintCenter.Title">Print Center</sys:String>
     <sys:String x:Key="PrintCenter.Category">Category</sys:String>
     <sys:String x:Key="PrintCenter.Template">Template</sys:String>

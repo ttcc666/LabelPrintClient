@@ -117,7 +117,10 @@ public class SettingsFunctionalTests
                 LicenseAccessKey = "access-key",
                 StandaloneLicenseFilePath = "license-test.json",
                 LicenseHeartbeatIntervalSeconds = 15,
-                LicenseHeartbeatTimeoutSeconds = 60
+                LicenseHeartbeatTimeoutSeconds = 60,
+                UpdateServerUrl = "https://updates.example/",
+                UpdateChannel = "stable",
+                AutoCheckUpdates = false
             };
 
             AppConfigService.Save(settings);
@@ -140,6 +143,9 @@ public class SettingsFunctionalTests
             Assert.Equal("license-test.json", loaded.StandaloneLicenseFilePath);
             Assert.Equal(15, loaded.LicenseHeartbeatIntervalSeconds);
             Assert.Equal(60, loaded.LicenseHeartbeatTimeoutSeconds);
+            Assert.Equal("https://updates.example/", loaded.UpdateServerUrl);
+            Assert.Equal("stable", loaded.UpdateChannel);
+            Assert.False(loaded.AutoCheckUpdates);
         }
         finally
         {

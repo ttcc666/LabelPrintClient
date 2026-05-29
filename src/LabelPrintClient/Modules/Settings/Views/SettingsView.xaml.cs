@@ -9,6 +9,7 @@ using LabelPrintClient.Modules.Auth.Services;
 using LabelPrintClient.Modules.License.Models;
 using LabelPrintClient.Modules.License.Services;
 using LabelPrintClient.Modules.Settings.Services;
+using LabelPrintClient.Modules.Update.Services;
 using LabelPrintClient.Services;
 using WinForms = System.Windows.Forms;
 
@@ -243,6 +244,10 @@ public partial class SettingsView : System.Windows.Controls.UserControl
         LicenseServerUrlBox.Text = settings.LicenseServerUrl;
         LicenseAccessKeyBox.Password = settings.LicenseAccessKey;
         MachineCodeBox.Text = LicenseManager.MachineCode;
+        CurrentVersionText.Text = ClientUpdateService.CurrentVersion;
+        UpdateServerUrlBox.Text = settings.UpdateServerUrl;
+        UpdateChannelBox.Text = settings.UpdateChannel;
+        AutoCheckUpdatesBox.IsChecked = settings.AutoCheckUpdates;
     }
 
     private bool TryBuildSettings(out AppSettings settings, out string errorMessage)
@@ -267,6 +272,9 @@ public partial class SettingsView : System.Windows.Controls.UserControl
         var licenseFilePath = LicenseFilePathBox.Text.Trim();
         var licenseServerUrl = LicenseServerUrlBox.Text.Trim();
         var licenseAccessKey = LicenseAccessKeyBox.Password.Trim();
+        var updateServerUrl = UpdateServerUrlBox.Text.Trim();
+        var updateChannel = UpdateChannelBox.Text.Trim();
+        var autoCheckUpdates = AutoCheckUpdatesBox.IsChecked == true;
 
         if (runMode == AppRunMode.LocalSqlite && string.IsNullOrWhiteSpace(sqliteConnection))
         {
@@ -300,6 +308,20 @@ public partial class SettingsView : System.Windows.Controls.UserControl
             return false;
         }
 
+        if (string.IsNullOrWhiteSpace(updateServerUrl) ||
+            !Uri.TryCreate(updateServerUrl, UriKind.Absolute, out var parsedUpdateServerUrl) ||
+            (parsedUpdateServerUrl.Scheme != Uri.UriSchemeHttp && parsedUpdateServerUrl.Scheme != Uri.UriSchemeHttps))
+        {
+            errorMessage = AppLanguageService.GetString("Update.ServerUrlInvalid");
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(updateChannel))
+        {
+            errorMessage = AppLanguageService.GetString("Update.ChannelRequired");
+            return false;
+        }
+
         settings.RunMode = runMode;
         settings.SqliteConnection = sqliteConnection;
         settings.PostgreSqlConnection = postgreSqlConnection;
@@ -318,6 +340,9 @@ public partial class SettingsView : System.Windows.Controls.UserControl
         settings.LicenseAccessKey = licenseAccessKey;
         settings.LicenseHeartbeatIntervalSeconds = App.Settings.LicenseHeartbeatIntervalSeconds;
         settings.LicenseHeartbeatTimeoutSeconds = App.Settings.LicenseHeartbeatTimeoutSeconds;
+        settings.UpdateServerUrl = updateServerUrl;
+        settings.UpdateChannel = updateChannel;
+        settings.AutoCheckUpdates = autoCheckUpdates;
         return true;
     }
 
@@ -478,7 +503,37 @@ public partial class SettingsView : System.Windows.Controls.UserControl
         App.Settings.StandaloneLicenseFilePath = settings.StandaloneLicenseFilePath;
         App.Settings.LicenseHeartbeatIntervalSeconds = settings.LicenseHeartbeatIntervalSeconds;
         App.Settings.LicenseHeartbeatTimeoutSeconds = settings.LicenseHeartbeatTimeoutSeconds;
+        App.Settings.UpdateServerUrl = settings.UpdateServerUrl;
+        App.Settings.UpdateChannel = settings.UpdateChannel;
+        App.Settings.AutoCheckUpdates = settings.AutoCheckUpdates;
         LicenseManager.Initialize(App.Settings);
+    }
+
+    private async void CheckUpdates_Click(object sender, RoutedEventArgs e)
+    {
+        if (!AuthorizationService.EnsurePermission(Permissions.SettingsSave, "检查客户端更新")) return;
+
+        if (!TryBuildSettings(out var settings, out var errorMessage))
+        {
+            AppMessageBox.Show(errorMessage, AppLanguageService.GetString("Settings.ValidationFailedTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        var element = sender as UIElement;
+        if (element != null)
+            element.IsEnabled = false;
+
+        StatusText.Text = AppLanguageService.GetString("Update.Checking");
+        try
+        {
+            await ClientUpdateService.CheckAndPromptAsync(settings, manual: true);
+            StatusText.Text = AppLanguageService.Format("Update.Checked", DateTime.Now);
+        }
+        finally
+        {
+            if (element != null)
+                element.IsEnabled = true;
+        }
     }
 
     private void BrowseLicenseFile_Click(object sender, RoutedEventArgs e)

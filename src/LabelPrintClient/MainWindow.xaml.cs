@@ -7,6 +7,7 @@ using LabelPrintClient.Modules.PrintHistory.Views;
 using LabelPrintClient.Modules.Settings.Views;
 using LabelPrintClient.Modules.TaskCenter.Views;
 using LabelPrintClient.Modules.Template.Views;
+using LabelPrintClient.Modules.Update.Services;
 using LabelPrintClient.Services;
 using System.Windows;
 using System.Windows.Controls;
@@ -37,6 +38,7 @@ public partial class MainWindow : HandyControl.Controls.Window
         {
             HandyControl.Controls.Growl.Register(AppMessageBox.ToastToken, ToastHost);
             SelectFirstAllowedNavigation();
+            _ = ClientUpdateService.CheckAndPromptAsync(App.Settings, manual: false);
         };
         Closed += (_, _) =>
         {

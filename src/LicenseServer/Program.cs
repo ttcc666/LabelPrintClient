@@ -3,10 +3,16 @@ using LicenseServer.Config;
 using LicenseServer.Infrastructure;
 using LicenseServer.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Http.Features;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.Configure<LicenseServerOptions>(builder.Configuration.GetSection("LicenseServer"));
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = builder.Configuration.GetSection("LicenseServer").Get<LicenseServerOptions>()?.MaxUpdateUploadBytes
+                                       ?? 500L * 1024 * 1024;
+});
 builder.Services.AddSingleton<LicenseDb>();
 builder.Services.AddScoped<AdminAuthService>();
 builder.Services.AddScoped<PrivateKeyProtector>();
@@ -14,6 +20,7 @@ builder.Services.AddScoped<SigningKeyService>();
 builder.Services.AddScoped<StandaloneLicenseGenerator>();
 builder.Services.AddScoped<LicenseValidator>();
 builder.Services.AddScoped<FloatingLicenseService>();
+builder.Services.AddScoped<UpdateReleaseService>();
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
@@ -46,6 +53,7 @@ app.UseMiddleware<SetupRedirectMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapLicenseApi();
+app.MapUpdateApi();
 app.MapRazorPages();
 app.Run();
 

@@ -11,5 +11,6 @@ public static class DbInitializer
         db.Db.CodeFirst.InitTables<OnlineSession>();
         db.Db.CodeFirst.InitTables<SigningKey>();
         db.Db.CodeFirst.InitTables<AdminUser>();
+        db.Db.CodeFirst.InitTables<UpdateRelease>();
     }
 }

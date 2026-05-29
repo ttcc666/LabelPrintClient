@@ -1,0 +1,159 @@
+@page
+@model LicenseServer.Pages.UpdatesModel
+@{
+    ViewData["Title"] = "更新发布管理 (Updates)";
+}
+
+<div class="console-card">
+    <div class="card-title-bar">
+        <h5 class="card-heading">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M21 12a9 9 0 11-2.64-6.36"/>
+                <path d="M21 3v6h-6"/>
+                <path d="M12 7v5l3 2"/>
+            </svg>
+            上传 Velopack Release
+        </h5>
+    </div>
+
+    <form method="post" asp-page-handler="Upload" enctype="multipart/form-data" class="row g-3">
+        <div class="col-md-3">
+            <label asp-for="Input.ProductCode" class="form-label">产品编码</label>
+            <input asp-for="Input.ProductCode" class="form-control" />
+        </div>
+        <div class="col-md-2">
+            <label asp-for="Input.Channel" class="form-label">发布通道</label>
+            <input asp-for="Input.Channel" class="form-control" />
+        </div>
+        <div class="col-md-2">
+            <label asp-for="Input.Version" class="form-label">版本号</label>
+            <input asp-for="Input.Version" class="form-control" placeholder="1.2.0" />
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+            <div class="form-check mb-2">
+                <input asp-for="Input.IsMandatory" class="form-check-input" />
+                <label asp-for="Input.IsMandatory" class="form-check-label">强制更新</label>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <label asp-for="ReleaseZip" class="form-label">Release 目录 zip</label>
+            <input asp-for="ReleaseZip" type="file" accept=".zip" class="form-control" required />
+        </div>
+        <div class="col-12">
+            <label asp-for="Input.ReleaseNotes" class="form-label">更新说明</label>
+            <textarea asp-for="Input.ReleaseNotes" rows="3" class="form-control" placeholder="填写本次更新修复内容、注意事项或强制更新原因。"></textarea>
+        </div>
+        <div class="col-12 d-flex justify-content-end">
+            <button class="btn btn-primary" type="submit">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <path d="M17 8l-5-5-5 5"/>
+                    <path d="M12 3v12"/>
+                </svg>
+                上传并登记
+            </button>
+        </div>
+    </form>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(Model.Message))
+{
+    var success = Model.Message.Contains("成功") || Model.Message.Contains("启用") || Model.Message.Contains("禁用") || Model.Message.Contains("删除") || Model.Message.Contains("强制");
+    <div class="alert @(success ? "alert-success" : "alert-danger") py-2 mb-4">
+        @Model.Message
+    </div>
+}
+
+<div class="table-responsive">
+    <table class="console-table align-middle">
+        <thead>
+            <tr>
+                <th>产品</th>
+                <th>通道</th>
+                <th>版本</th>
+                <th>状态</th>
+                <th>强制</th>
+                <th>文件</th>
+                <th>SHA256</th>
+                <th>上传时间</th>
+                <th style="width: 330px;">操作</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var item in Model.Items)
+        {
+            <tr>
+                <td><code style="font-size: 0.85rem; color: #0284c7; background-color: var(--primary-light); padding: 0.15rem 0.45rem; border-radius: 4px;">@item.ProductCode</code></td>
+                <td><span class="badge bg-secondary">@item.Channel</span></td>
+                <td style="font-weight: 700;">@item.Version</td>
+                <td>
+                    @if (item.IsEnabled)
+                    {
+                        <span class="badge bg-success">已启用</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary">已禁用</span>
+                    }
+                </td>
+                <td>
+                    @if (item.IsMandatory)
+                    {
+                        <span class="badge badge-warning">强制</span>
+                    }
+                    else
+                    {
+                        <span class="text-muted">普通</span>
+                    }
+                </td>
+                <td>
+                    <div><code>@item.FeedFileName</code></div>
+                    <div class="text-muted small">@($"{item.FileSizeBytes / 1024.0 / 1024.0:F2} MB")</div>
+                </td>
+                <td><code style="font-size: 0.75rem;">@item.Sha256[..Math.Min(12, item.Sha256.Length)]...</code></td>
+                <td>@item.CreateTime.ToString("yyyy-MM-dd HH:mm")</td>
+                <td>
+                    <div class="d-flex flex-wrap gap-2">
+                        <form method="post" asp-page-handler="ToggleEnabled" asp-route-id="@item.Id" class="m-0">
+                            <input type="hidden" name="enabled" value="@(!item.IsEnabled)" />
+                            <button class="btn btn-sm btn-outline-primary py-1" type="submit">
+                                @(item.IsEnabled ? "禁用" : "启用")
+                            </button>
+                        </form>
+                        <form method="post" asp-page-handler="ToggleMandatory" asp-route-id="@item.Id" class="m-0">
+                            <input type="hidden" name="mandatory" value="@(!item.IsMandatory)" />
+                            <button class="btn btn-sm btn-outline-primary py-1" type="submit">
+                                @(item.IsMandatory ? "取消强制" : "设为强制")
+                            </button>
+                        </form>
+                        <form method="post" asp-page-handler="Delete" asp-route-id="@item.Id" class="m-0" onsubmit="return confirm('确定只删除该更新版本记录吗？包文件会保留在磁盘中。');">
+                            <input type="hidden" name="deleteFiles" value="false" />
+                            <button class="btn btn-sm btn-outline-danger py-1" type="submit">删记录</button>
+                        </form>
+                        <form method="post" asp-page-handler="Delete" asp-route-id="@item.Id" class="m-0" onsubmit="return confirm('确定删除该更新版本记录并同时删除包文件吗？');">
+                            <input type="hidden" name="deleteFiles" value="true" />
+                            <button class="btn btn-sm btn-outline-danger py-1" type="submit">删除含文件</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            @if (!string.IsNullOrWhiteSpace(item.ReleaseNotes))
+            {
+                <tr>
+                    <td colspan="9" class="text-muted small" style="background: #fff;">
+                        <strong>更新说明：</strong>@item.ReleaseNotes
+                    </td>
+                </tr>
+            }
+        }
+        @if (!Model.Items.Any())
+        {
+            <tr>
+                <td colspan="9" class="text-center text-muted py-4">
+                    暂无更新版本。请先用 vpk pack 生成 Velopack release 目录，压缩为 zip 后上传。
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>
