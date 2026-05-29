@@ -92,6 +92,8 @@
     <sys:String x:Key="License.SettingsTitle">授权使用配置</sys:String>
     <sys:String x:Key="License.Status">授权状态</sys:String>
     <sys:String x:Key="License.StatusUnknown">尚未执行授权校验。</sys:String>
+    <sys:String x:Key="License.StatusStandaloneValid">单机授权有效。</sys:String>
+    <sys:String x:Key="License.StatusFloatingValid">浮动授权有效。</sys:String>
     <sys:String x:Key="License.Mode">授权模式</sys:String>
     <sys:String x:Key="License.ModeStandalone">单机授权</sys:String>
     <sys:String x:Key="License.ModeFloating">浮动许可 / 并发授权</sys:String>

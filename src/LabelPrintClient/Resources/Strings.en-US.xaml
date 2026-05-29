@@ -92,6 +92,8 @@
     <sys:String x:Key="License.SettingsTitle">License Configuration</sys:String>
     <sys:String x:Key="License.Status">License status</sys:String>
     <sys:String x:Key="License.StatusUnknown">License has not been checked.</sys:String>
+    <sys:String x:Key="License.StatusStandaloneValid">Standalone license is valid.</sys:String>
+    <sys:String x:Key="License.StatusFloatingValid">Floating license is valid.</sys:String>
     <sys:String x:Key="License.Mode">License mode</sys:String>
     <sys:String x:Key="License.ModeStandalone">Standalone</sys:String>
     <sys:String x:Key="License.ModeFloating">Floating / concurrent</sys:String>

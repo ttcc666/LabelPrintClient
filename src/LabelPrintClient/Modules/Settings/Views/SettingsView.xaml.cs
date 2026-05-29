@@ -28,6 +28,21 @@ public partial class SettingsView : System.Windows.Controls.UserControl
             LoadPrinters();
             LoadSettings();
         };
+        AppLanguageService.LanguageChanged += AppLanguageService_LanguageChanged;
+    }
+
+    private void AppLanguageService_LanguageChanged(object? sender, AppLanguage language)
+    {
+        if (!Dispatcher.CheckAccess())
+        {
+            Dispatcher.Invoke(() => AppLanguageService_LanguageChanged(sender, language));
+            return;
+        }
+
+        LoadPrinters();
+        SelectDefaultPrinter(App.Settings.DefaultPrinterName);
+        UpdateBackupState();
+        UpdateLicenseStatusText();
     }
 
     private void Reload_Click(object sender, RoutedEventArgs e)
@@ -611,7 +626,7 @@ public partial class SettingsView : System.Windows.Controls.UserControl
         try
         {
             var result = await ValidateLicenseSettingsAsync(settings);
-            LicenseStatusText.Text = result.Message;
+            LicenseStatusText.Text = GetLicenseStatusText(result);
             LicenseStatusText.Foreground = result.IsValid
                 ? System.Windows.Media.Brushes.ForestGreen
                 : System.Windows.Media.Brushes.IndianRed;
@@ -628,10 +643,22 @@ public partial class SettingsView : System.Windows.Controls.UserControl
         var result = LicenseManager.Current;
         LicenseStatusText.Text = result == null
             ? AppLanguageService.GetString("License.StatusUnknown")
-            : result.Message;
+            : GetLicenseStatusText(result);
         LicenseStatusText.Foreground = result?.IsValid == true
             ? System.Windows.Media.Brushes.ForestGreen
             : System.Windows.Media.Brushes.IndianRed;
+    }
+
+    private static string GetLicenseStatusText(LicenseResult result)
+    {
+        if (result.IsValid)
+        {
+            return result.Mode == LicenseMode.Floating
+                ? AppLanguageService.GetString("License.StatusFloatingValid")
+                : AppLanguageService.GetString("License.StatusStandaloneValid");
+        }
+
+        return result.Message;
     }
 
     private void UpdateBackupState()
