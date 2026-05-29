@@ -7,11 +7,22 @@ using Microsoft.AspNetCore.Http.Features;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var licenseServerOptions = builder.Configuration.GetSection("LicenseServer").Get<LicenseServerOptions>() ?? new LicenseServerOptions();
+var maxUpdateUploadBytes = licenseServerOptions.MaxUpdateUploadBytes;
+
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.Limits.MaxRequestBodySize = maxUpdateUploadBytes;
+});
+
 builder.Services.Configure<LicenseServerOptions>(builder.Configuration.GetSection("LicenseServer"));
+builder.Services.Configure<IISServerOptions>(options =>
+{
+    options.MaxRequestBodySize = maxUpdateUploadBytes;
+});
 builder.Services.Configure<FormOptions>(options =>
 {
-    options.MultipartBodyLengthLimit = builder.Configuration.GetSection("LicenseServer").Get<LicenseServerOptions>()?.MaxUpdateUploadBytes
-                                       ?? 500L * 1024 * 1024;
+    options.MultipartBodyLengthLimit = maxUpdateUploadBytes;
 });
 builder.Services.AddSingleton<LicenseDb>();
 builder.Services.AddScoped<AdminAuthService>();
