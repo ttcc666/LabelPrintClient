@@ -94,11 +94,16 @@ public class SettingsFunctionalTests
     [Trait("Category", "Functional")]
     public void AppConfigService_SaveThenLoad_PreservesSettings()
     {
+        using var temp = new TempFolder();
+        using var configScope = new AppConfigDataDirectoryScope(temp.Path);
         var configPath = AppConfigService.GetConfigPath();
         var hadOriginal = File.Exists(configPath);
         var original = hadOriginal ? File.ReadAllText(configPath) : null;
         try
         {
+            var expectedDbPath = Path.Combine(temp.Path, "Data/test.db");
+            var expectedTemplateFolder = Path.Combine(temp.Path, "TestTemplates");
+            var expectedLicensePath = Path.Combine(temp.Path, "license-test.json");
             var settings = new AppSettings
             {
                 RunMode = AppRunMode.LocalSqlite,
@@ -127,8 +132,8 @@ public class SettingsFunctionalTests
             var loaded = AppConfigService.LoadOrCreateDefault();
 
             Assert.Equal(AppRunMode.LocalSqlite, loaded.RunMode);
-            Assert.Equal("DataSource=Data/test.db", loaded.SqliteConnection);
-            Assert.Equal("TestTemplates", loaded.LocalTemplateFolder);
+            Assert.Equal($"DataSource={expectedDbPath}", loaded.SqliteConnection);
+            Assert.Equal(expectedTemplateFolder, loaded.LocalTemplateFolder);
             Assert.Equal("tester", loaded.OperatorName);
             Assert.Equal("Printer-01", loaded.DefaultPrinterName);
             Assert.Equal(3, loaded.DefaultPrintCopies);
@@ -140,7 +145,7 @@ public class SettingsFunctionalTests
             Assert.Equal("TEST_PRODUCT", loaded.ProductCode);
             Assert.Equal("https://license.example/", loaded.LicenseServerUrl);
             Assert.Equal("access-key", loaded.LicenseAccessKey);
-            Assert.Equal("license-test.json", loaded.StandaloneLicenseFilePath);
+            Assert.Equal(expectedLicensePath, loaded.StandaloneLicenseFilePath);
             Assert.Equal(15, loaded.LicenseHeartbeatIntervalSeconds);
             Assert.Equal(60, loaded.LicenseHeartbeatTimeoutSeconds);
             Assert.Equal("https://updates.example/", loaded.UpdateServerUrl);
@@ -161,6 +166,8 @@ public class SettingsFunctionalTests
     public async Task SqliteBackupService_Restore_ReplacesDatabaseAndTemplateFolder()
     {
         using var database = TestDatabase.Create();
+        using var configTemp = new TempFolder();
+        using var configScope = new AppConfigDataDirectoryScope(configTemp.Path);
         var templateFolder = database.Settings.LocalTemplateFolder;
         Directory.CreateDirectory(templateFolder);
         await File.WriteAllTextAsync(Path.Combine(templateFolder, "sample.mrt"), "original");
@@ -207,6 +214,23 @@ public class SettingsFunctionalTests
             catch
             {
             }
+        }
+    }
+
+    private sealed class AppConfigDataDirectoryScope : IDisposable
+    {
+        private const string VariableName = "LABELPRINTCLIENT_DATA_DIR";
+        private readonly string? _originalValue;
+
+        public AppConfigDataDirectoryScope(string path)
+        {
+            _originalValue = Environment.GetEnvironmentVariable(VariableName);
+            Environment.SetEnvironmentVariable(VariableName, path);
+        }
+
+        public void Dispose()
+        {
+            Environment.SetEnvironmentVariable(VariableName, _originalValue);
         }
     }
 }

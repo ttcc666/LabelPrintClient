@@ -121,6 +121,7 @@ public partial class SettingsView : System.Windows.Controls.UserControl
             bool dbChanged = settings.RunMode != App.Settings.RunMode ||
                              settings.SqliteConnection != App.Settings.SqliteConnection ||
                              settings.PostgreSqlConnection != App.Settings.PostgreSqlConnection;
+            bool licenseChanged = IsLicenseSettingsChanged(settings);
 
             if (dbChanged)
             {
@@ -131,6 +132,14 @@ public partial class SettingsView : System.Windows.Controls.UserControl
                     : settings.PostgreSqlConnection;
 
                 await ConnectionTestService.TestAsync(settings.RunMode, testConnectionString);
+            }
+
+            if (licenseChanged)
+            {
+                StatusText.Text = "正在校验新授权配置...";
+                var licenseResult = await ValidateLicenseSettingsAsync(settings).ConfigureAwait(true);
+                if (!licenseResult.IsValid)
+                    throw new InvalidOperationException(licenseResult.Message);
             }
 
             // 2. 预校验连通成功，写入物理 appsettings.json 配置文件
@@ -188,6 +197,14 @@ public partial class SettingsView : System.Windows.Controls.UserControl
             }
 
             ApplyToRuntimeSettings(settings);
+            if (licenseChanged)
+            {
+                ApplyLicenseToRuntimeSettings(settings);
+                var licenseResult = await LicenseManager.ReconfigureAsync(App.Settings).ConfigureAwait(true);
+                if (!licenseResult.IsValid)
+                    throw new InvalidOperationException(licenseResult.Message);
+            }
+
             StatusText.Text = AppLanguageService.Format("Settings.Saved", DateTime.Now);
             AppMessageBox.Show(AppLanguageService.GetString("Settings.SavedMessage"), AppLanguageService.GetString("Settings.SaveSuccess"), MessageBoxButton.OK, MessageBoxImage.Information);
         }
@@ -323,9 +340,11 @@ public partial class SettingsView : System.Windows.Controls.UserControl
         }
 
         settings.RunMode = runMode;
-        settings.SqliteConnection = sqliteConnection;
+        settings.SqliteConnection = string.IsNullOrWhiteSpace(sqliteConnection)
+            ? AppConfigService.CreateSqliteConnection(AppConfigService.GetDefaultSqliteDatabasePath())
+            : AppConfigService.NormalizeSqliteConnection(sqliteConnection, createDirectory: runMode == AppRunMode.LocalSqlite);
         settings.PostgreSqlConnection = postgreSqlConnection;
-        settings.LocalTemplateFolder = localTemplateFolder;
+        settings.LocalTemplateFolder = AppConfigService.ResolveTemplateFolder(localTemplateFolder);
         settings.OperatorName = App.Settings.OperatorName;
         settings.DefaultPrinterName = defaultPrinterName;
         settings.DefaultPrintCopies = defaultPrintCopies;
@@ -335,7 +354,9 @@ public partial class SettingsView : System.Windows.Controls.UserControl
         settings.Language = language;
         settings.LicenseMode = licenseMode;
         settings.ProductCode = productCode;
-        settings.StandaloneLicenseFilePath = licenseFilePath;
+        settings.StandaloneLicenseFilePath = string.IsNullOrWhiteSpace(licenseFilePath)
+            ? string.Empty
+            : AppConfigService.ResolveStandaloneLicenseFilePath(licenseFilePath);
         settings.LicenseServerUrl = licenseServerUrl;
         settings.LicenseAccessKey = licenseAccessKey;
         settings.LicenseHeartbeatIntervalSeconds = App.Settings.LicenseHeartbeatIntervalSeconds;
@@ -496,6 +517,15 @@ public partial class SettingsView : System.Windows.Controls.UserControl
         App.Settings.EnableSqlLogging = settings.EnableSqlLogging;
         App.Settings.ThemeMode = settings.ThemeMode;
         App.Settings.Language = settings.Language;
+        App.Settings.LicenseHeartbeatIntervalSeconds = settings.LicenseHeartbeatIntervalSeconds;
+        App.Settings.LicenseHeartbeatTimeoutSeconds = settings.LicenseHeartbeatTimeoutSeconds;
+        App.Settings.UpdateServerUrl = settings.UpdateServerUrl;
+        App.Settings.UpdateChannel = settings.UpdateChannel;
+        App.Settings.AutoCheckUpdates = settings.AutoCheckUpdates;
+    }
+
+    private static void ApplyLicenseToRuntimeSettings(AppSettings settings)
+    {
         App.Settings.LicenseMode = settings.LicenseMode;
         App.Settings.ProductCode = settings.ProductCode;
         App.Settings.LicenseServerUrl = settings.LicenseServerUrl;
@@ -503,10 +533,25 @@ public partial class SettingsView : System.Windows.Controls.UserControl
         App.Settings.StandaloneLicenseFilePath = settings.StandaloneLicenseFilePath;
         App.Settings.LicenseHeartbeatIntervalSeconds = settings.LicenseHeartbeatIntervalSeconds;
         App.Settings.LicenseHeartbeatTimeoutSeconds = settings.LicenseHeartbeatTimeoutSeconds;
-        App.Settings.UpdateServerUrl = settings.UpdateServerUrl;
-        App.Settings.UpdateChannel = settings.UpdateChannel;
-        App.Settings.AutoCheckUpdates = settings.AutoCheckUpdates;
-        LicenseManager.Initialize(App.Settings);
+    }
+
+    private static bool IsLicenseSettingsChanged(AppSettings settings)
+    {
+        return settings.LicenseMode != App.Settings.LicenseMode ||
+               !string.Equals(settings.ProductCode, App.Settings.ProductCode, StringComparison.Ordinal) ||
+               !string.Equals(settings.LicenseServerUrl, App.Settings.LicenseServerUrl, StringComparison.Ordinal) ||
+               !string.Equals(settings.LicenseAccessKey, App.Settings.LicenseAccessKey, StringComparison.Ordinal) ||
+               !string.Equals(settings.StandaloneLicenseFilePath, App.Settings.StandaloneLicenseFilePath, StringComparison.Ordinal);
+    }
+
+    private static async Task<LicenseResult> ValidateLicenseSettingsAsync(AppSettings settings)
+    {
+        var licenseService = new LicenseService(settings);
+        var result = await licenseService.ValidateStartupAsync().ConfigureAwait(false);
+        if (result.IsValid && settings.LicenseMode == LicenseMode.Floating)
+            await licenseService.ReleaseAsync().ConfigureAwait(false);
+
+        return result;
     }
 
     private async void CheckUpdates_Click(object sender, RoutedEventArgs e)
@@ -565,8 +610,7 @@ public partial class SettingsView : System.Windows.Controls.UserControl
 
         try
         {
-            LicenseManager.Initialize(settings);
-            var result = await LicenseManager.ValidateStartupAsync();
+            var result = await ValidateLicenseSettingsAsync(settings);
             LicenseStatusText.Text = result.Message;
             LicenseStatusText.Foreground = result.IsValid
                 ? System.Windows.Media.Brushes.ForestGreen
@@ -675,12 +719,12 @@ public partial class SettingsView : System.Windows.Controls.UserControl
     private static string ResolveInitialFolder(string folder)
     {
         if (string.IsNullOrWhiteSpace(folder))
-            return AppContext.BaseDirectory;
+            return AppConfigService.GetDefaultTemplateFolder();
 
         var path = Path.IsPathRooted(folder)
             ? folder
-            : Path.Combine(AppContext.BaseDirectory, folder);
+            : AppConfigService.ResolveTemplateFolder(folder);
 
-        return Directory.Exists(path) ? path : AppContext.BaseDirectory;
+        return Directory.Exists(path) ? path : AppConfigService.GetDefaultTemplateFolder();
     }
 }

@@ -105,10 +105,27 @@ if (-not $SkipTests) {
 }
 
 # ── Publish ──────────────────────────────────────────────────────────────────
+if (Test-Path $PublishDir) {
+    Write-Step "清理旧 publish 目录：$PublishDir"
+    $publishFull = [System.IO.Path]::GetFullPath($PublishDir)
+    $allowedRoot = [System.IO.Path]::GetFullPath("$Root\artifacts\publish")
+    $allowedRootPrefix = $allowedRoot.TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar) + [System.IO.Path]::DirectorySeparatorChar
+    if (-not $publishFull.StartsWith($allowedRootPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+        Write-Host "✘  PublishDir 不在允许清理的 artifacts\publish 目录下：$publishFull" -ForegroundColor Red
+        exit 1
+    }
+    Remove-Item -LiteralPath $PublishDir -Recurse -Force
+}
+
 Invoke-Cmd "dotnet publish (win-x64, self-contained)" {
     dotnet publish $ClientCsproj `
         -c Release -r win-x64 --self-contained true `
         -o $PublishDir
+}
+
+if (Test-Path "$PublishDir\appsettings.json") {
+    Write-Host "✘  publish 输出不应包含 appsettings.json。请检查 csproj 配置。" -ForegroundColor Red
+    exit 1
 }
 
 # ── vpk pack ─────────────────────────────────────────────────────────────────

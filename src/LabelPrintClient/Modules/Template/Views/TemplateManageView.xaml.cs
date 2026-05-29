@@ -1319,9 +1319,7 @@ public partial class TemplateManageView : System.Windows.Controls.UserControl
 
     private static string ResolveTemplateFolder()
     {
-        var folder = App.Settings.LocalTemplateFolder;
-        if (!Path.IsPathRooted(folder))
-            folder = Path.Combine(AppContext.BaseDirectory, folder);
+        var folder = AppConfigService.ResolveTemplateFolder(App.Settings.LocalTemplateFolder);
         Directory.CreateDirectory(folder);
         return folder;
     }

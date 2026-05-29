@@ -6,11 +6,11 @@ public class AppSettings
 {
     public AppRunMode RunMode { get; set; } = AppRunMode.LocalSqlite;
 
-    public string SqliteConnection { get; set; } = "DataSource=Data/label_print.db";
+    public string SqliteConnection { get; set; } = AppConfigService.CreateSqliteConnection(AppConfigService.GetDefaultSqliteDatabasePath());
 
     public string PostgreSqlConnection { get; set; } = "Host=127.0.0.1;Port=5432;Username=postgres;Database=label_print;";
 
-    public string LocalTemplateFolder { get; set; } = "Templates";
+    public string LocalTemplateFolder { get; set; } = AppConfigService.GetDefaultTemplateFolder();
 
     public string OperatorName { get; set; } = "admin";
 
@@ -34,7 +34,7 @@ public class AppSettings
 
     public string LicenseAccessKey { get; set; } = string.Empty;
 
-    public string StandaloneLicenseFilePath { get; set; } = "license.json";
+    public string StandaloneLicenseFilePath { get; set; } = AppConfigService.GetDefaultStandaloneLicenseFilePath();
 
     public int LicenseHeartbeatIntervalSeconds { get; set; } = 30;
 

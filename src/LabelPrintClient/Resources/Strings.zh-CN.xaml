@@ -104,6 +104,17 @@
     <sys:String x:Key="License.Validate">重新校验授权</sys:String>
     <sys:String x:Key="License.RuntimeExpired">授权已失效，应用即将退出。&#x0a;原因：{0}</sys:String>
 
+    <sys:String x:Key="Setup.Title">首次配置</sys:String>
+    <sys:String x:Key="Setup.Hint">请先完成本机配置，保存后才能继续使用客户端。</sys:String>
+    <sys:String x:Key="Setup.ConfigPath">配置文件</sys:String>
+    <sys:String x:Key="Setup.SaveAndContinue">保存并继续</sys:String>
+    <sys:String x:Key="Setup.CancelExit">退出</sys:String>
+    <sys:String x:Key="Setup.StatusReady">请填写配置并保存。</sys:String>
+    <sys:String x:Key="Setup.DatabaseTesting">正在测试数据库连接...</sys:String>
+    <sys:String x:Key="Setup.Saved">首次配置已保存。</sys:String>
+    <sys:String x:Key="Setup.SqliteDatabaseFile">SQLite 数据库文件</sys:String>
+    <sys:String x:Key="Setup.MachineDataDirectory">机器数据目录</sys:String>
+
     <sys:String x:Key="Settings.Title">系统配置</sys:String>
     <sys:String x:Key="Settings.DataSource">数据源连接配置</sys:String>
     <sys:String x:Key="Settings.RunMode">运行模式</sys:String>

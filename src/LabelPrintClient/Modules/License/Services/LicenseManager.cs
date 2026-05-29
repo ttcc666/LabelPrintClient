@@ -9,6 +9,7 @@ public static class LicenseManager
     private static ILicenseService _service = new LicenseService(new AppSettings());
     private static CancellationTokenSource? _heartbeatCts;
     private static LicenseResult? _current;
+    private static Action<LicenseResult>? _onExpired;
     private static DateTime _lastValidHeartbeat = DateTime.Now;
 
     public static LicenseResult? Current => _current;
@@ -36,9 +37,23 @@ public static class LicenseManager
 
     public static void StartHeartbeat(AppSettings settings, Action<LicenseResult> onExpired)
     {
+        _onExpired = onExpired;
         StopHeartbeat();
         _heartbeatCts = new CancellationTokenSource();
         _ = RunHeartbeatAsync(settings, onExpired, _heartbeatCts.Token);
+    }
+
+    public static async Task<LicenseResult> ReconfigureAsync(AppSettings settings, CancellationToken cancellationToken = default)
+    {
+        var onExpired = _onExpired;
+        StopHeartbeat();
+        Initialize(settings);
+
+        var result = await ValidateStartupAsync(cancellationToken).ConfigureAwait(false);
+        if (result.IsValid && onExpired != null)
+            StartHeartbeat(settings, onExpired);
+
+        return result;
     }
 
     public static void StopHeartbeat()

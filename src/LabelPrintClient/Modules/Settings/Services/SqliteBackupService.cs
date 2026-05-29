@@ -44,7 +44,7 @@ public static class SqliteBackupService
     {
         EnsureLocalSqlite(settings);
 
-        var databasePath = ResolveSqliteDatabasePath(settings.SqliteConnection);
+        var databasePath = AppConfigService.GetSqliteDatabasePath(settings.SqliteConnection);
         if (!File.Exists(databasePath))
             throw new FileNotFoundException("SQLite 数据库文件不存在。", databasePath);
 
@@ -56,7 +56,7 @@ public static class SqliteBackupService
             File.Delete(backupPath);
 
         var configPath = AppConfigService.GetConfigPath();
-        var templateFolder = ResolveTemplateFolder(settings.LocalTemplateFolder);
+        var templateFolder = AppConfigService.ResolveTemplateFolder(settings.LocalTemplateFolder);
         var hasTemplateFolder = Directory.Exists(templateFolder);
         var manifest = new BackupManifest
         {
@@ -106,14 +106,13 @@ public static class SqliteBackupService
             var databaseBackupPath = ResolveBackupDatabasePath(tempFolder, manifest);
 
             var preRestoreBackupPath = Path.Combine(
-                AppContext.BaseDirectory,
-                "Backups",
+                AppConfigService.GetDefaultBackupDirectory(),
                 $"pre-restore-{DateTime.Now:yyyyMMdd-HHmmss}.zip");
             CreateBackupCore(preRestoreBackupPath, settings, cancellationToken);
 
             AppDb.Close();
 
-            var targetDatabasePath = ResolveSqliteDatabasePath(settings.SqliteConnection);
+            var targetDatabasePath = AppConfigService.GetSqliteDatabasePath(settings.SqliteConnection);
             var targetDatabaseDirectory = Path.GetDirectoryName(targetDatabasePath);
             if (!string.IsNullOrWhiteSpace(targetDatabaseDirectory))
                 Directory.CreateDirectory(targetDatabaseDirectory);
@@ -129,7 +128,7 @@ public static class SqliteBackupService
 
             var templateBackupFolder = Path.Combine(tempFolder, "templates");
             if (Directory.Exists(templateBackupFolder))
-                ReplaceDirectory(templateBackupFolder, ResolveTemplateFolder(restoredTemplateFolder));
+                ReplaceDirectory(templateBackupFolder, AppConfigService.ResolveTemplateFolder(restoredTemplateFolder));
 
             return new SqliteRestoreResult
             {
@@ -178,36 +177,6 @@ public static class SqliteBackupService
     {
         if (settings.RunMode != AppRunMode.LocalSqlite)
             throw new InvalidOperationException("一键备份恢复仅支持 LocalSqlite 模式。");
-    }
-
-    private static string ResolveSqliteDatabasePath(string connectionString)
-    {
-        var parts = connectionString.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        foreach (var part in parts)
-        {
-            var kv = part.Split('=', 2, StringSplitOptions.TrimEntries);
-            if (kv.Length != 2)
-                continue;
-
-            if (!kv[0].Equals("DataSource", StringComparison.OrdinalIgnoreCase) &&
-                !kv[0].Equals("Data Source", StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
-
-            return Path.IsPathRooted(kv[1])
-                ? kv[1]
-                : Path.Combine(AppContext.BaseDirectory, kv[1]);
-        }
-
-        throw new InvalidOperationException("SQLite 连接串缺少 DataSource。");
-    }
-
-    private static string ResolveTemplateFolder(string folder)
-    {
-        return Path.IsPathRooted(folder)
-            ? folder
-            : Path.Combine(AppContext.BaseDirectory, folder);
     }
 
     private static string? TryReadTemplateFolder(string configPath)
@@ -264,36 +233,11 @@ public static class SqliteBackupService
         if (File.Exists(snapshotPath))
             File.Delete(snapshotPath);
 
-        using var source = new SQLiteConnection(NormalizeSqliteConnection(connectionString));
+        using var source = new SQLiteConnection(AppConfigService.NormalizeSqliteConnection(connectionString, createDirectory: true));
         using var destination = new SQLiteConnection($"Data Source={snapshotPath};Version=3;");
         source.Open();
         destination.Open();
         source.BackupDatabase(destination, "main", "main", -1, null, 0);
-    }
-
-    private static string NormalizeSqliteConnection(string connectionString)
-    {
-        var parts = connectionString.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
-        for (var i = 0; i < parts.Count; i++)
-        {
-            var kv = parts[i].Split('=', 2, StringSplitOptions.TrimEntries);
-            if (kv.Length != 2)
-                continue;
-
-            if (!kv[0].Equals("DataSource", StringComparison.OrdinalIgnoreCase) &&
-                !kv[0].Equals("Data Source", StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
-
-            var value = Path.IsPathRooted(kv[1])
-                ? kv[1]
-                : Path.Combine(AppContext.BaseDirectory, kv[1]);
-            parts[i] = $"{kv[0]}={value}";
-            break;
-        }
-
-        return string.Join(';', parts);
     }
 
     private static void ReplaceDirectory(string sourceFolder, string targetFolder)
@@ -330,10 +274,12 @@ public static class SqliteBackupService
         var fullPath = Path.GetFullPath(targetFolder).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
         var root = Path.GetPathRoot(fullPath)?.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
         var baseDirectory = Path.GetFullPath(AppContext.BaseDirectory).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        var machineDataDirectory = Path.GetFullPath(AppConfigService.GetMachineDataDirectory()).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
 
         if (string.IsNullOrWhiteSpace(fullPath) ||
             string.Equals(fullPath, root, StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(fullPath, baseDirectory, StringComparison.OrdinalIgnoreCase))
+            string.Equals(fullPath, baseDirectory, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(fullPath, machineDataDirectory, StringComparison.OrdinalIgnoreCase))
         {
             throw new InvalidOperationException("本地模板目录指向高风险路径，已阻止自动恢复模板目录。");
         }

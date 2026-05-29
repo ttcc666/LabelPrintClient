@@ -95,7 +95,10 @@ public partial class LicenseActivationWindow : Window
 
         _settings.LicenseMode = mode;
         _settings.ProductCode = productCode;
-        _settings.StandaloneLicenseFilePath = LicenseFilePathBox.Text.Trim();
+        var licenseFilePath = LicenseFilePathBox.Text.Trim();
+        _settings.StandaloneLicenseFilePath = string.IsNullOrWhiteSpace(licenseFilePath)
+            ? string.Empty
+            : AppConfigService.ResolveStandaloneLicenseFilePath(licenseFilePath);
         _settings.LicenseServerUrl = LicenseServerUrlBox.Text.Trim();
         _settings.LicenseAccessKey = LicenseAccessKeyBox.Password.Trim();
         return true;

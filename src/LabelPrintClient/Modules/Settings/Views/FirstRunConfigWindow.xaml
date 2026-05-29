@@ -1,0 +1,266 @@
+<hc:Window x:Class="LabelPrintClient.Modules.Settings.Views.FirstRunConfigWindow"
+           xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+           xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+           xmlns:hc="https://handyorg.github.io/handycontrol"
+           xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+           Title="{DynamicResource Setup.Title}"
+           Width="1060"
+           Height="760"
+           MinWidth="920"
+           MinHeight="680"
+           WindowStartupLocation="CenterScreen"
+           Background="{DynamicResource SecondaryRegionBrush}"
+           Foreground="{DynamicResource PrimaryTextBrush}"
+           NonClientAreaBackground="{DynamicResource RegionBrush}">
+    <Grid Margin="14">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Style="{StaticResource AppToolbarCardStyle}">
+            <DockPanel LastChildFill="True">
+                <StackPanel DockPanel.Dock="Left" Margin="0,0,24,0">
+                    <TextBlock Text="{DynamicResource Setup.Title}" Style="{StaticResource AppPageTitleStyle}" />
+                    <TextBlock Text="{DynamicResource Setup.Hint}"
+                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                               FontSize="12"
+                               Margin="0,4,0,0" />
+                </StackPanel>
+                <TextBlock x:Name="ConfigPathText"
+                           VerticalAlignment="Center"
+                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                           TextTrimming="CharacterEllipsis" />
+            </DockPanel>
+        </Border>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <Grid Margin="0,12,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1*" MinWidth="430" />
+                    <ColumnDefinition Width="1*" MinWidth="430" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                    <Border Style="{StaticResource AppCardStyle}" Padding="18" Margin="0,0,0,14">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                                <iconPacks:PackIconMaterial Kind="Database" Width="16" Height="16" Foreground="{DynamicResource PrimaryBrush}" VerticalAlignment="Center" />
+                                <TextBlock Text="{DynamicResource Settings.DataSource}" FontWeight="SemiBold" Margin="8,0,0,0" />
+                            </StackPanel>
+
+                            <TextBlock Text="{DynamicResource Settings.RunMode}" Style="{StaticResource AppFormLabelStyle}" />
+                            <ComboBox x:Name="RunModeBox" Width="240" HorizontalAlignment="Left" Margin="0,6,0,12" SelectionChanged="RunModeBox_SelectionChanged">
+                                <ComboBoxItem Content="{DynamicResource Settings.LocalSqlite}" Tag="LocalSqlite" />
+                                <ComboBoxItem Content="{DynamicResource Settings.LanPostgreSql}" Tag="LanPostgreSql" />
+                            </ComboBox>
+
+                            <StackPanel x:Name="SqlitePanel">
+                                <TextBlock Text="{DynamicResource Setup.SqliteDatabaseFile}" Style="{StaticResource AppFormLabelStyle}" />
+                                <Grid Margin="0,6,0,12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox x:Name="SqliteDatabasePathBox" Grid.Column="0" Margin="0,0,8,0" Padding="8,6" />
+                                    <Button Grid.Column="1" Style="{StaticResource AppSecondaryButtonStyle}" Width="76" Click="BrowseSqliteDatabase_Click">
+                                        <StackPanel Orientation="Horizontal">
+                                            <iconPacks:PackIconMaterial Kind="FolderOpen" Width="12" Height="12" Margin="0,0,4,0" VerticalAlignment="Center" />
+                                            <TextBlock Text="{DynamicResource Settings.Browse}" FontSize="12" VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </Button>
+                                </Grid>
+                            </StackPanel>
+
+                            <StackPanel x:Name="PostgreSqlPanel">
+                                <TextBlock Text="{DynamicResource Settings.PostgreSqlConnection}" Style="{StaticResource AppFormLabelStyle}" />
+                                <TextBox x:Name="PostgreSqlConnectionBox" Margin="0,6,0,12" Padding="8,6" />
+                            </StackPanel>
+
+                            <Button Style="{StaticResource AppSecondaryButtonStyle}" HorizontalAlignment="Left" Click="TestDatabase_Click">
+                                <StackPanel Orientation="Horizontal">
+                                    <iconPacks:PackIconMaterial Kind="Connection" Width="14" Height="14" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                    <TextBlock Text="{DynamicResource Settings.Test}" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource AppCardStyle}" Padding="18" Margin="0,0,0,14">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                                <iconPacks:PackIconMaterial Kind="FolderOpen" Width="16" Height="16" Foreground="{DynamicResource PrimaryBrush}" VerticalAlignment="Center" />
+                                <TextBlock Text="{DynamicResource Setup.MachineDataDirectory}" FontWeight="SemiBold" Margin="8,0,0,0" />
+                            </StackPanel>
+
+                            <TextBlock Text="{DynamicResource Settings.TemplateFolder}" Style="{StaticResource AppFormLabelStyle}" />
+                            <Grid Margin="0,6,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox x:Name="TemplateFolderBox" Grid.Column="0" Margin="0,0,8,0" Padding="8,6" />
+                                <Button Grid.Column="1" Style="{StaticResource AppSecondaryButtonStyle}" Width="76" Click="BrowseTemplateFolder_Click">
+                                    <StackPanel Orientation="Horizontal">
+                                        <iconPacks:PackIconMaterial Kind="FolderOpen" Width="12" Height="12" Margin="0,0,4,0" VerticalAlignment="Center" />
+                                        <TextBlock Text="{DynamicResource Settings.Browse}" FontSize="12" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="1*" />
+                                    <ColumnDefinition Width="1*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                    <TextBlock Text="{DynamicResource Settings.DefaultPrinter}" Style="{StaticResource AppFormLabelStyle}" />
+                                    <ComboBox x:Name="DefaultPrinterBox" Margin="0,6,0,0" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                                    <TextBlock Text="{DynamicResource Settings.DefaultPrintCopies}" Style="{StaticResource AppFormLabelStyle}" />
+                                    <TextBox x:Name="DefaultPrintCopiesBox" Margin="0,6,0,0" Padding="8,6" />
+                                </StackPanel>
+                            </Grid>
+
+                            <CheckBox x:Name="ConfirmBeforePrintBox"
+                                      Content="{DynamicResource Settings.ConfirmBeforePrint}"
+                                      Margin="0,14,0,0" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                    <Border Style="{StaticResource AppCardStyle}" Padding="18" Margin="0,0,0,14">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                                <iconPacks:PackIconMaterial Kind="ShieldKey" Width="16" Height="16" Foreground="{DynamicResource PrimaryBrush}" VerticalAlignment="Center" />
+                                <TextBlock Text="{DynamicResource License.SettingsTitle}" FontWeight="SemiBold" Margin="8,0,0,0" />
+                            </StackPanel>
+
+                            <TextBlock Text="{DynamicResource License.MachineCode}" Style="{StaticResource AppFormLabelStyle}" />
+                            <TextBox x:Name="MachineCodeBox" IsReadOnly="True" TextWrapping="Wrap" Margin="0,6,0,12" Padding="8,6" />
+
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="1*" />
+                                    <ColumnDefinition Width="1*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                    <TextBlock Text="{DynamicResource License.Mode}" Style="{StaticResource AppFormLabelStyle}" />
+                                    <ComboBox x:Name="LicenseModeBox" Margin="0,6,0,0" SelectionChanged="LicenseModeBox_SelectionChanged">
+                                        <ComboBoxItem Content="{DynamicResource License.ModeStandalone}" Tag="Standalone" />
+                                        <ComboBoxItem Content="{DynamicResource License.ModeFloating}" Tag="Floating" />
+                                    </ComboBox>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                                    <TextBlock Text="{DynamicResource License.ProductCode}" Style="{StaticResource AppFormLabelStyle}" />
+                                    <TextBox x:Name="ProductCodeBox" Margin="0,6,0,0" Padding="8,6" />
+                                </StackPanel>
+                            </Grid>
+
+                            <StackPanel x:Name="StandalonePanel">
+                                <TextBlock Text="{DynamicResource License.FilePath}" Style="{StaticResource AppFormLabelStyle}" />
+                                <Grid Margin="0,6,0,12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox x:Name="LicenseFilePathBox" Grid.Column="0" Margin="0,0,8,0" Padding="8,6" />
+                                    <Button Grid.Column="1" Style="{StaticResource AppSecondaryButtonStyle}" Width="76" Click="BrowseLicenseFile_Click">
+                                        <StackPanel Orientation="Horizontal">
+                                            <iconPacks:PackIconMaterial Kind="FolderOpen" Width="12" Height="12" Margin="0,0,4,0" VerticalAlignment="Center" />
+                                            <TextBlock Text="{DynamicResource Settings.Browse}" FontSize="12" VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </Button>
+                                </Grid>
+                            </StackPanel>
+
+                            <StackPanel x:Name="FloatingPanel">
+                                <TextBlock Text="{DynamicResource License.ServerUrl}" Style="{StaticResource AppFormLabelStyle}" />
+                                <TextBox x:Name="LicenseServerUrlBox" Margin="0,6,0,12" Padding="8,6" />
+
+                                <TextBlock Text="{DynamicResource License.AccessKey}" Style="{StaticResource AppFormLabelStyle}" />
+                                <PasswordBox x:Name="LicenseAccessKeyBox" Margin="0,6,0,0" Padding="8,6" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource AppCardStyle}" Padding="18" Margin="0,0,0,14">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                                <iconPacks:PackIconMaterial Kind="Update" Width="16" Height="16" Foreground="{DynamicResource PrimaryBrush}" VerticalAlignment="Center" />
+                                <TextBlock Text="{DynamicResource Update.SettingsTitle}" FontWeight="SemiBold" Margin="8,0,0,0" />
+                            </StackPanel>
+
+                            <TextBlock Text="{DynamicResource Update.ServerUrl}" Style="{StaticResource AppFormLabelStyle}" />
+                            <TextBox x:Name="UpdateServerUrlBox" Margin="0,6,0,12" Padding="8,6" />
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="1*" />
+                                    <ColumnDefinition Width="1*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                    <TextBlock Text="{DynamicResource Update.Channel}" Style="{StaticResource AppFormLabelStyle}" />
+                                    <TextBox x:Name="UpdateChannelBox" Margin="0,6,0,0" Padding="8,6" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Bottom" Margin="8,0,0,8">
+                                    <CheckBox x:Name="AutoCheckUpdatesBox" Content="{DynamicResource Update.AutoCheck}" />
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource AppCardStyle}" Padding="18" Margin="0,0,0,14">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*" />
+                                <ColumnDefinition Width="1*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                <TextBlock Text="{DynamicResource Settings.ThemeMode}" Style="{StaticResource AppFormLabelStyle}" />
+                                <ComboBox x:Name="ThemeModeBox" Margin="0,6,0,0">
+                                    <ComboBoxItem Content="{DynamicResource Settings.ThemeSystem}" Tag="System" />
+                                    <ComboBoxItem Content="{DynamicResource Settings.ThemeLight}" Tag="Light" />
+                                    <ComboBoxItem Content="{DynamicResource Settings.ThemeDark}" Tag="Dark" />
+                                </ComboBox>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                                <TextBlock Text="{DynamicResource Settings.Language}" Style="{StaticResource AppFormLabelStyle}" />
+                                <ComboBox x:Name="LanguageBox" Margin="0,6,0,0">
+                                    <ComboBoxItem Content="{DynamicResource Settings.LanguageZhCn}" Tag="ZhCn" />
+                                    <ComboBoxItem Content="{DynamicResource Settings.LanguageEnUs}" Tag="EnUs" />
+                                </ComboBox>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </ScrollViewer>
+
+        <Border Grid.Row="2" Style="{StaticResource AppFooterCardStyle}">
+            <DockPanel LastChildFill="False">
+                <TextBlock x:Name="StatusText"
+                           DockPanel.Dock="Left"
+                           VerticalAlignment="Center"
+                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                <WrapPanel DockPanel.Dock="Right" HorizontalAlignment="Right">
+                    <Button Style="{StaticResource AppSecondaryButtonStyle}" Click="Cancel_Click" Margin="0,0,8,0">
+                        <StackPanel Orientation="Horizontal">
+                            <iconPacks:PackIconMaterial Kind="Close" Width="14" Height="14" Margin="0,0,6,0" VerticalAlignment="Center" />
+                            <TextBlock Text="{DynamicResource Setup.CancelExit}" />
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource AppPrimaryButtonStyle}" Click="SaveAndContinue_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <iconPacks:PackIconMaterial Kind="ContentSave" Width="14" Height="14" Margin="0,0,6,0" VerticalAlignment="Center" />
+                            <TextBlock Text="{DynamicResource Setup.SaveAndContinue}" />
+                        </StackPanel>
+                    </Button>
+                </WrapPanel>
+            </DockPanel>
+        </Border>
+    </Grid>
+</hc:Window>

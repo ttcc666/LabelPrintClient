@@ -6,6 +6,7 @@ using LabelPrintClient.Modules.Auth.Services;
 using LabelPrintClient.Modules.Auth.Views;
 using LabelPrintClient.Modules.License.Services;
 using LabelPrintClient.Modules.License.Views;
+using LabelPrintClient.Modules.Settings.Views;
 using LabelPrintClient.Services;
 using LabelPrintClient.Infrastructure;
 using Stimulsoft.Report;
@@ -41,6 +42,24 @@ public partial class App : System.Windows.Application
             AppLogger.LogInfo("开始应用语言");
             AppLanguageService.Apply(Settings.Language);
             AppLogger.LogInfo($"语言应用完成：{Settings.Language}");
+
+            if (!AppConfigService.Exists())
+            {
+                AppLogger.LogInfo("未检测到机器配置，进入首次配置");
+                var setupWindow = new FirstRunConfigWindow(Settings);
+                if (setupWindow.ShowDialog() != true)
+                {
+                    AppLogger.LogInfo("用户取消首次配置，应用退出");
+                    Shutdown();
+                    return;
+                }
+
+                Settings = AppConfigService.LoadRequired();
+                AppThemeService.Apply(Settings.ThemeMode);
+                AppLanguageService.Apply(Settings.Language);
+                AppLogger.LogInfo("首次配置已保存并重新加载");
+            }
+
             AppLogger.LogInfo("开始初始化数据库连接");
             AppDb.Init(Settings);
             AppLogger.LogInfo("数据库连接对象初始化完成");
@@ -171,6 +190,12 @@ public partial class App : System.Windows.Application
     private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
     {
         var ex = e.ExceptionObject as Exception;
+        if (IsIgnorableShutdownWindowHandleException(ex))
+        {
+            AppLogger.LogWarning("应用退出阶段忽略无效窗口句柄异常", ex);
+            return;
+        }
+
         AppLogger.LogError($"非UI线程致命未处理异常 (IsTerminating: {e.IsTerminating})", ex);
 
         // 由于后台线程严重异常是在 MTA 线程触发的，直接弹窗可能会因为线程不是 STA 模型而二次崩溃。
@@ -249,6 +274,15 @@ public partial class App : System.Windows.Application
 
         // 标记为已观测，防止可能导致程序退出（取决于 .NET 版本行为）
         e.SetObserved();
+    }
+
+    private static bool IsIgnorableShutdownWindowHandleException(Exception? ex)
+    {
+        var dispatcher = System.Windows.Application.Current?.Dispatcher;
+        var isShuttingDown = dispatcher?.HasShutdownStarted == true || dispatcher?.HasShutdownFinished == true;
+        return isShuttingDown &&
+               ex is System.ComponentModel.Win32Exception win32 &&
+               win32.NativeErrorCode == 1400;
     }
 
     private static void LoadStimulsoftLocalization()

@@ -104,6 +104,17 @@
     <sys:String x:Key="License.Validate">Validate license</sys:String>
     <sys:String x:Key="License.RuntimeExpired">License is no longer valid. The application will exit.&#x0a;Reason: {0}</sys:String>
 
+    <sys:String x:Key="Setup.Title">First Setup</sys:String>
+    <sys:String x:Key="Setup.Hint">Complete this machine configuration before using the client.</sys:String>
+    <sys:String x:Key="Setup.ConfigPath">Config file</sys:String>
+    <sys:String x:Key="Setup.SaveAndContinue">Save and Continue</sys:String>
+    <sys:String x:Key="Setup.CancelExit">Exit</sys:String>
+    <sys:String x:Key="Setup.StatusReady">Fill in the configuration and save.</sys:String>
+    <sys:String x:Key="Setup.DatabaseTesting">Testing database connection...</sys:String>
+    <sys:String x:Key="Setup.Saved">First setup has been saved.</sys:String>
+    <sys:String x:Key="Setup.SqliteDatabaseFile">SQLite database file</sys:String>
+    <sys:String x:Key="Setup.MachineDataDirectory">Machine data directory</sys:String>
+
     <sys:String x:Key="Settings.Title">Settings</sys:String>
     <sys:String x:Key="Settings.DataSource">Data Source</sys:String>
     <sys:String x:Key="Settings.RunMode">Run mode</sys:String>

@@ -176,7 +176,11 @@
                             <Setter TargetName="ButtonBorder" Property="Background" Value="{DynamicResource ControlFillColorDisabledBrush}" />
                             <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="{DynamicResource ControlStrokeColorDefaultBrush}" />
                             <Setter Property="Foreground" Value="{DynamicResource TextFillColorDisabledBrush}" />
-                            <Setter TargetName="ButtonBorder" Property="Effect" Value="{x:Null}" />
+                            <Setter TargetName="ButtonBorder" Property="Effect">
+                                <Setter.Value>
+                                    <DropShadowEffect Color="#000000" BlurRadius="3" ShadowDepth="1" Opacity="0" Direction="270" />
+                                </Setter.Value>
+                            </Setter>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

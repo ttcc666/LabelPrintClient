@@ -29,9 +29,6 @@
   <ItemGroup>
     <None Remove="Assets\app-icon.ico" />
     <Resource Include="Assets\app-icon.ico" />
-    <None Update="appsettings.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Include="$(PkgStimulsoft_Reports_Engine)\content\Localization\zh-CHS.xml" Link="Localization\zh-CHS.xml" CopyToOutputDirectory="PreserveNewest" Condition="'$(PkgStimulsoft_Reports_Engine)' != ''" />
   </ItemGroup>
 </Project>

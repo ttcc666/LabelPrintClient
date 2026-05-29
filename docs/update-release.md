@@ -232,15 +232,31 @@ Invoke-WebRequest $latest.setupDownloadUrl -OutFile 'D:\Demo\LabelPrintClient\ar
 
 ## 10. 客户端配置
 
-客户端通过 `appsettings.json` 配置更新中心：
+发布包不再携带项目里的 `appsettings.json`。客户端首次启动时，如果未检测到机器配置，会先进入首次配置页面；保存后配置会写入：
+
+```text
+C:\ProgramData\LabelPrintClient\appsettings.json
+```
+
+SQLite 模式下，默认数据库文件位置为：
+
+```text
+C:\ProgramData\LabelPrintClient\Data\label_print.db
+```
+
+本地模板默认目录为：
+
+```text
+C:\ProgramData\LabelPrintClient\Templates
+```
+
+也可以在客户端 Settings 页面修改更新中心：
 
 ```json
 {
-  "AppSettings": {
-    "UpdateServerUrl": "http://127.0.0.1:5051/",
-    "UpdateChannel": "stable",
-    "AutoCheckUpdates": true
-  }
+  "UpdateServerUrl": "http://127.0.0.1:5051/",
+  "UpdateChannel": "stable",
+  "AutoCheckUpdates": true
 }
 ```
 
@@ -248,11 +264,9 @@ Invoke-WebRequest $latest.setupDownloadUrl -OutFile 'D:\Demo\LabelPrintClient\ar
 
 ```json
 {
-  "AppSettings": {
-    "UpdateServerUrl": "https://license.example.com/",
-    "UpdateChannel": "stable",
-    "AutoCheckUpdates": true
-  }
+  "UpdateServerUrl": "https://license.example.com/",
+  "UpdateChannel": "stable",
+  "AutoCheckUpdates": true
 }
 ```
 

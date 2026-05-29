@@ -34,7 +34,7 @@ xwIDAQAB
         if (string.IsNullOrWhiteSpace(settings.StandaloneLicenseFilePath))
             return LicenseResult.Failure(LicenseStatus.Missing, LicenseMode.Standalone, "未配置单机授权文件。");
 
-        var path = ResolveLicensePath(settings.StandaloneLicenseFilePath);
+        var path = AppConfigService.ResolveStandaloneLicenseFilePath(settings.StandaloneLicenseFilePath);
         if (!File.Exists(path))
             return LicenseResult.Failure(LicenseStatus.Missing, LicenseMode.Standalone, "单机授权文件不存在。");
 
@@ -105,13 +105,6 @@ xwIDAQAB
         {
             return false;
         }
-    }
-
-    private static string ResolveLicensePath(string path)
-    {
-        return Path.IsPathRooted(path)
-            ? path
-            : Path.Combine(AppContext.BaseDirectory, path);
     }
 
     private sealed record LicensePayload(

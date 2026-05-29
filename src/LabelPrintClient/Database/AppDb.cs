@@ -22,7 +22,7 @@ public static class AppDb
         CurrentDbType = dbType;
 
         var connectionString = settings.RunMode == AppRunMode.LocalSqlite
-            ? NormalizeSqliteConnection(settings.SqliteConnection)
+            ? AppConfigService.NormalizeSqliteConnection(settings.SqliteConnection, createDirectory: true)
             : settings.PostgreSqlConnection;
 
         _scope = new SqlSugarScope(new ConnectionConfig
@@ -106,29 +106,4 @@ public static class AppDb
         }
     }
 
-    private static string NormalizeSqliteConnection(string connectionString)
-    {
-        var parts = connectionString.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
-        for (var i = 0; i < parts.Count; i++)
-        {
-            var kv = parts[i].Split('=', 2, StringSplitOptions.TrimEntries);
-            if (kv.Length != 2) continue;
-            var key = kv[0];
-            var value = kv[1];
-            if (!key.Equals("DataSource", StringComparison.OrdinalIgnoreCase) &&
-                !key.Equals("Data Source", StringComparison.OrdinalIgnoreCase)) continue;
-
-            if (!Path.IsPathRooted(value))
-            {
-                value = Path.Combine(AppContext.BaseDirectory, value);
-            }
-
-            var dir = Path.GetDirectoryName(value);
-            if (!string.IsNullOrWhiteSpace(dir)) Directory.CreateDirectory(dir);
-            parts[i] = $"{key}={value}";
-            break;
-        }
-
-        return string.Join(';', parts);
-    }
 }
