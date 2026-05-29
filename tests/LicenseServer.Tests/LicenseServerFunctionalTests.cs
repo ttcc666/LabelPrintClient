@@ -6,6 +6,7 @@ using System.Text.Json;
 using LicenseServer.Config;
 using LicenseServer.Infrastructure;
 using LicenseServer.Models;
+using LicenseServer.Pages;
 using LicenseServer.Services;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Options;
@@ -173,10 +174,13 @@ cRTwWdAfC5+A4G/GxvXHJuR+0tzh/v2WK9sjSEzynIHFQOAHWWKdOb2Km+yXgv1o
             PublicKeyPem = ClientPublicKeyPem // 设置为公司端的公钥
         }));
         
-        var errorMessage = await SimulateImportLicenseAsync(lan.Db, validator, signedLicenseJson);
+        var model = new LicensesModel(lan.Db, lan.Generator, lan.SigningKeys, validator, lan.Protector);
+        model.ImportLicenseContent = signedLicenseJson;
+
+        await model.OnPostImportAsync();
 
         // 验证导入成功提示
-        Assert.Contains("成功", errorMessage);
+        Assert.Contains("成功", model.ErrorMessage);
 
         // 检查局域网端的数据库是否自动建好了客户记录和许可证记录
         var importedLicense = await lan.Db.Db.Queryable<AppLicense>().FirstAsync(x => x.Id == companyLicense.Id);
@@ -211,10 +215,12 @@ cRTwWdAfC5+A4G/GxvXHJuR+0tzh/v2WK9sjSEzynIHFQOAHWWKdOb2Km+yXgv1o
         {
             PublicKeyPem = ClientPublicKeyPem
         }));
+        var model = new LicensesModel(lan.Db, lan.Generator, lan.SigningKeys, validator, lan.Protector);
 
         // 1. 无效签名
-        var err1 = await SimulateImportLicenseAsync(lan.Db, validator, "{\"ProductCode\":\"LABEL_PRINT_CLIENT\",\"Signature\":\"bad-sig\"}");
-        Assert.Contains("验证失败", err1);
+        model.ImportLicenseContent = "{\"ProductCode\":\"LABEL_PRINT_CLIENT\",\"Signature\":\"bad-sig\"}";
+        await model.OnPostImportAsync();
+        Assert.Contains("验证失败", model.ErrorMessage);
 
         // 2. 过期证书
         using var company = TestFixture.Create();
@@ -227,8 +233,9 @@ cRTwWdAfC5+A4G/GxvXHJuR+0tzh/v2WK9sjSEzynIHFQOAHWWKdOb2Km+yXgv1o
             expireTime: DateTime.Now.AddDays(-1));
         var expiredJson = await company.Generator.GenerateAsync(expiredLicense, "key");
 
-        var err2 = await SimulateImportLicenseAsync(lan.Db, validator, expiredJson);
-        Assert.Contains("已过期", err2);
+        model.ImportLicenseContent = expiredJson;
+        await model.OnPostImportAsync();
+        Assert.Contains("已过期", model.ErrorMessage);
 
         // 3. 局域网端导入单机版证书（应该拒绝）
         var standaloneLicense = await company.InsertLicenseAsync(
@@ -237,8 +244,9 @@ cRTwWdAfC5+A4G/GxvXHJuR+0tzh/v2WK9sjSEzynIHFQOAHWWKdOb2Km+yXgv1o
             machineCode: "M1");
         var standaloneJson = await company.Generator.GenerateAsync(standaloneLicense);
 
-        var err3 = await SimulateImportLicenseAsync(lan.Db, validator, standaloneJson);
-        Assert.Contains("仅支持导入浮动授权", err3);
+        model.ImportLicenseContent = standaloneJson;
+        await model.OnPostImportAsync();
+        Assert.Contains("仅支持导入浮动授权", model.ErrorMessage);
     }
 
     [Fact]
@@ -274,79 +282,6 @@ cRTwWdAfC5+A4G/GxvXHJuR+0tzh/v2WK9sjSEzynIHFQOAHWWKdOb2Km+yXgv1o
         rsa.ImportFromPem(ClientPublicKeyPem);
         var payload = Encoding.UTF8.GetBytes(StandaloneLicenseGenerator.CreateSignedPayload(document));
         return rsa.VerifyData(payload, Convert.FromBase64String(document.Signature), HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
-    }
-
-    private static async Task<string?> SimulateImportLicenseAsync(LicenseDb db, LicenseValidator validator, string cipherText)
-    {
-        if (string.IsNullOrWhiteSpace(cipherText))
-        {
-            return "请输入您要导入的许可证加密密文！";
-        }
-
-        try
-        {
-            var doc = JsonSerializer.Deserialize<LicenseDocument>(cipherText.Trim(), new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-            if (doc == null || string.IsNullOrEmpty(doc.IssuedTo) || string.IsNullOrEmpty(doc.Signature))
-            {
-                return "验证失败：此许可证密文格式不合法！";
-            }
-
-            if (!validator.Verify(doc))
-            {
-                return "验证失败：验签失败！";
-            }
-
-            if (doc.ExpireTime <= DateTime.Now)
-            {
-                return "验证失败：该许可证已过期！";
-            }
-
-            if (doc.LicenseMode != LicenseMode.Floating)
-            {
-                return "验证失败：仅支持导入浮动授权！";
-            }
-
-            var cust = db.Db.Queryable<Customer>().ToList().FirstOrDefault(c => c.Name == doc.IssuedTo.Trim());
-            if (cust == null)
-            {
-                cust = new Customer
-                {
-                    Id = IdHelper.NewId(),
-                    Name = doc.IssuedTo.Trim(),
-                    CreateTime = DateTime.Now,
-                    IsEnabled = true
-                };
-                await db.Db.Insertable(cust).ExecuteCommandAsync();
-            }
-
-            var exists = await db.Db.Queryable<AppLicense>().AnyAsync(l => l.CustomerId == cust.Id && l.ProductCode == doc.ProductCode);
-            if (exists)
-            {
-                await db.Db.Deleteable<AppLicense>().Where(l => l.CustomerId == cust.Id && l.ProductCode == doc.ProductCode).ExecuteCommandAsync();
-            }
-
-            var model = new AppLicense
-            {
-                Id = doc.Id ?? IdHelper.NewId(),
-                CustomerId = cust.Id,
-                ProductCode = doc.ProductCode,
-                LicenseMode = doc.LicenseMode,
-                MachineCode = doc.MachineCode,
-                TotalCount = doc.TotalCount,
-                ExpireTime = doc.ExpireTime,
-                IssuedTo = doc.IssuedTo,
-                IsEnabled = true,
-                AccessKeyHash = string.IsNullOrEmpty(doc.AccessKey) ? null : HashService.Sha256(doc.AccessKey),
-                CreateTime = DateTime.Now
-            };
-
-            await db.Db.Insertable(model).ExecuteCommandAsync();
-            return "成功";
-        }
-        catch (Exception ex)
-        {
-            return $"验证失败: {ex.Message}";
-        }
     }
 
     private sealed class TestFixture : IDisposable
