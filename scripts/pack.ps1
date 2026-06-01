@@ -31,8 +31,7 @@ $ErrorActionPreference = 'Stop'
 $Root        = Resolve-Path "$PSScriptRoot\.."
 $Sln         = "$Root\LabelPrintClient.sln"
 $ClientCsproj= "$Root\src\LabelPrintClient\LabelPrintClient.csproj"
-$PublishDir  = "$Root\artifacts\publish\LabelPrintClient"
-$ReleasesDir = "$Root\artifacts\releases"
+$ReleasesDir = "$Root\artifacts\releases\LabelPrintClient"
 
 # ── 工具函数 ────────────────────────────────────────────────────────────────
 function Write-Step([string]$msg) {
@@ -63,8 +62,10 @@ if (-not $Version) {
 }
 Write-Ok "版本：$Version"
 
+$PublishDir = "$Root\artifacts\publish\LabelPrintClient\$Version"
 $ReleaseDir = "$ReleasesDir\LabelPrintClient-$Version"
 $ZipPath    = "$ReleasesDir\LabelPrintClient-$Version.zip"
+New-Item -ItemType Directory -Force -Path $ReleasesDir | Out-Null
 
 # ── 检查 vpk ─────────────────────────────────────────────────────────────────
 Write-Step "检查 vpk CLI"
