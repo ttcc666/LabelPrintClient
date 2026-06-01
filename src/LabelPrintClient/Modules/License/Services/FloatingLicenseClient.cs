@@ -36,6 +36,28 @@ public sealed class FloatingLicenseClient
         }
     }
 
+    public async Task<LicenseResult> ValidateAsync(AppSettings settings, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(settings.LicenseServerUrl))
+            return LicenseResult.Failure(LicenseStatus.InvalidConfiguration, LicenseMode.Floating, "未配置浮动授权服务器地址。");
+
+        try
+        {
+            ConfigureBaseAddress(settings.LicenseServerUrl);
+            var response = await _http.PostAsJsonAsync("api/license/validate", new LicenseAcquireRequest(
+                settings.ProductCode,
+                settings.LicenseAccessKey,
+                MachineCodeService.GetMachineCode(),
+                Environment.MachineName), cancellationToken).ConfigureAwait(false);
+
+            return await ReadResultAsync(response, LicenseMode.Floating, cancellationToken).ConfigureAwait(false);
+        }
+        catch
+        {
+            return LicenseResult.Failure(LicenseStatus.ServerUnavailable, LicenseMode.Floating, "授权服务器不可用。");
+        }
+    }
+
     public async Task<LicenseResult> HeartbeatAsync(string token, AppSettings settings, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(token))

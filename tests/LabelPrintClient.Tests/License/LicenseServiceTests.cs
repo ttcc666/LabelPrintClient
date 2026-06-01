@@ -141,6 +141,29 @@ cRTwWdAfC5+A4G/GxvXHJuR+0tzh/v2WK9sjSEzynIHFQOAHWWKdOb2Km+yXgv1o
     }
 
     [Fact]
+    public async Task LicenseService_ValidateConfigurationAsync_ForFloatingUsesValidateEndpointOnly()
+    {
+        var handler = new FakeHandler((request, _) =>
+        {
+            var path = request.RequestUri?.AbsolutePath;
+            return path == "/api/license/validate"
+                ? JsonResponse(HttpStatusCode.OK, new { Success = true, Message = "ok", HeartbeatIntervalSeconds = 15 })
+                : new HttpResponseMessage(HttpStatusCode.NotFound);
+        });
+        var client = new FloatingLicenseClient(new HttpClient(handler));
+        var settings = new AppSettings { LicenseMode = LicenseMode.Floating, LicenseServerUrl = "https://license.local/", LicenseAccessKey = "client-access-key" };
+        var service = new LicenseService(settings, floatingClient: client);
+
+        var result = await service.ValidateConfigurationAsync();
+
+        Assert.True(result.IsValid);
+        Assert.Null(result.Token);
+        Assert.Contains("/api/license/validate", handler.Paths);
+        Assert.DoesNotContain("/api/license/acquire", handler.Paths);
+        Assert.DoesNotContain("/api/license/release", handler.Paths);
+    }
+
+    [Fact]
     public async Task FloatingLicenseClient_SeatLimit_ReturnsSeatLimitExceeded()
     {
         var handler = new FakeHandler((_, _) =>

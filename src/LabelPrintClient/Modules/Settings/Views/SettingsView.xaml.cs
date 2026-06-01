@@ -562,11 +562,7 @@ public partial class SettingsView : System.Windows.Controls.UserControl
     private static async Task<LicenseResult> ValidateLicenseSettingsAsync(AppSettings settings)
     {
         var licenseService = new LicenseService(settings);
-        var result = await licenseService.ValidateStartupAsync().ConfigureAwait(false);
-        if (result.IsValid && settings.LicenseMode == LicenseMode.Floating)
-            await licenseService.ReleaseAsync().ConfigureAwait(false);
-
-        return result;
+        return await licenseService.ValidateConfigurationAsync().ConfigureAwait(false);
     }
 
     private async void CheckUpdates_Click(object sender, RoutedEventArgs e)

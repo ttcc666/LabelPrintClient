@@ -27,6 +27,13 @@ public sealed class LicenseService : ILicenseService
             : AcquireAsync(cancellationToken);
     }
 
+    public Task<LicenseResult> ValidateConfigurationAsync(CancellationToken cancellationToken = default)
+    {
+        return _settings.LicenseMode == LicenseMode.Standalone
+            ? _standaloneVerifier.VerifyAsync(_settings, cancellationToken)
+            : _floatingClient.ValidateAsync(_settings, cancellationToken);
+    }
+
     public async Task<LicenseResult> AcquireAsync(CancellationToken cancellationToken = default)
     {
         if (_settings.LicenseMode == LicenseMode.Standalone)

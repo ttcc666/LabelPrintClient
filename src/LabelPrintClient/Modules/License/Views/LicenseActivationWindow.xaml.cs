@@ -236,7 +236,7 @@ public partial class LicenseActivationWindow : Window
                 LicenseAccessKey = LicenseAccessKeyBox.Password.Trim()
             };
 
-            var result = await tempClient.AcquireAsync(tempSettings);
+            var result = await tempClient.ValidateAsync(tempSettings);
 
             if (result.Status == LicenseStatus.ServerUnavailable)
             {
