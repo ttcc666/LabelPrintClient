@@ -3,6 +3,7 @@ using System.Text.Json;
 using LicenseServer.Infrastructure;
 using LicenseServer.Models;
 using LicenseServer.Services;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -43,6 +44,9 @@ public sealed class LicensesModel : PageModel
     [BindProperty]
     public string? ImportLicenseContent { get; set; }
 
+    [BindProperty]
+    public IFormFile? ImportLicenseFile { get; set; }
+
     public async Task OnGetAsync()
     {
         await LoadAsync();
@@ -76,19 +80,22 @@ public sealed class LicensesModel : PageModel
             MachineCode = string.IsNullOrWhiteSpace(Input.MachineCode) ? null : Input.MachineCode.Trim(),
             TotalCount = Math.Max(1, Input.TotalCount),
             AccessKeyHash = accessKey == null ? null : HashService.Sha256(accessKey),
+            AccessKey = accessKey,
             IssuedTo = Input.IssuedTo.Trim(),
             CreateTime = DateTime.Now
         };
         await _db.Db.Insertable(license).ExecuteCommandAsync();
-        TempData["AccessKey"] = accessKey == null ? null : $"新浮动许可证 AccessKey：{accessKey}";
+        if (accessKey != null && TempData != null)
+            TempData["AccessKey"] = "新浮动许可证已创建，AccessKey 已保存并显示在列表中。";
         return RedirectToPage();
     }
 
     public async Task<IActionResult> OnPostImportAsync()
     {
-        if (string.IsNullOrWhiteSpace(ImportLicenseContent))
+        var importContent = await ResolveImportLicenseContentAsync();
+        if (string.IsNullOrWhiteSpace(importContent))
         {
-            ErrorMessage = "导入内容不能为空。";
+            ErrorMessage = "请粘贴许可证 JSON，或选择一个许可证文件。";
             await LoadAsync();
             return Page();
         }
@@ -96,7 +103,7 @@ public sealed class LicensesModel : PageModel
         LicenseDocument? doc;
         try
         {
-            doc = JsonSerializer.Deserialize<LicenseDocument>(ImportLicenseContent, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            doc = JsonSerializer.Deserialize<LicenseDocument>(importContent, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
         }
         catch
         {
@@ -168,6 +175,7 @@ public sealed class LicensesModel : PageModel
             MachineCode = null,
             TotalCount = doc.TotalCount,
             AccessKeyHash = HashService.Sha256(doc.AccessKey),
+            AccessKey = doc.AccessKey,
             IssuedTo = customerName,
             CreateTime = existingLicense?.CreateTime ?? DateTime.Now
         };
@@ -185,6 +193,22 @@ public sealed class LicensesModel : PageModel
 
         await LoadAsync();
         return Page();
+    }
+
+    private async Task<string?> ResolveImportLicenseContentAsync()
+    {
+        if (!string.IsNullOrWhiteSpace(ImportLicenseContent))
+            return ImportLicenseContent.Trim();
+
+        if (ImportLicenseFile == null)
+            return null;
+
+        if (ImportLicenseFile.Length <= 0)
+            return null;
+
+        using var stream = ImportLicenseFile.OpenReadStream();
+        using var reader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
+        return (await reader.ReadToEndAsync()).Trim();
     }
 
     public async Task<IActionResult> OnGetDownloadAsync(long id)
@@ -229,13 +253,16 @@ public sealed class LicensesModel : PageModel
             return RedirectToPage();
         }
 
-        if (string.IsNullOrWhiteSpace(accessKey))
+        var resolvedAccessKey = string.IsNullOrWhiteSpace(accessKey)
+            ? license.AccessKey
+            : accessKey.Trim();
+        if (string.IsNullOrWhiteSpace(resolvedAccessKey))
         {
             TempData["ErrorMessage"] = "下载浮动许可证需要提供匹配的 AccessKey。";
             return RedirectToPage();
         }
 
-        var hash = HashService.Sha256(accessKey.Trim());
+        var hash = HashService.Sha256(resolvedAccessKey);
         if (!string.Equals(license.AccessKeyHash, hash, StringComparison.OrdinalIgnoreCase))
         {
             TempData["ErrorMessage"] = "提供的 AccessKey 校验失败，无法下载。";
@@ -244,7 +271,7 @@ public sealed class LicensesModel : PageModel
 
         try
         {
-            var json = await _generator.GenerateAsync(license, accessKey.Trim());
+            var json = await _generator.GenerateAsync(license, resolvedAccessKey);
             var bytes = Encoding.UTF8.GetBytes(json);
             return File(bytes, "application/json", $"{license.ProductCode}-floating.license");
         }
@@ -260,6 +287,23 @@ public sealed class LicensesModel : PageModel
         }
     }
 
+    public async Task<IActionResult> OnPostDeleteAsync(long id)
+    {
+        var license = await _db.Db.Queryable<AppLicense>().FirstAsync(x => x.Id == id);
+        if (license == null)
+        {
+            if (TempData != null)
+                TempData["ErrorMessage"] = "许可证证书不存在或已删除。";
+            return RedirectToPage();
+        }
+
+        await _db.Db.Deleteable<OnlineSession>().Where(x => x.LicenseId == id).ExecuteCommandAsync();
+        await _db.Db.Deleteable<AppLicense>().Where(x => x.Id == id).ExecuteCommandAsync();
+        if (TempData != null)
+            TempData["ErrorMessage"] = "许可证证书已删除，关联在线会话已清理。";
+        return RedirectToPage();
+    }
+
     private async Task LoadAsync()
     {
         HasMasterKey = _protector.HasMasterKey;
@@ -270,13 +314,26 @@ public sealed class LicensesModel : PageModel
         Items = licenses.Select(x => new LicenseRow(
             x,
             customerMap.GetValueOrDefault(x.CustomerId, "-"),
-            x.AccessKeyHash == null ? "-" : "创建后仅显示一次")).ToList();
+            CreateAccessKeyPreview(x))).ToList();
 
         if (TempData != null && TempData.TryGetValue("AccessKey", out var accessKey))
             ErrorMessage = accessKey?.ToString() ?? string.Empty;
 
         if (TempData != null && TempData.TryGetValue("ErrorMessage", out var errMsg))
             ErrorMessage = errMsg?.ToString() ?? string.Empty;
+    }
+
+    private static string CreateAccessKeyPreview(AppLicense license)
+    {
+        if (license.LicenseMode != LicenseMode.Floating)
+            return "-";
+
+        if (!string.IsNullOrWhiteSpace(license.AccessKey))
+            return license.AccessKey;
+
+        return string.IsNullOrWhiteSpace(license.AccessKeyHash)
+            ? "-"
+            : "旧数据未保存";
     }
 
     public sealed class LicenseInput

@@ -8,6 +8,7 @@ using LicenseServer.Infrastructure;
 using LicenseServer.Models;
 using LicenseServer.Pages;
 using LicenseServer.Services;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Options;
 
@@ -151,6 +152,36 @@ cRTwWdAfC5+A4G/GxvXHJuR+0tzh/v2WK9sjSEzynIHFQOAHWWKdOb2Km+yXgv1o
     }
 
     [Fact]
+    public async Task CompanyMode_CreateFloatingLicense_PersistsPlainAccessKeyForGridDisplay()
+    {
+        using var fixture = TestFixture.Create();
+        await fixture.SigningKeys.ImportAsync(PrivateKeyPem);
+        var customer = await fixture.InsertCustomerAsync();
+        var model = new LicensesModel(fixture.Db, fixture.Generator, fixture.SigningKeys, fixture.Validator, fixture.Protector)
+        {
+            Input = new LicensesModel.LicenseInput
+            {
+                CustomerId = customer.Id,
+                ProductCode = "LABEL_PRINT_CLIENT",
+                LicenseMode = LicenseMode.Floating,
+                ExpireTime = DateTime.Today.AddYears(1),
+                TotalCount = 3,
+                IssuedTo = "ACME"
+            }
+        };
+
+        await model.OnPostAsync();
+
+        var created = await fixture.Db.Db.Queryable<AppLicense>()
+            .OrderByDescending(x => x.CreateTime)
+            .FirstAsync(x => x.CustomerId == customer.Id && x.LicenseMode == LicenseMode.Floating);
+
+        Assert.NotNull(created);
+        Assert.False(string.IsNullOrWhiteSpace(created.AccessKey));
+        Assert.Equal(HashService.Sha256(created.AccessKey!), created.AccessKeyHash);
+    }
+
+    [Fact]
     public async Task FloatingLicense_InvalidAccessKeyOrExpiredLicense_IsRejected()
     {
         using var fixture = TestFixture.Create();
@@ -204,6 +235,7 @@ cRTwWdAfC5+A4G/GxvXHJuR+0tzh/v2WK9sjSEzynIHFQOAHWWKdOb2Km+yXgv1o
         Assert.NotNull(importedLicense);
         Assert.Equal(LicenseMode.Floating, importedLicense.LicenseMode);
         Assert.Equal(2, importedLicense.TotalCount);
+        Assert.Equal("my-custom-access-key", importedLicense.AccessKey);
         Assert.Equal(HashService.Sha256("my-custom-access-key"), importedLicense.AccessKeyHash);
 
         var importedCustomer = await lan.Db.Db.Queryable<Customer>().FirstAsync(x => x.Id == importedLicense.CustomerId);
@@ -222,6 +254,56 @@ cRTwWdAfC5+A4G/GxvXHJuR+0tzh/v2WK9sjSEzynIHFQOAHWWKdOb2Km+yXgv1o
         Assert.True(second.Success);
         Assert.False(third.Success); // 席位满，超限失败
         Assert.Equal(409, third.StatusCode);
+    }
+
+    [Fact]
+    public async Task ClientMode_CanImportFloatingLicenseFromUploadedFile()
+    {
+        using var company = TestFixture.Create();
+        await company.SigningKeys.ImportAsync(PrivateKeyPem);
+        var companyCustomer = await company.InsertCustomerAsync();
+        var companyLicense = await company.InsertLicenseAsync(
+            companyCustomer.Id,
+            LicenseMode.Floating,
+            accessKey: "file-import-access-key",
+            totalCount: 2);
+        var signedLicenseJson = await company.Generator.GenerateAsync(companyLicense, "file-import-access-key");
+
+        using var lan = TestFixture.Create(setMasterKey: false);
+        var validator = new LicenseValidator(Options.Create(new LicenseServerOptions
+        {
+            PublicKeyPem = ClientPublicKeyPem
+        }));
+        var model = new LicensesModel(lan.Db, lan.Generator, lan.SigningKeys, validator, lan.Protector)
+        {
+            ImportLicenseFile = CreateLicenseFile(signedLicenseJson)
+        };
+
+        await model.OnPostImportAsync();
+
+        Assert.Contains("成功", model.ErrorMessage);
+        var imported = await lan.Db.Db.Queryable<AppLicense>().FirstAsync(x => x.Id == companyLicense.Id);
+        Assert.NotNull(imported);
+        Assert.Equal("file-import-access-key", imported.AccessKey);
+    }
+
+    [Fact]
+    public async Task DeleteLicense_RemovesLicenseAndRelatedSessions()
+    {
+        using var fixture = TestFixture.Create();
+        var customer = await fixture.InsertCustomerAsync();
+        var license = await fixture.InsertLicenseAsync(customer.Id, LicenseMode.Floating, accessKey: "delete-license-key", totalCount: 1);
+        var acquire = await fixture.Floating.AcquireAsync(new LicenseAcquireRequest("LABEL_PRINT_CLIENT", "delete-license-key", "M1", "PC-1"));
+        Assert.True(acquire.Success);
+
+        var model = new LicensesModel(fixture.Db, fixture.Generator, fixture.SigningKeys, fixture.Validator, fixture.Protector);
+        await model.OnPostDeleteAsync(license.Id);
+
+        var deletedLicense = await fixture.Db.Db.Queryable<AppLicense>().FirstAsync(x => x.Id == license.Id);
+        var remainingSessions = await fixture.Db.Db.Queryable<OnlineSession>().CountAsync(x => x.LicenseId == license.Id);
+
+        Assert.Null(deletedLicense);
+        Assert.Equal(0, remainingSessions);
     }
 
     [Fact]
@@ -301,12 +383,23 @@ cRTwWdAfC5+A4G/GxvXHJuR+0tzh/v2WK9sjSEzynIHFQOAHWWKdOb2Km+yXgv1o
         return rsa.VerifyData(payload, Convert.FromBase64String(document.Signature), HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
     }
 
+    private static IFormFile CreateLicenseFile(string content)
+    {
+        var bytes = Encoding.UTF8.GetBytes(content);
+        var stream = new MemoryStream(bytes);
+        return new FormFile(stream, 0, bytes.Length, "ImportLicenseFile", "floating.license")
+        {
+            Headers = new HeaderDictionary(),
+            ContentType = "application/json"
+        };
+    }
+
     private sealed class TestFixture : IDisposable
     {
         private readonly string _root;
         private readonly string? _previousMasterKey;
 
-        private TestFixture(string root, string? previousMasterKey, LicenseDb db, SigningKeyService signingKeys, StandaloneLicenseGenerator generator, FloatingLicenseService floating, PrivateKeyProtector protector)
+        private TestFixture(string root, string? previousMasterKey, LicenseDb db, SigningKeyService signingKeys, StandaloneLicenseGenerator generator, FloatingLicenseService floating, PrivateKeyProtector protector, LicenseValidator validator)
         {
             _root = root;
             _previousMasterKey = previousMasterKey;
@@ -315,6 +408,7 @@ cRTwWdAfC5+A4G/GxvXHJuR+0tzh/v2WK9sjSEzynIHFQOAHWWKdOb2Km+yXgv1o
             Generator = generator;
             Floating = floating;
             Protector = protector;
+            Validator = validator;
         }
 
         public LicenseDb Db { get; }
@@ -322,6 +416,7 @@ cRTwWdAfC5+A4G/GxvXHJuR+0tzh/v2WK9sjSEzynIHFQOAHWWKdOb2Km+yXgv1o
         public StandaloneLicenseGenerator Generator { get; }
         public FloatingLicenseService Floating { get; }
         public PrivateKeyProtector Protector { get; }
+        public LicenseValidator Validator { get; }
 
         public static TestFixture Create(bool setMasterKey = true)
         {
@@ -344,7 +439,8 @@ cRTwWdAfC5+A4G/GxvXHJuR+0tzh/v2WK9sjSEzynIHFQOAHWWKdOb2Km+yXgv1o
             var signingKeys = new SigningKeyService(db, protector);
             var generator = new StandaloneLicenseGenerator(signingKeys);
             var floating = new FloatingLicenseService(db, options);
-            return new TestFixture(root, previous, db, signingKeys, generator, floating, protector);
+            var validator = new LicenseValidator(options);
+            return new TestFixture(root, previous, db, signingKeys, generator, floating, protector, validator);
         }
 
         public async Task<Customer> InsertCustomerAsync()
@@ -373,6 +469,7 @@ cRTwWdAfC5+A4G/GxvXHJuR+0tzh/v2WK9sjSEzynIHFQOAHWWKdOb2Km+yXgv1o
                 MachineCode = machineCode,
                 TotalCount = totalCount,
                 AccessKeyHash = accessKey == null ? null : HashService.Sha256(accessKey),
+                AccessKey = accessKey,
                 IssuedTo = "ACME",
                 CreateTime = DateTime.Now
             };

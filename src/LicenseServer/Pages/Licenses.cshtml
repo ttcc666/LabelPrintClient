@@ -98,10 +98,15 @@ else
                 导入公司已签名许可证 (局域网端)
             </h5>
         </div>
-        <form method="post" asp-page-handler="Import">
+        <form method="post" asp-page-handler="Import" enctype="multipart/form-data">
             <div class="mb-3">
                 <label asp-for="ImportLicenseContent" class="form-label">密文 JSON 凭证内容</label>
                 <textarea asp-for="ImportLicenseContent" rows="5" class="form-control font-monospace" placeholder="请在此粘贴由公司使用开发端私钥签名生成的许可证密文 JSON 完整串..."></textarea>
+            </div>
+            <div class="mb-3">
+                <label asp-for="ImportLicenseFile" class="form-label">或者选择许可证文件</label>
+                <input asp-for="ImportLicenseFile" type="file" class="form-control" accept=".json,.license,.txt,application/json,text/plain" />
+                <div class="form-text">可直接选择公司导出的许可证文件，也可以继续粘贴 JSON。</div>
             </div>
             <button class="btn btn-success" type="submit">验证数字签名并导入数据库</button>
         </form>
@@ -139,7 +144,7 @@ else
                 <th>关联产品</th>
                 <th>过期时间截止</th>
                 <th>席位总数</th>
-                <th>验证 AccessKey</th>
+                <th>AccessKey</th>
                 <th class="table-action-medium">操作</th>
             </tr>
         </thead>
@@ -189,16 +194,31 @@ else
                             }
                             else if (item.License.LicenseMode == LicenseMode.Floating)
                             {
-                                <form method="post" asp-page-handler="Download" class="d-inline-flex gap-1.5 align-items-center m-0">
-                                    <input type="hidden" name="id" value="@item.License.Id" />
-                                    <input type="text" name="accessKey" placeholder="输入 AccessKey" class="form-control form-control-sm inline-input" required />
-                                    <button type="submit" class="btn btn-sm btn-outline-primary py-1.5">
-                                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                                            <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-                                        </svg>
-                                        签名并导出
-                                    </button>
-                                </form>
+                                if (!string.IsNullOrWhiteSpace(item.License.AccessKey))
+                                {
+                                    <form method="post" asp-page-handler="Download" class="d-inline-flex gap-1.5 align-items-center m-0">
+                                        <input type="hidden" name="id" value="@item.License.Id" />
+                                        <button type="submit" class="btn btn-sm btn-outline-primary py-1.5">
+                                            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                                <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                                            </svg>
+                                            签名并导出
+                                        </button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <form method="post" asp-page-handler="Download" class="d-inline-flex gap-1.5 align-items-center m-0">
+                                        <input type="hidden" name="id" value="@item.License.Id" />
+                                        <input type="text" name="accessKey" placeholder="输入旧 AccessKey" class="form-control form-control-sm inline-input" required />
+                                        <button type="submit" class="btn btn-sm btn-outline-primary py-1.5">
+                                            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                                <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                                            </svg>
+                                            签名并导出
+                                        </button>
+                                    </form>
+                                }
                             }
                         }
                         else
@@ -211,7 +231,7 @@ else
                             </span>
                         }
                     }
-                    else
+                    else if (item.License.LicenseMode == LicenseMode.Floating)
                     {
                         <span class="text-muted small d-inline-flex align-items-center gap-1">
                             <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -220,6 +240,16 @@ else
                             局域网中转运行托管中
                         </span>
                     }
+                    else
+                    {
+                        <span class="text-muted small">局域网端不处理单机证书下载</span>
+                    }
+
+                    <form method="post" asp-page-handler="Delete" asp-route-id="@item.License.Id" class="d-inline-flex m-0 ms-2" onsubmit="return confirm('确定删除这条许可证证书吗？关联在线会话也会一并清理。');">
+                        <button type="submit" class="btn btn-sm btn-outline-danger py-1.5">
+                            删除证书
+                        </button>
+                    </form>
                 </td>
             </tr>
         }

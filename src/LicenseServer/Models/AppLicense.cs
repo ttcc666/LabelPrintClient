@@ -28,6 +28,9 @@ public sealed class AppLicense
     [SugarColumn(Length = 128, IsNullable = true)]
     public string? AccessKeyHash { get; set; }
 
+    [SugarColumn(Length = 256, IsNullable = true)]
+    public string? AccessKey { get; set; }
+
     [SugarColumn(Length = 120)]
     public string IssuedTo { get; set; } = string.Empty;
 
