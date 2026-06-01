@@ -37,11 +37,11 @@
             </h5>
         </div>
         <dl class="row mb-0 align-items-center">
-            <dt class="col-sm-2 text-muted" style="font-weight: 500;">公钥指纹 Hash</dt>
-            <dd class="col-sm-10 m-0"><code style="font-size: 0.95rem; font-weight: 600;">@Model.ActiveKey.PublicKeyFingerprint</code></dd>
+            <dt class="col-sm-2 text-muted fw-medium">公钥指纹 Hash</dt>
+            <dd class="col-sm-10 m-0"><code class="code-sm fw-bold">@Model.ActiveKey.PublicKeyFingerprint</code></dd>
             
-            <dt class="col-sm-2 text-muted mt-3" style="font-weight: 500;">创建并激活时间</dt>
-            <dd class="col-sm-10 m-0 mt-3 text-dark" style="font-weight: 500;">@Model.ActiveKey.CreateTime.ToString("yyyy-MM-dd HH:mm:ss")</dd>
+            <dt class="col-sm-2 text-muted mt-3 fw-medium">创建并激活时间</dt>
+            <dd class="col-sm-10 m-0 mt-3 text-dark fw-medium">@Model.ActiveKey.CreateTime.ToString("yyyy-MM-dd HH:mm:ss")</dd>
         </dl>
     </div>
 }
@@ -86,7 +86,7 @@ else
                 安全限制运行自锁中
             </h5>
         </div>
-        <p class="text-muted small mb-0" style="line-height: 1.6;">
+        <p class="copy-muted mb-0">
             由于此 `LicenseServer` 实例运行在客户的局域网内部，本平台已经<strong>自动屏蔽了私钥导入表单</strong>。
             浮动许可证将通过内置于服务端的公开公钥进行高强度验签。您无需也不应在此服务器配置任何签名私钥，这极大地防范了私钥由于第三方逆向、硬件遗失等带来的外泄风险。
         </p>

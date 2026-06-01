@@ -28,7 +28,7 @@
             <label asp-for="Input.Remark" class="form-label">合作备注信息</label>
             <input asp-for="Input.Remark" class="form-control" placeholder="如：XX事业部、首批合作等" />
         </div>
-        <div class="col-md-1.5 pb-2">
+        <div class="col-md-auto pb-2">
             <div class="form-check form-switch pt-1">
                 <input asp-for="Input.IsEnabled" class="form-check-input" type="checkbox" role="switch" checked id="isEnabledSwitch" />
                 <label class="form-check-label form-label m-0" for="isEnabledSwitch">启用状态</label>
@@ -54,7 +54,7 @@
         @foreach (var item in Model.Customers)
         {
             <tr>
-                <td style="font-weight: 600;">@item.Name</td>
+                <td class="entity-name">@item.Name</td>
                 <td>@item.Contact</td>
                 <td>
                     @if (item.IsEnabled)

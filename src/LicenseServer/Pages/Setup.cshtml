@@ -11,24 +11,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>初始化管理员 - LicenseServer Console</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body class="login-body">
-    <div class="login-glass-card" style="width: 480px;">
-        <div class="d-flex align-items-center justify-content-center gap-2 mb-4">
-            <div class="sidebar-logo-icon" style="width: 32px; height: 32px; font-size: 1rem; border-radius: 8px;">LS</div>
-            <span style="font-size: 1.45rem; font-weight: 700; background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">LicenseServer</span>
+    <div class="login-glass-card login-glass-card-wide">
+        <div class="auth-brand">
+            <div class="sidebar-logo-icon">LS</div>
+            <span class="auth-brand-name">LicenseServer</span>
         </div>
         
-        <h5 class="mb-4 text-center text-dark" style="font-weight: 600; letter-spacing: -0.01em;">初始化系统管理员</h5>
+        <h5 class="auth-title">初始化系统管理员</h5>
         
         <form method="post" class="text-start">
             <div class="mb-3">
                 <label class="form-label">管理员登录账号</label>
-                <input class="form-control" value="System" disabled style="background-color: #f1f5f9; font-weight: 600; color: #475569;" />
+                <input class="form-control setup-fixed-user" value="System" disabled />
                 <span class="text-muted small mt-1 d-block">系统固定的主系统管理员账号名称</span>
             </div>
             
@@ -49,7 +46,7 @@
                 </div>
             }
             
-            <button class="btn btn-primary w-100 py-2.5" type="submit" style="font-size: 0.95rem; font-weight: 600;">
+            <button class="btn btn-primary w-100 py-2.5" type="submit">
                 创建系统管理员并登录
             </button>
         </form>

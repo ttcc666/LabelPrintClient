@@ -57,14 +57,14 @@
                     <input asp-for="Input.IssuedTo" class="form-control" placeholder="客户企业工商全称" />
                 </div>
                 <div class="col-md-2 d-flex align-items-end">
-                    <button class="btn btn-primary w-100" type="submit" style="height: 42px;">新增并启用</button>
+                    <button class="btn btn-primary w-100" type="submit">新增并启用</button>
                 </div>
             </form>
         </div>
     }
     else
     {
-        <div class="console-card border-warning" style="border-left: 4px solid var(--warning);">
+        <div class="console-card warning-panel">
             <div class="card-title-bar">
                 <h5 class="card-heading text-warning">
                     <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -74,9 +74,9 @@
                 </h5>
             </div>
             <div class="card-body p-0">
-                <p class="mb-3 text-muted" style="line-height: 1.6;">
+                <p class="copy-muted mb-3">
                     当前系统运行在<strong>公司签发模式</strong>下，但数据库中尚未导入可用于证书签发与离线签名的私钥明文。
-                    请先前往左侧菜单的 <strong><a asp-page="/Keys" class="text-primary" style="font-weight: 500; text-decoration: underline;">签名密钥 (Signing Key)</a></strong> 页面导入有效的 RSA 签发私钥，方可解锁证书签发和导出面板。
+                    请先前往左侧菜单的 <strong><a asp-page="/Keys" class="text-primary text-decoration-underline fw-medium">签名密钥 (Signing Key)</a></strong> 页面导入有效的 RSA 签发私钥，方可解锁证书签发和导出面板。
                 </p>
                 <div class="d-flex">
                     <a class="btn btn-primary btn-sm px-4" asp-page="/Keys">
@@ -140,14 +140,14 @@ else
                 <th>过期时间截止</th>
                 <th>席位总数</th>
                 <th>验证 AccessKey</th>
-                <th style="width: 320px;">操作</th>
+                <th class="table-action-medium">操作</th>
             </tr>
         </thead>
         <tbody>
         @foreach (var item in Model.Items)
         {
             <tr>
-                <td style="font-weight: 600;">@item.CustomerName</td>
+                <td class="entity-name">@item.CustomerName</td>
                 <td>
                     @if (item.License.LicenseMode == LicenseMode.Standalone)
                     {
@@ -158,11 +158,11 @@ else
                         <span class="badge bg-success">浮动 (Floating)</span>
                     }
                 </td>
-                <td><code style="font-size: 0.85rem; color: #0284c7; background-color: var(--primary-light); padding: 0.15rem 0.45rem; border-radius: 4px;">@item.License.ProductCode</code></td>
+                <td><code class="code-pill code-sm">@item.License.ProductCode</code></td>
                 <td>
                     @if (item.License.ExpireTime <= DateTime.Now)
                     {
-                        <span class="text-danger" style="font-weight: 500;">
+                        <span class="text-danger fw-medium">
                             @item.License.ExpireTime.ToString("yyyy-MM-dd") (已过期)
                         </span>
                     }
@@ -172,7 +172,7 @@ else
                     }
                 </td>
                 <td><strong>@item.License.TotalCount</strong> 席</td>
-                <td><code style="font-size: 0.825rem;">@item.AccessKeyPreview</code></td>
+                <td><code class="code-xs">@item.AccessKeyPreview</code></td>
                 <td>
                     @if (Model.HasMasterKey)
                     {
@@ -191,8 +191,8 @@ else
                             {
                                 <form method="post" asp-page-handler="Download" class="d-inline-flex gap-1.5 align-items-center m-0">
                                     <input type="hidden" name="id" value="@item.License.Id" />
-                                    <input type="text" name="accessKey" placeholder="输入 AccessKey" class="form-control form-control-sm" style="width: 130px; height: 32px;" required />
-                                    <button type="submit" class="btn btn-sm btn-outline-primary py-1.5" style="height: 32px;">
+                                    <input type="text" name="accessKey" placeholder="输入 AccessKey" class="form-control form-control-sm inline-input" required />
+                                    <button type="submit" class="btn btn-sm btn-outline-primary py-1.5">
                                         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                                             <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
                                         </svg>
@@ -203,7 +203,7 @@ else
                         }
                         else
                         {
-                            <span class="text-danger small d-inline-flex align-items-center gap-1" style="font-weight: 500;">
+                            <span class="text-danger small d-inline-flex align-items-center gap-1 fw-medium">
                                 <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                     <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                                 </svg>

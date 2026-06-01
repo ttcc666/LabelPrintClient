@@ -1,20 +1,31 @@
 using LicenseServer.Infrastructure;
 using LicenseServer.Models;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace LicenseServer.Services;
 
 public sealed class AdminAuthService
 {
-    private readonly LicenseDb _db;
+    private const string HasAnyAdminCacheKey = "license-server:has-any-admin";
+    private static readonly TimeSpan HasAnyAdminCacheDuration = TimeSpan.FromSeconds(30);
 
-    public AdminAuthService(LicenseDb db)
+    private readonly LicenseDb _db;
+    private readonly IMemoryCache _cache;
+
+    public AdminAuthService(LicenseDb db, IMemoryCache cache)
     {
         _db = db;
+        _cache = cache;
     }
 
     public async Task<bool> HasAnyAdminAsync()
     {
-        return await _db.Db.Queryable<AdminUser>().AnyAsync();
+        if (_cache.TryGetValue(HasAnyAdminCacheKey, out bool hasAnyAdmin))
+            return hasAnyAdmin;
+
+        hasAnyAdmin = await _db.Db.Queryable<AdminUser>().AnyAsync();
+        _cache.Set(HasAnyAdminCacheKey, hasAnyAdmin, HasAnyAdminCacheDuration);
+        return hasAnyAdmin;
     }
 
     public async Task<AdminUser> CreateInitialAdminAsync(string password, string displayName = "Administrator")
@@ -36,6 +47,7 @@ public sealed class AdminAuthService
         };
 
         await _db.Db.Insertable(user).ExecuteCommandAsync();
+        _cache.Set(HasAnyAdminCacheKey, true, HasAnyAdminCacheDuration);
         return user;
     }
 

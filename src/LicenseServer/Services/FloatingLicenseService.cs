@@ -77,6 +77,23 @@ public sealed class FloatingLicenseService
         return FloatingLicenseResponse.Ok(token, license, _options.HeartbeatIntervalSeconds);
     }
 
+    public async Task<FloatingLicenseResponse> ValidateAsync(LicenseAcquireRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.ProductCode) ||
+            string.IsNullOrWhiteSpace(request.AccessKey) ||
+            string.IsNullOrWhiteSpace(request.MachineCode))
+        {
+            return FloatingLicenseResponse.Fail(400, "ProductCode、AccessKey 和 MachineCode 不能为空。");
+        }
+
+        var accessKeyHash = HashService.Sha256(request.AccessKey);
+        var license = await _db.Db.Queryable<AppLicense>()
+            .FirstAsync(x => x.AccessKeyHash == accessKeyHash);
+
+        var validation = ValidateLicense(license, request.ProductCode);
+        return validation ?? FloatingLicenseResponse.OkValidated(license!, _options.HeartbeatIntervalSeconds);
+    }
+
     public async Task<FloatingLicenseResponse> HeartbeatAsync(string token)
     {
         if (string.IsNullOrWhiteSpace(token))
@@ -169,6 +186,20 @@ public sealed class FloatingLicenseResponse
         {
             Success = true,
             Token = token,
+            Message = "浮动授权有效。",
+            IssuedTo = license.IssuedTo,
+            ExpireTime = license.ExpireTime,
+            HeartbeatIntervalSeconds = heartbeatIntervalSeconds > 0 ? heartbeatIntervalSeconds : 30,
+            StatusCode = 200
+        };
+    }
+
+    public static FloatingLicenseResponse OkValidated(AppLicense license, int heartbeatIntervalSeconds)
+    {
+        return new FloatingLicenseResponse
+        {
+            Success = true,
+            Token = null,
             Message = "浮动授权有效。",
             IssuedTo = license.IssuedTo,
             ExpireTime = license.ExpireTime,

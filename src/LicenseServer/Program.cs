@@ -24,6 +24,7 @@ builder.Services.Configure<FormOptions>(options =>
 {
     options.MultipartBodyLengthLimit = maxUpdateUploadBytes;
 });
+builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<LicenseDb>();
 builder.Services.AddScoped<AdminAuthService>();
 builder.Services.AddScoped<PrivateKeyProtector>();

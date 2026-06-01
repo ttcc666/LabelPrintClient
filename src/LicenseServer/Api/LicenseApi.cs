@@ -15,6 +15,12 @@ public static class LicenseApi
             return ToResult(result);
         });
 
+        group.MapPost("/validate", async Task<IResult> (LicenseAcquireRequest request, FloatingLicenseService service) =>
+        {
+            var result = await service.ValidateAsync(request);
+            return ToResult(result);
+        });
+
         group.MapPost("/heartbeat", async Task<IResult> (LicenseHeartbeatRequest request, FloatingLicenseService service) =>
         {
             var result = await service.HeartbeatAsync(request.Token);

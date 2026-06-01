@@ -76,16 +76,16 @@
                 <th>文件</th>
                 <th>SHA256</th>
                 <th>上传时间</th>
-                <th style="width: 330px;">操作</th>
+                <th class="table-action-wide">操作</th>
             </tr>
         </thead>
         <tbody>
         @foreach (var item in Model.Items)
         {
             <tr>
-                <td><code style="font-size: 0.85rem; color: #0284c7; background-color: var(--primary-light); padding: 0.15rem 0.45rem; border-radius: 4px;">@item.ProductCode</code></td>
+                <td><code class="code-pill code-sm">@item.ProductCode</code></td>
                 <td><span class="badge bg-secondary">@item.Channel</span></td>
-                <td style="font-weight: 700;">@item.Version</td>
+                <td class="table-strong">@item.Version</td>
                 <td>
                     @if (item.IsEnabled)
                     {
@@ -110,7 +110,7 @@
                     <div><code>@item.FeedFileName</code></div>
                     <div class="text-muted small">@($"{item.FileSizeBytes / 1024.0 / 1024.0:F2} MB")</div>
                 </td>
-                <td><code style="font-size: 0.75rem;">@item.Sha256[..Math.Min(12, item.Sha256.Length)]...</code></td>
+                <td><code class="code-xs">@item.Sha256[..Math.Min(12, item.Sha256.Length)]...</code></td>
                 <td>@item.CreateTime.ToString("yyyy-MM-dd HH:mm")</td>
                 <td>
                     <div class="d-flex flex-wrap gap-2">
@@ -140,7 +140,7 @@
             @if (!string.IsNullOrWhiteSpace(item.ReleaseNotes))
             {
                 <tr>
-                    <td colspan="9" class="text-muted small" style="background: #fff;">
+                    <td colspan="9" class="text-muted small">
                         <strong>更新说明：</strong>@item.ReleaseNotes
                     </td>
                 </tr>

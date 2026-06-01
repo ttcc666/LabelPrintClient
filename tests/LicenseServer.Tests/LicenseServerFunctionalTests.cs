@@ -117,6 +117,23 @@ cRTwWdAfC5+A4G/GxvXHJuR+0tzh/v2WK9sjSEzynIHFQOAHWWKdOb2Km+yXgv1o
     }
 
     [Fact]
+    public async Task FloatingLicense_ValidateOnly_DoesNotReplaceOrReleaseExistingSession()
+    {
+        using var fixture = TestFixture.Create();
+        var customer = await fixture.InsertCustomerAsync();
+        await fixture.InsertLicenseAsync(customer.Id, LicenseMode.Floating, accessKey: "access-key", totalCount: 1);
+
+        var acquire = await fixture.Floating.AcquireAsync(new LicenseAcquireRequest("LABEL_PRINT_CLIENT", "access-key", "M1", "PC-1"));
+        var validate = await fixture.Floating.ValidateAsync(new LicenseAcquireRequest("LABEL_PRINT_CLIENT", "access-key", "M1", "PC-1"));
+        var heartbeat = await fixture.Floating.HeartbeatAsync(acquire.Token!);
+
+        Assert.True(acquire.Success);
+        Assert.True(validate.Success);
+        Assert.Null(validate.Token);
+        Assert.True(heartbeat.Success);
+    }
+
+    [Fact]
     public async Task FloatingLicense_WhenSeatFull_ReturnsConflictButSameMachineReusesSeat()
     {
         using var fixture = TestFixture.Create();
