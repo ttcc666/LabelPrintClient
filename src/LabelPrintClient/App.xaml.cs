@@ -84,6 +84,8 @@ public partial class App : System.Windows.Application
                 }
             }
 
+            LicenseManager.StartHeartbeat(Settings, OnLicenseExpired);
+
             if (!await ShowAuthFlowAsync())
             {
                 AppLogger.LogInfo("用户取消登录，应用退出");
@@ -94,7 +96,6 @@ public partial class App : System.Windows.Application
             var mainWindow = new MainWindow();
             MainWindow = mainWindow;
             mainWindow.Show();
-            LicenseManager.StartHeartbeat(Settings, OnLicenseExpired);
             ShutdownMode = ShutdownMode.OnMainWindowClose;
             AppLogger.LogInfo("主窗口已显示");
         }

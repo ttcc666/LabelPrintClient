@@ -46,11 +46,29 @@ public sealed class LicenseService : ILicenseService
         return result;
     }
 
-    public Task<LicenseResult> HeartbeatAsync(CancellationToken cancellationToken = default)
+    public async Task<LicenseResult> HeartbeatAsync(CancellationToken cancellationToken = default)
     {
-        return _settings.LicenseMode == LicenseMode.Standalone
-            ? _standaloneVerifier.VerifyAsync(_settings, cancellationToken)
-            : _floatingClient.HeartbeatAsync(_token ?? string.Empty, _settings, cancellationToken);
+        if (_settings.LicenseMode == LicenseMode.Standalone)
+            return await _standaloneVerifier.VerifyAsync(_settings, cancellationToken).ConfigureAwait(false);
+
+        if (string.IsNullOrWhiteSpace(_token))
+            return await AcquireAsync(cancellationToken).ConfigureAwait(false);
+
+        var result = await _floatingClient.HeartbeatAsync(_token, _settings, cancellationToken).ConfigureAwait(false);
+        if (result.IsValid)
+        {
+            _token = result.Token ?? _token;
+            return result;
+        }
+
+        if (result.Status == LicenseStatus.Rejected)
+        {
+            var reacquire = await AcquireAsync(cancellationToken).ConfigureAwait(false);
+            if (reacquire.IsValid)
+                return reacquire;
+        }
+
+        return result;
     }
 
     public Task ReleaseAsync(CancellationToken cancellationToken = default)

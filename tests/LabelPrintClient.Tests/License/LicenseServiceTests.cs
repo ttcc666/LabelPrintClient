@@ -164,6 +164,44 @@ cRTwWdAfC5+A4G/GxvXHJuR+0tzh/v2WK9sjSEzynIHFQOAHWWKdOb2Km+yXgv1o
     }
 
     [Fact]
+    public async Task LicenseService_HeartbeatAsync_WhenFloatingSessionExpired_ReacquiresToken()
+    {
+        var acquireCount = 0;
+        var handler = new FakeHandler((request, _) =>
+        {
+            var path = request.RequestUri?.AbsolutePath;
+            if (path == "/api/license/acquire")
+            {
+                acquireCount++;
+                return JsonResponse(HttpStatusCode.OK, new
+                {
+                    Success = true,
+                    Token = $"token-{acquireCount}",
+                    Message = "ok",
+                    HeartbeatIntervalSeconds = 15
+                });
+            }
+
+            if (path == "/api/license/heartbeat")
+                return JsonResponse(HttpStatusCode.NotFound, new { Success = false, Message = "session expired" });
+
+            return new HttpResponseMessage(HttpStatusCode.NotFound);
+        });
+        var client = new FloatingLicenseClient(new HttpClient(handler));
+        var settings = new AppSettings { LicenseMode = LicenseMode.Floating, LicenseServerUrl = "https://license.local/", LicenseAccessKey = "client-access-key" };
+        var service = new LicenseService(settings, floatingClient: client);
+
+        var startup = await service.ValidateStartupAsync();
+        var heartbeat = await service.HeartbeatAsync();
+
+        Assert.True(startup.IsValid);
+        Assert.True(heartbeat.IsValid);
+        Assert.Equal("token-2", heartbeat.Token);
+        Assert.Equal(2, acquireCount);
+        Assert.Equal(new[] { "/api/license/acquire", "/api/license/heartbeat", "/api/license/acquire" }, handler.Paths);
+    }
+
+    [Fact]
     public async Task FloatingLicenseClient_SeatLimit_ReturnsSeatLimitExceeded()
     {
         var handler = new FakeHandler((_, _) =>
