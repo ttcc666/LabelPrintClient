@@ -13,15 +13,28 @@
 .PARAMETER SkipBuild
     跳过 restore / build，直接从 publish 开始（适合重复打包同一版本）。
 
+.PARAMETER PackageType
+    控制 Velopack 输出类型：
+    All        = 默认，生成更新包、安装器、便携包。
+    Installer  = 生成更新包和安装器，跳过便携包。
+    Portable   = 生成更新包和便携包，跳过安装器。
+    UpdateOnly = 最终 release / zip 只保留更新包和 feed。
+
 .EXAMPLE
     .\scripts\pack.ps1
     .\scripts\pack.ps1 -SkipTests
     .\scripts\pack.ps1 -SkipBuild -SkipTests
+    .\scripts\pack.ps1 -PackageType Installer
+    .\scripts\pack.ps1 -PackageType Portable -SkipTests
+    .\scripts\pack.ps1 -PackageType UpdateOnly -SkipBuild -SkipTests
 #>
 [CmdletBinding()]
 param(
     [switch] $SkipTests,
-    [switch] $SkipBuild
+    [switch] $SkipBuild,
+
+    [ValidateSet('All', 'Installer', 'Portable', 'UpdateOnly')]
+    [string] $PackageType = 'All'
 )
 
 Set-StrictMode -Version Latest
@@ -61,6 +74,7 @@ if (-not $Version) {
     exit 1
 }
 Write-Ok "版本：$Version"
+Write-Ok "打包类型：$PackageType"
 
 $PublishDir = "$Root\artifacts\publish\LabelPrintClient\$Version"
 $ReleaseDir = "$ReleasesDir\LabelPrintClient-$Version"
@@ -136,19 +150,53 @@ if (Test-Path $ReleaseDir) {
 }
 
 Invoke-Cmd "vpk pack" {
-    vpk pack `
-        --packId      LabelPrintClient `
-        --packVersion $Version `
-        --channel     stable `
-        --packDir     $PublishDir `
-        --mainExe     LabelPrintClient.exe `
-        --runtime     win-x64 `
-        --outputDir   $ReleaseDir
+    $vpkPackArgs = @(
+        'pack',
+        '--packId', 'LabelPrintClient',
+        '--packVersion', $Version,
+        '--channel', 'stable',
+        '--packDir', $PublishDir,
+        '--mainExe', 'LabelPrintClient.exe',
+        '--runtime', 'win-x64',
+        '--outputDir', $ReleaseDir
+    )
+
+    switch ($PackageType) {
+        'Installer' {
+            $vpkPackArgs += '--noPortable'
+        }
+        'Portable' {
+            $vpkPackArgs += '--noInst'
+        }
+        'UpdateOnly' {
+            # Velopack 不允许同时使用 --noPortable 和 --noInst。
+            # 这里先跳过 portable，再在打包后移除安装器，只保留自动更新需要的文件。
+            $vpkPackArgs += '--noPortable'
+        }
+    }
+
+    & vpk @vpkPackArgs
+}
+
+if ($PackageType -eq 'UpdateOnly') {
+    Write-Step "清理 UpdateOnly 不需要的安装包产物"
+    foreach ($pattern in @('*Setup.exe', '*Portable.zip', 'assets*.json')) {
+        Get-ChildItem -Path $ReleaseDir -Filter $pattern -File -ErrorAction SilentlyContinue |
+            ForEach-Object { Remove-Item -LiteralPath $_.FullName -Force }
+    }
+    Write-Ok "已仅保留自动更新必要文件"
 }
 
 # ── 验证 release 产物 ─────────────────────────────────────────────────────────
 Write-Step "验证 release 产物"
-$requiredPatterns = @('*.nupkg', '*Setup.exe')
+$requiredPatterns = @('*.nupkg')
+if ($PackageType -in @('All', 'Installer')) {
+    $requiredPatterns += '*Setup.exe'
+}
+if ($PackageType -in @('All', 'Portable')) {
+    $requiredPatterns += '*Portable.zip'
+}
+
 foreach ($pattern in $requiredPatterns) {
     $found = Get-ChildItem $ReleaseDir -Filter $pattern -ErrorAction SilentlyContinue
     if (-not $found) {
@@ -156,6 +204,23 @@ foreach ($pattern in $requiredPatterns) {
         exit 1
     }
 }
+
+$forbiddenPatterns = @()
+if ($PackageType -in @('Installer', 'UpdateOnly')) {
+    $forbiddenPatterns += '*Portable.zip'
+}
+if ($PackageType -in @('Portable', 'UpdateOnly')) {
+    $forbiddenPatterns += '*Setup.exe'
+}
+
+foreach ($pattern in $forbiddenPatterns) {
+    $found = Get-ChildItem $ReleaseDir -Filter $pattern -ErrorAction SilentlyContinue
+    if ($found) {
+        Write-Host "✘  当前打包类型不应包含文件：$pattern" -ForegroundColor Red
+        exit 1
+    }
+}
+
 $hasFeed = (Test-Path "$ReleaseDir\RELEASES") -or
            (Test-Path "$ReleaseDir\releases.stable.json")
 if (-not $hasFeed) {
@@ -180,6 +245,7 @@ Write-Host ""
 Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Green
 Write-Host "  打包完成" -ForegroundColor Green
 Write-Host "  版本：$Version" -ForegroundColor Green
+Write-Host "  类型：$PackageType" -ForegroundColor Green
 Write-Host "  zip ：$ZipPath  ($zipSize MB)" -ForegroundColor Green
 Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Green
 Write-Host ""
